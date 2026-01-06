@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <div className="flex items-center justify-center text-center bg-zinc-50 px-6 text-center font-sans min-h-screen">
   <h1 className="max-w-3xl text-2xl font-semibold leading-relaxed text-orange-600">
-    Hello Peter 
+    Hello Peter i am sudais
     <br />
     This is the official project boilerplate.  
     <br />
