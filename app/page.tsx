@@ -11,6 +11,8 @@ export default function Home() {
     We’ll use this URL to deploy all updates and track progress in real time.  
     <br />
     Please check your Vercel dashboard or just use the above url to see every new change as it goes live.
+     <br />
+     I will start it after my exam
   </h1>
 </div>
 
