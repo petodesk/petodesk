@@ -2,8 +2,8 @@ import Image from "next/image";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 text-center font-sans dark:bg-black">
-  <h1 className="max-w-3xl text-2xl font-semibold leading-relaxed text-orange-200">
+    <div className="flex items-center justify-center text-center bg-zinc-50 px-6 text-center font-sans min-h-screen">
+  <h1 className="max-w-3xl text-2xl font-semibold leading-relaxed text-orange-600">
     Hello Peter 
     <br />
     This is the official project boilerplate.  
