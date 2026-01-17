@@ -1,6 +1,43 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: 255 255 255;
+  --foreground: 23 23 23;
+  --primary: 37 99 235;     /* #2563EB */
+  --secondary: 245 158 11;  /* #F59E0B */
+}
+@theme {
+  --font-poppins: var(--font-poppins);
+}
+
+
+
+@layer components {
+  .btn-primary {
+    background-color: rgb(var(--primary));
+    cursor: pointer;
+  }
+
+  .text-primary {
+    color: rgb(var(--primary));
+  }
+
+  .btn-secondary {
+    background-color: rgb(var(--secondary));
+     cursor: pointer;
+
+  }
+
+  .text-secondary {
+    color: rgb(var(--secondary));
+    
+  }
+
+}
+.btn-primary:hover {
+  background-color: rgb(var(--primary) / 0.9);
+}
+
+.btn-secondary:hover {
+  background-color: rgb(var(--secondary) / 0.9);
 }
