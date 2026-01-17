@@ -6,7 +6,8 @@ export default function LandingPageHero() {
   return (
     <div>
       <Hero
-        title="Manage Your Business and Team Smarter"
+        title="Manage Your Business and Team Smarter 
+All in One Platform"
         description="Track your sales effortlessly, manage inventory in real time, oversee your staff and their tasks,
 run payroll with ease, handle HR operations seamlessly, and make smarter business decisions,
 all from one secure, responsive platform. Collaborate with your team, monitor performance,

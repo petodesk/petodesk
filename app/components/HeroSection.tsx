@@ -29,12 +29,12 @@ export default function Hero({
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-          <button className="btn-primary px-6 py-2 rounded-md">
+          <button className="btn-primary px-6 py-2 rounded-md text-white">
             {primaryButtonText}
           </button>
 
           {secondaryButtonText && (
-            <button className="btn-secondary px-6 py-2 rounded-md">
+            <button className="btn-secondary px-6 py-2 rounded-md text-white">
               {secondaryButtonText}
             </button>
           )}
