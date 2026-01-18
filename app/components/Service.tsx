@@ -1,14 +1,14 @@
 import Image from 'next/image'
-import React from 'react'
 import salesex from  '../assets/s&e.png'
 import inventory from  '../assets/inv.png'
 import hr from  '../assets/hr.png'
 import task from  '../assets/task.png'
 import report from '../assets/rep.png'
 import ServiceCard from './ServiceCard'
+
 function Service() {
   return (
-    <div className='bg-[#E1B12C] py-12 rounded-lg  p-10 font-poppins'
+    <div className='bg-[#E1B12C] py-12 rounded-lg  p-4 md:p-10 font-poppins'
     >
         <div className='mb-5'>
             <h1 className='text-center text-lg md:text-3xl font-bold'>Everything Your Business Needs in One Platform</h1>

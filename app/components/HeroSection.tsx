@@ -16,7 +16,7 @@ export default function Hero({
   secondaryButtonText,
 }: HeroProps) {
   return (
-    <section className="flex flex-col-reverse md:flex-row items-center justify-between gap-10 px-6 pt-12 font-poppins">
+    <section className="flex flex-col-reverse md:flex-row items-center justify-between gap-10 px-6 pt-2 mt-20 font-poppins">
 
       {/* Left content */}
       <div className="flex-1 max-w-2xl text-center md:text-left">
@@ -42,7 +42,7 @@ export default function Hero({
       </div>
 
       {/* Right image */}
-      <div className="relative w-[340px] h-[320px] sm:w-[280px] sm:h-[380px] md:w-[320px] md:h-[420px]">
+      <div className="relative w-[340px] h-[320px] sm:w-[280px] sm:h-[380px] md:w-[420px] md:h-[420px]">
         <Image
           src={imageSrc}
           alt="Hero Image"
