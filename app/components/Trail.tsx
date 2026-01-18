@@ -6,11 +6,11 @@ import { FaCheckCircle } from 'react-icons/fa'
 
 function Trail() {
     return (
-        <div className='bg-[#F59E0B] p-12 rounded-t-4xl '>
-        <div className='flex flex-col gap-10 md:flex-row justify-between '>
+        <div className='bg-[#F59E0B] p-6 md:p-12 rounded-t-4xl '>
+        <div className='flex flex-col gap-10 md:flex-row justify-between'>
             <div className=''>
                 <h1 className='text-xl md:text-2xl lg:text-3xl font-bold pb-10'>Run your business smarter with PetoDesk</h1>
-                <div className='flex justify-between gap-20'>
+                <div className='flex flex-col md:flex-row justify-between gap-5 md:gap-20'>
                     <ul className='flex flex-col gap-4'>
                         <li className='flex items-center gap-1'>
                             <FaCheckCircle className='text-blue-600 tex-xl' />

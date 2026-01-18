@@ -5,7 +5,7 @@ import planimg from '../assets/plan.png'
 
 function PlanDetails() {
   return (
-    <div className='flex flex-col justify-between gap-20 py-12 px-10'>
+    <div className='flex flex-col justify-between gap-20 px-6 py-12 mdpx-10'>
       <div className='flex flex-col justify-between gap-6'>
         <h1 className='text-xl md:text-3xl font-bold text-center'>Everything Your Business Needs in One Platform. Total business control.</h1>
         <p className='text-sm font-semibold text-center'>Manage sales, inventory, staff, payroll, HR, and reports from a single dashboard — built for growing businesses.</p>
