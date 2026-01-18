@@ -33,7 +33,7 @@ function Header() {
             English
           </li>
 
-          <li className="list-none cursor-pointer">Sign In</li>
+          <li className="list-none cursor-pointer text-primary">Sign In</li>
 
           {/* Mobile toggle */}
           <button

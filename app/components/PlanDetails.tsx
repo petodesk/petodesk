@@ -80,7 +80,7 @@ function PlanDetails() {
             <Image
             src={planimg}
             alt='plan image'
-            className='w-[400px]'
+            className='w-[400px] hover:translate-y-2 duration-300'
             />
         </div>
       </div>

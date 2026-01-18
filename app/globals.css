@@ -41,3 +41,6 @@
 .btn-secondary:hover {
   background-color: rgb(var(--secondary) / 0.9);
 }
+.text-primary:hover {
+    color: rgb(8, 78, 101);
+  }
