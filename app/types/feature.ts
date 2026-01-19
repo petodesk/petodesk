@@ -7,4 +7,5 @@ export default interface FeatureSectionProps {
   image: StaticImageData
   bgColor?: string
   reverse?: boolean
+  whiteDot?:boolean
 }

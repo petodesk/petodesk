@@ -1,5 +1,5 @@
 import Hero from "./HeroSection";
-import bussinesshero from "../assets/buss.png";
+import bussinesshero from "../assets/bussimg.svg";
 
 export default function BusinessHero() {
   return (

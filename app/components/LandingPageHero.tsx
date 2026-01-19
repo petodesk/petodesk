@@ -4,7 +4,7 @@ import { FaCheckCircle } from "react-icons/fa";
 
 export default function LandingPageHero() {
   return (
-    <div>
+    <div className="flex flex-col gap-4 mt-15 pl-4">
       <Hero
         title="Manage Your Business and Team Smarter 
 All in One Platform"

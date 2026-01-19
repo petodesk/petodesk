@@ -42,6 +42,12 @@ function Footer() {
             </a>
           </div>
 
+           <div className='flex flex-col gap-2 mt-13'>
+      <p className='text-sm'>© 2026 PetoDesk</p>
+      <p className='text-sm font-semibold'>PetoDesk  - a product of Process Pro Tech</p>
+
+     </div>
+
 
         </div>
 
@@ -98,6 +104,7 @@ function Footer() {
         </div>
 
       </div>
+    
     </div>
   )
 }

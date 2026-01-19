@@ -59,7 +59,7 @@ function Header() {
     </Link>
   </li>
   <li>
-    <Link href="/learn-support" className="cursor-pointer hover:text-primary">
+    <Link href="/contact" className="cursor-pointer hover:text-primary">
       Learn & Support
     </Link>
   </li>
@@ -119,7 +119,7 @@ function Header() {
       </li>
       <li>
         <Link
-          href="/learn-support"
+          href="/contact"
           onClick={() => setOpen(false)}
           className="cursor-pointer block"
         >

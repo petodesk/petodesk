@@ -9,7 +9,8 @@ function page() {
       <Header/>
       <BusinessHero/>
       <BusinessCard/>
-      <ManageB/>
+      <ManageB description='Ready to start managing your
+business smarter?'/>
     </div>
   )
 }
