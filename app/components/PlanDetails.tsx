@@ -18,60 +18,60 @@ function PlanDetails() {
 
         <div className='flex flex-col gap-5'>
             <li className='flex gap-2 font-semibold text-white'>
-           <FaCheckCircle className="text-orange-500 text-xl" />
+           <FaCheckCircle className="text-white text-xl" />
                 
                 Per-employee pricing
             </li>
               <li className='flex gap-2 font-semibold text-white'>
-           <FaCheckCircle className="text-orange-500 text-xl" />
+         <FaCheckCircle className="text-white text-xl" />
                 
                 Secure data backup & export
             </li>
 
               <li className='flex gap-2 font-semibold text-white'>
-           <FaCheckCircle className="text-orange-500 text-xl" />
+          <FaCheckCircle className="text-white text-xl" />
               Sales, expenses & inventory tracking
             </li>
 
               <li className='flex gap-2 font-semibold text-white'>
                 
-           <FaCheckCircle className="text-orange-500 text-xl" />
+          <FaCheckCircle className="text-white text-xl" />
                Task, payroll & leave management
             </li>
 
              <li className='flex gap-2 font-semibold text-white'>
                 
-           <FaCheckCircle className="text-orange-500 text-xl" />
+          <FaCheckCircle className="text-white text-xl" />
            Admin & role-based access
             </li>
             
         </div>
         <div className='flex flex-col gap-5'>
             <li className='flex gap-2 font-semibold text-white'>
-           <FaCheckCircle className="text-orange-500 text-xl" />
+          <FaCheckCircle className="text-white text-xl" />
                 
                 Per-employee pricing
             </li>
               <li className='flex gap-2 font-semibold text-white'>
-           <FaCheckCircle className="text-orange-500 text-xl" />
+           <FaCheckCircle className="text-white text-xl" />
                 
                 Secure data backup & export
             </li>
 
               <li className='flex gap-2 font-semibold text-white'>
-           <FaCheckCircle className="text-orange-500 text-xl" />
+         <FaCheckCircle className="text-white text-xl" />
               Sales, expenses & inventory tracking
             </li>
 
               <li className='flex gap-2 font-semibold text-white'>
                 
-           <FaCheckCircle className="text-orange-500 text-xl" />
+           <FaCheckCircle className="text-white text-xl" />
                Task, payroll & leave management
             </li>
 
              <li className='flex gap-2 font-semibold text-white'>
                 
-           <FaCheckCircle className="text-orange-500 text-xl" />
+           <FaCheckCircle className="text-white text-xl" />
            Admin & role-based access
             </li>
             

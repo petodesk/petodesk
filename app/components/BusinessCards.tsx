@@ -25,7 +25,7 @@ export default function BusinessCard() {
 
       <FeatureSection
         title="Sales & Expenses"
-        description="Monitor daily sales, expenses, and profit."
+        description="Monitor daily sales and expenses, and track your profit & loss."
         features={[
           'Record sales and expenses per user',
           'Track profit/loss by day, week, month',
@@ -41,12 +41,13 @@ export default function BusinessCard() {
         features={[
           'Create and email invoices to clients',
           'Track payment status',
-          'nternal wallet for business earnings',
+          'Internal wallet for business earnings',
           `Bank transfers & withdrawal tracking Transaction history`,
           'Transaction history'
         ]}
         image={invoiceImg}
         bgColor="bg-blue-600 text-white"
+        whiteDot
       />
 
       <FeatureSection
