@@ -74,7 +74,11 @@ function Header() {
             English
           </li>
 
-          <li className="list-none cursor-pointer text-primary">Sign In</li>
+          <li className="list-none cursor-pointer text-primary">
+            <Link href='/signup'>
+             Sign In
+            </Link>
+           </li>
 
           {/* Mobile toggle */}
           <button
