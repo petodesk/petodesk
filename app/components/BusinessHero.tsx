@@ -1,14 +1,14 @@
 import Hero from "./HeroSection";
-import bussinesshero from "../assets/bussimg.svg";
+import bussinesshero from "../assets/bussimg.png";
 
 export default function BusinessHero() {
   return (
     <div>
       <Hero
         title="Run your business efficiently from one
-smart platform."
+                   smart platform."
         description="Track sales, manage inventory, oversee tasks, generate invoices, and get actionable
-reports, all in one place."
+             reports, all in one place."
         imageSrc={bussinesshero}
         primaryButtonText="Activate Free Trial"
         secondaryButtonText="Contact Sales"

@@ -20,32 +20,61 @@ export default function Contact() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* Left Card */}
                     <div className="bg-blue-600 text-white max-w-100 rounded-xl p-6 flex flex-col justify-between">
-                        <div className='flex flex-col gap-3 '>
+
+                        <div className="flex flex-col gap-3">
                             <h3 className="text-3xl font-bold mb-2">
                                 Let’s Start a Conversation
                             </h3>
+
                             <p className="text-md text-blue-100 mb-6">
                                 Reach out to us through any of the channels below.
                                 We’re here to help.
                             </p>
 
                             <ul className="space-y-8 text-sm">
-                                <li className="flex items-center gap-3 ">
-                                    <FaWhatsapp className="rounded-lg p-2 bg-[#719AF2] size-8 md:size-10"  />
-                                    <span>WhatsApp<br />+234 555 5169</span>
+
+                                {/* WhatsApp */}
+                                <li>
+                                    <a
+                                        href="https://wa.me/2349158553169"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition"
+                                    >
+                                        <FaWhatsapp className="rounded-lg p-2 bg-[#719AF2] size-8 md:size-10" />
+                                        <span>
+                                            WhatsApp <br />
+                                            +234 915 855 3169
+                                        </span>
+                                    </a>
                                 </li>
 
-                                <li className="flex items-center gap-3">
-                                    <FaPhoneAlt className="rounded-lg p-2 bg-[#719AF2] size-8 md:size-10" />
-                                    <span>Call<br />+234 704 560 1723</span>
+                                {/* Phone */}
+                                <li>
+                                    <a
+                                        href="tel:+2347045601723"
+                                        className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition"
+                                    >
+                                        <FaPhoneAlt className="rounded-lg p-2 bg-[#719AF2] size-8 md:size-10" />
+                                        <span>
+                                            Call <br />
+                                            +234 704 560 1723
+                                        </span>
+                                    </a>
                                 </li>
 
+                                {/* Support Hours*/}
                                 <li className="flex items-center gap-3">
-                                    <FaClock className="rounded-lg p-2 bg-[#719AF2] size-8 md:size-10"/>
-                                    <span>Support Hours<br />Mon – Fri, 8am – 5pm</span>
+                                    <FaClock className="rounded-lg p-2 bg-[#719AF2] size-8 md:size-10" />
+                                    <span>
+                                        Support Hours <br />
+                                        Mon – Fri, 8am – 5pm
+                                    </span>
                                 </li>
+
                             </ul>
                         </div>
+
                     </div>
 
                     {/* Right Form */}
@@ -75,14 +104,14 @@ export default function Contact() {
                                 <input
                                     type="text"
                                     placeholder="Subject *"
-                                   
-                                     className=" rounded-lg w-full border border-gray-500 p-2"
+
+                                    className=" rounded-lg w-full border border-gray-500 p-2"
                                 />
 
                                 <textarea
                                     rows={4}
                                     placeholder="Message *"
-                                  className=" rounded-lg w-full border border-gray-500 p-2"
+                                    className=" rounded-lg w-full border border-gray-500 p-2"
                                 />
                             </div>
 
@@ -91,7 +120,7 @@ export default function Contact() {
                                 type="submit"
                                 className="w-full btn-primary text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
                             >
-                                Create Account
+                                Submit Message
                             </button>
                         </form>
                     </div>
