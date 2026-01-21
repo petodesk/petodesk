@@ -22,13 +22,8 @@ function Footer() {
 
 
       <div className=' flex flex-col-reverse gap-10 md:flex-row justify-between text-white'>
-        <div className='flex flex-col gap-4'>
-          <Image
-            src={logo}
-            alt='logo'
-            className='w-20 invert dark:invert-120'
-
-          />
+        <div className='flex flex-col gap-3'>
+          <p className='text-lg font-semibold txt-white font-poppins'>PetoDesk</p>
           <div className='flex gap-1'>
             <a href="#"
             className="inline-block border-b-2 border-transparent hover:border-orange-300 transition duration-300">
