@@ -7,20 +7,25 @@ import { createClient } from '@/app/utils/supabase/client'
 
 export default function VerifyEmail() {
   const [otp, setOtp] = useState('')
+  const [email, setEmail] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const router = useRouter()
   const searchParams = useSearchParams()
-  const email = searchParams.get('email')
   const supabase = createClient()
 
-  //Auto submit when OTP is complete
+  // ✅ Read search params ONLY on client
   useEffect(() => {
-    if (otp.length === 6) {
+    setEmail(searchParams.get('email'))
+  }, [searchParams])
+
+  // Auto submit when OTP complete
+  useEffect(() => {
+    if (otp.length === 6 && email) {
       handleVerify()
     }
-  }, [otp])
+  }, [otp, email])
 
   const handleVerify = async () => {
     if (!email || otp.length !== 6) return
@@ -33,8 +38,11 @@ export default function VerifyEmail() {
     })
     setLoading(false)
 
-    if (error) alert(error.message)
-    else router.push('/company')
+    if (error) {
+      alert(error.message)
+    } else {
+      router.push('/company')
+    }
   }
 
   return (
@@ -46,10 +54,10 @@ export default function VerifyEmail() {
 
         <p className="text-gray-500 text-center mt-3 mb-8">
           Enter the 6-digit code sent to <br />
-          <strong>{email}</strong>
+          <strong>{email ?? 'your email'}</strong>
         </p>
 
-        {/* OTP BOXES */}
+        {/* OTP boxes */}
         <div
           className="flex justify-between gap-3 mb-8 cursor-text"
           onClick={() => inputRef.current?.focus()}
@@ -60,15 +68,9 @@ export default function VerifyEmail() {
               <div
                 key={i}
                 className={`h-14 w-full rounded-md border-2 flex items-center justify-center text-2xl font-bold relative
-                  ${
-                    isActive
-                      ? 'border-blue-600'
-                      : 'border-gray-300'
-                  }`}
+                  ${isActive ? 'border-blue-600' : 'border-gray-300'}`}
               >
                 {otp[i] ?? ''}
-
-                {/* Blinking cursor */}
                 {isActive && !loading && (
                   <span className="absolute w-[2px] h-7 bg-blue-600 animate-pulse" />
                 )}
@@ -77,7 +79,7 @@ export default function VerifyEmail() {
           })}
         </div>
 
-        {/* REAL INPUT (hidden) */}
+        {/* Hidden real input */}
         <input
           ref={inputRef}
           type="text"
@@ -86,7 +88,7 @@ export default function VerifyEmail() {
           value={otp}
           autoFocus
           onChange={(e) =>
-            setOtp(e.target.value.replace(/\D/g, ''))
+            setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))
           }
           onPaste={(e) => {
             const pasted = e.clipboardData
@@ -98,7 +100,6 @@ export default function VerifyEmail() {
           className="absolute opacity-0 pointer-events-none"
         />
 
-        {/* Manual submit fallback */}
         <button
           disabled={loading}
           onClick={handleVerify}
