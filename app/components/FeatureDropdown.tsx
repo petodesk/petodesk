@@ -47,7 +47,7 @@ export default function FeatureDropdown({ value, onChange }: FeatureDropdownProp
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-2 w-full bg-white border rounded-lg shadow-lg p-4 space-y-4">
+        <div className="absolute z-50 mt-2 max-w-xl bg-white border rounded-lg shadow-lg p-4 space-y-4">
             <span className="text-gray-700">
           {selected ? selected.title : 'Pick the features that suit your business'}
         </span>

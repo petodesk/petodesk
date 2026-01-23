@@ -1,10 +1,45 @@
 'use client'
 import PasswordInput from "@/app/components/PasswordInpup";
+import { createClient } from "@/app/utils/supabase/client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function Home() {
+    const router = useRouter()
+    
+    const supabase = createClient()
     const [showPassword, setShowPassword] = useState(false)
+    const [loading, setLoading] = useState(false)
+
+    const [password, setPassword] = useState('')
+    const [email, setEmail] = useState('')
+
+const handleSignIn = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setLoading(true)
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+
+  setLoading(false)
+
+  if (error) {
+    alert(error.message)
+    return
+  }
+
+  // Successful login
+  router.push('/')
+}
+
+
+
+
+
+
     return (
         <div className="flex items-center justify-center bg-gray-60 p-4 ">
             <div className="w-full max-w-xl rounded-lg shadow-lg m-5 py-6 my-6">
@@ -16,7 +51,7 @@ export default function Home() {
 
                 {/* Login Form */}
                 <div className="p-3 md:p-6">
-                    <form className="flex flex-col gap-3">
+                    <form onSubmit={handleSignIn} className="flex flex-col gap-3">
                         {/* Email */}
                         <div className="flex flex-col gap-3">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -24,6 +59,8 @@ export default function Home() {
                             </label>
                             <input
                                 type="email"
+                                value={email}
+                                onChange={(e:any)=>setEmail(e.target.value)}
                                 required
                                 className="w-full px-3 py-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Enter your email"
@@ -35,9 +72,10 @@ export default function Home() {
                             <div className=" mb-1">
                                 <PasswordInput
                                     label="Password *"
-
+                                     value={password}
                                     show={showPassword}
                                     toggle={() => setShowPassword(!showPassword)}
+                                    onChange={(e:any)=>setPassword(e.target.value)}
                                 />
 
                             </div>

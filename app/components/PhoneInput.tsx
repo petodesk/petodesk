@@ -5,23 +5,41 @@ import Select, {
   SingleValue,
   StylesConfig,
   FormatOptionLabelMeta,
-  components,
 } from 'react-select'
 import countries from 'country-telephone-data'
 
+/* ---------------- Types ---------------- */
+
 type CountryOption = {
-  value: string
-  label: string
+  value: string // +251
+  label: string // Ethiopia
+}
+
+type CountryMeta = {
+  name: string
+  iso2: string
+  dialCode: string
 }
 
 type Props = {
   value?: string
+  onBlur?: () => void
   onChange?: (phone: string) => void
+  onCountryChange?: (country: CountryMeta) => void
 }
 
-export default function CustomPhoneInput({ onChange }: Props) {
+/* ---------------- Component ---------------- */
+
+export default function CustomPhoneInput({
+  value,
+  onChange,
+  onCountryChange,
+  onBlur
+}: Props) {
   const [countryCode, setCountryCode] = useState('+1')
   const [phoneNumber, setPhoneNumber] = useState('')
+
+  /* ---------------- Countries ---------------- */
 
   const countryOptions: CountryOption[] = countries.allCountries.map(
     (country) => ({
@@ -29,6 +47,33 @@ export default function CustomPhoneInput({ onChange }: Props) {
       label: country.name,
     })
   )
+
+  /* ---------------- Helpers ---------------- */
+
+  const emitPhoneChange = (code: string, phone: string) => {
+    onChange?.(`${code}${phone}`)
+  }
+
+  const handleCountrySelect = (
+    selected: SingleValue<CountryOption>
+  ) => {
+    if (!selected) return
+
+    const matchedCountry = countries.allCountries.find(
+      (c) => `+${c.dialCode}` === selected.value
+    )
+
+    setCountryCode(selected.value)
+    emitPhoneChange(selected.value, phoneNumber)
+
+    if (matchedCountry) {
+      onCountryChange?.({
+        name: matchedCountry.name,
+        iso2: matchedCountry.name,
+        dialCode: matchedCountry.dialCode,
+      })
+    }
+  }
 
   /* ---------------- Styles ---------------- */
 
@@ -43,14 +88,14 @@ export default function CustomPhoneInput({ onChange }: Props) {
     }),
     valueContainer: (base) => ({
       ...base,
-      paddingLeft: '2px',
-      paddingRight: '28px', // space for arrow
+      paddingLeft: '6px',
+      paddingRight: '28px',
     }),
     dropdownIndicator: (base) => ({
       ...base,
-      padding: '0 4px',
+      padding: '0 6px',
       color: '#6B7280',
-      fontWeight:"bold"
+      fontWeight: 'bold',
     }),
     indicatorsContainer: (base) => ({
       ...base,
@@ -67,36 +112,28 @@ export default function CustomPhoneInput({ onChange }: Props) {
     }),
   }
 
-  const emitChange = (code: string, phone: string) => {
-    onChange?.(`${code}${phone}`)
-  }
+  /* ---------------- Render ---------------- */
 
   return (
     <div className="w-full">
       <div className="flex w-full border-2 border-gray-200 rounded-lg focus-within:ring-2 focus-within:ring-gray-500">
-        {/* Country Code */}
-        <div className="relative w-30 border-r border-gray-300">
+        {/* Country Code Select */}
+        <div className="relative w-32 border-r border-gray-300">
           <Select<CountryOption, false>
             options={countryOptions}
             value={countryOptions.find(
               (opt) => opt.value === countryCode
             )}
-            onChange={(selected: SingleValue<CountryOption>) => {
-              const code = selected?.value || ''
-              setCountryCode(code)
-              emitChange(code, phoneNumber)
-            }}
+            onChange={handleCountrySelect}
             styles={selectStyles}
             placeholder="Code"
-            components={{
-              IndicatorSeparator: () => null,
-            }}
+            components={{ IndicatorSeparator: () => null }}
             formatOptionLabel={(
               option: CountryOption,
               meta: FormatOptionLabelMeta<CountryOption>
             ) =>
               meta.context === 'menu' ? (
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-4">
                   <span>{option.label}</span>
                   <span className="text-gray-500 text-sm">
                     {option.value}
@@ -109,14 +146,15 @@ export default function CustomPhoneInput({ onChange }: Props) {
           />
         </div>
 
-        {/* Phone Input */}
+        {/* Phone Number Input */}
         <input
           type="tel"
           value={phoneNumber}
+          onBlur={onBlur}
           onChange={(e) => {
-            const val = e.target.value.replace(/\D/g, '')
-            setPhoneNumber(val)
-            emitChange(countryCode, val)
+            const digitsOnly = e.target.value.replace(/\D/g, '')
+            setPhoneNumber(digitsOnly)
+            emitPhoneChange(countryCode, digitsOnly)
           }}
           className="w-full h-[44px] px-3 outline-none text-sm"
           placeholder="Enter phone number"

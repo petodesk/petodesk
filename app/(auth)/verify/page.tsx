@@ -1,37 +1,111 @@
+'use client'
+import { useState, useRef, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { createClient } from '@/app/utils/supabase/client'
 
-export default function VerificationPage() {
+export default function VerifyEmail() {
+  const [otp, setOtp] = useState('')
+  const [loading, setLoading] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const email = searchParams.get('email')
+  const supabase = createClient()
+
+  //Auto submit when OTP is complete
+  useEffect(() => {
+    if (otp.length === 6) {
+      handleVerify()
+    }
+  }, [otp])
+
+  const handleVerify = async () => {
+    if (!email || otp.length !== 6) return
+
+    setLoading(true)
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otp,
+      type: 'signup',
+    })
+    setLoading(false)
+
+    if (error) alert(error.message)
+    else router.push('/company')
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4">
-      <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl p-8 md:p-10">
-        <div className="flex flex-col items-center justify-center">
-             <h1 className="text-3xl font-bold text-gray-800 mb-2">Enter verification code</h1>
-        <p className="text-gray-600 mb-8">
-          We sent a 6-digit code to your phone number. 
-          <br />
-          Enter it below to verify your account.
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+        <h1 className="text-3xl font-bold text-center text-gray-800">
+          Verify your email
+        </h1>
+
+        <p className="text-gray-500 text-center mt-3 mb-8">
+          Enter the 6-digit code sent to <br />
+          <strong>{email}</strong>
         </p>
-        
+
+        {/* OTP BOXES */}
+        <div
+          className="flex justify-between gap-3 mb-8 cursor-text"
+          onClick={() => inputRef.current?.focus()}
+        >
+          {[...Array(6)].map((_, i) => {
+            const isActive = i === otp.length
+            return (
+              <div
+                key={i}
+                className={`h-14 w-full rounded-md border-2 flex items-center justify-center text-2xl font-bold relative
+                  ${
+                    isActive
+                      ? 'border-blue-600'
+                      : 'border-gray-300'
+                  }`}
+              >
+                {otp[i] ?? ''}
+
+                {/* Blinking cursor */}
+                {isActive && !loading && (
+                  <span className="absolute w-[2px] h-7 bg-blue-600 animate-pulse" />
+                )}
+              </div>
+            )
+          })}
         </div>
-       
-        {/* Verification code input fields */}
-        <div className="mb-10">
-          <div className="flex justify-between gap-3 md:gap-4">
-            {[...Array(6)].map((_, index) => (
-              <input
-                key={index}
-                type="text"
-                maxLength={1}
-                className="w-full h-14 md:h-16 text-3xl text-center font-bold border-2 border-gray-300 rounded-md focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition"
-              />
-            ))}
-          </div>
-        </div>
-        
-        {/* Submit button */}
-        <button className="w-full btn-primary text-white font-semibold py-4 px-4 rounded-xl text-lg transition duration-200 shadow-md hover:shadow-lg">
-          Submit
+
+        {/* REAL INPUT (hidden) */}
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="numeric"
+          maxLength={6}
+          value={otp}
+          autoFocus
+          onChange={(e) =>
+            setOtp(e.target.value.replace(/\D/g, ''))
+          }
+          onPaste={(e) => {
+            const pasted = e.clipboardData
+              .getData('text')
+              .replace(/\D/g, '')
+              .slice(0, 6)
+            setOtp(pasted)
+          }}
+          className="absolute opacity-0 pointer-events-none"
+        />
+
+        {/* Manual submit fallback */}
+        <button
+          disabled={loading}
+          onClick={handleVerify}
+          className="w-full bg-blue-600 text-white font-semibold py-4 rounded-xl text-lg
+                     hover:bg-blue-700 transition disabled:opacity-60"
+        >
+          {loading ? 'Verifying…' : 'Verify email'}
         </button>
       </div>
     </div>
-  );
+  )
 }
