@@ -45,7 +45,7 @@ const handleSignIn = async (e: React.FormEvent) => {
             <div className="w-full max-w-xl rounded-lg shadow-lg m-5 py-6 my-6">
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome to PetoDesk</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome to PetoDesk</h1>
                     <p className="text-gray-600">Log in to manage your business operations.</p>
                 </div>
 
@@ -79,7 +79,7 @@ const handleSignIn = async (e: React.FormEvent) => {
                                 />
 
                             </div>
-                            <a href="#" className="text-sm text-blue-600 hover:text-blue-800">
+                            <a href="#" className="text-sm text-blue-600 hover:text-blue-900">
                                 Forgot password?
                             </a>
                         </div>
