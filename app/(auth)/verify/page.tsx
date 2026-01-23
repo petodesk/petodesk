@@ -1,4 +1,6 @@
 'use client'
+export const dynamic = 'force-dynamic'
+
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/app/utils/supabase/client'
@@ -38,11 +40,11 @@ export default function VerifyEmail() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <h1 className="text-3xl font-bold text-center text-gray-800">
+        <h1 className="text-3xl font-bold text-center text-gray-900">
           Verify your email
         </h1>
 
-        <p className="text-gray-500 text-center mt-3 mb-8">
+        <p className="text-gray-600 text-center mt-3 mb-8">
           Enter the 6-digit code sent to <br />
           <strong>{email}</strong>
         </p>
