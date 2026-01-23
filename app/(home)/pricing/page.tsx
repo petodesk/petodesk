@@ -78,7 +78,7 @@ export default function PricingPage() {
     <section className="max-w-8xl mx-auto px-10 py-20 font-poppins bg-gray-50 ">
       {/* Header */}
       <div className="text-center max-w-4xl mx-auto py-4">
-        <h1 className="text-2xl md:text-4xl font-bold text-gray-900">
+        <h1 className="text-2xl md:text-4xl font-bold text-gray-800">
           Let’s build the right solution for your business
         </h1>
         <p className="mt-4 text-gray-800">

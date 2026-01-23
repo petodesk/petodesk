@@ -57,7 +57,7 @@ const handleSignup = async (e: React.FormEvent) => {
     return
   }
 
-  /* ---------------- REAL ERROR ---------------- */
+
   if (error) {
     alert(error.message)
     return
@@ -73,7 +73,7 @@ const handleSignup = async (e: React.FormEvent) => {
     <section className="min-h-screen flex items-center justify-center bg-gray-50 font-poppins">
       <div className="w-full max-w-2xl bg-white p-8 py-12 rounded-xl shadow-sm my-10">
         <div className="text-right text-sm mb-6">
-          <span className="text-gray-500">Have a PetoDesk? </span>
+          <span className="text-gray-600">Have a PetoDesk? </span>
           <Link href="/login" className="text-blue-600 font-medium hover:underline">SIGN IN</Link>
         </div>
         <div className='flex flex-col gap-2 pb-4'>
@@ -129,7 +129,7 @@ const handleSignup = async (e: React.FormEvent) => {
                 ></div>
               </div>
               {passwordError && (
-                <p className="text-red-500 text-sm">{passwordError}</p>
+                <p className="text-red-500 text-md">{passwordError}</p>
               )}
             </div>
           </div>
@@ -149,7 +149,7 @@ const handleSignup = async (e: React.FormEvent) => {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-3 rounded-lg disabled:bg-blue-300"
           >
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? 'Creating Account....' : 'Create Account'}
           </button>
 
 
