@@ -1,161 +1,185 @@
 'use client'
+
 import Link from 'next/link'
 import { useState } from 'react'
-import CustomPhoneInput from '@/app/components/PhoneInput'
+import { useRouter } from 'next/navigation'
 import PasswordInput from '@/app/components/PasswordInpup'
-import FeatureDropdown from '@/app/components/FeatureDropdown'
-import IndustryDropdown from '@/app/components/IndustryDropdown'
-import { log } from 'console'
+import { createClient } from '@/app/utils/supabase/client'
 
 export default function Signup() {
-    const [showPassword, setShowPassword] = useState(false)
-    const [phone, setPhone] = useState('')
-    const [feature, setFeature] = useState<string | null>(null)
-    const [industry, setIndustry] = useState<string | null>(null)
+  const router = useRouter()
+  const supabase = createClient()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+
+  // 1. Password Strength Logic
+  const getStrength = (pass: string) => {
+    if (pass.length === 0) return { label: '', color: 'bg-gray-200', width: '0%' }
+    if (pass.length < 6) return { label: 'Weak', color: 'bg-red-500', width: '33%' }
+    if (pass.length < 10) return { label: 'Good', color: 'bg-yellow-500', width: '66%' }
+    return { label: 'Strong', color: 'bg-green-500', width: '100%' }
+  }
+  const strength = getStrength(password)
 
 
-    console.log(feature, industry, phone)
-    return (
-        <section className="min-h-screen bg-gray-50 flex items-center justify-center px-4 font-poppins">
-            <div className="w-full max-w-2xl bg-white rounded-xl shadow-sm  px-10 py-6 my-10">
+const handleSignup = async (e: React.FormEvent) => {
+  e.preventDefault()
 
-                {/* Top right */}
-                <div className="text-right text-sm mb-6">
-                    <span className="text-gray-500">Have a PetoDesk? </span>
-                    <Link href="/login" className="text-blue-600 font-medium hover:underline">
-                        SIGN IN
-                    </Link>
-                </div>
+  // Basic validation
+  if (password !== confirmPassword) {
+    setPasswordError('Passwords do not match!')
+    return
+  }
 
-                {/* Header */}
-                <div className="text-center mb-8">
-                    <h1 className="text-2xl font-semibold text-gray-900">
-                        Create your business account
-                    </h1>
-                    <p className="text-md text-gray-500 mt-1">
-                        You’ll start on the Free Plan. Upgrade anytime to unlock more features.
-                    </p>
-                </div>
+  if (password.length < 6) {
+    setPasswordError('Password must be at least 6 characters.')
+    return
+  }
 
-                {/* Form */}
-                <form className="space-y-8 w-full flex-1">
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-10'>
+  setPasswordError('')
+  setLoading(true)
 
-                        <div className='flex flex-col gap-2'>
-                            <label className='text-md ' htmlFor="name"> Full Name *</label>
-                            <input className='p-2 rounded-lg border border-gray-500' type="text" />
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  })
 
-                        </div>
-                        <div className='flex flex-col gap-2'>
-                            <label className='text-md ' htmlFor="company"> Company Name *</label>
-                            <input className='p-2 rounded-lg border border-gray-500 w-full' type="text" />
+  setLoading(false)
 
-                        </div>
-                    </div>
+  /* ---------------- EMAIL ALREADY EXISTS ---------------- */
+  if (!error && data.user && data.user.identities?.length === 0) {
+    alert('An account with this email already exists. Please sign in.')
+    router.push('/login')
+    return
+  }
 
-                    <div className="relative grid grid-cols-1 md:grid-cols-2 gap-10">
+  /* ---------------- REAL ERROR ---------------- */
+  if (error) {
+    alert(error.message)
+    return
+  }
 
-                        {/* Features */}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-md">
-                                Choose Your Features *
-                            </label>
-                            <FeatureDropdown
-                                value={feature}
-                                onChange={setFeature}
-                            />
-                        </div>
-
-                        {/* Industry */}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-md">
-                                Business Type / Industry *
-                            </label>
-                            <IndustryDropdown
-                                value={industry}
-                                onChange={setIndustry}
-                            />
-                        </div>
-
-                    </div>
-
-
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-10'>
-
-                        <div className='flex flex-col  gap-3'>
-                            <label htmlFor="phone">Phone Number *</label>
-                            <CustomPhoneInput
-                                value={phone}
-                                onChange={(val) => setPhone(val)}
-                            />
-                        </div>
-                        <div className='flex flex-col gap-3'>
-                            <label className='text-md ' htmlFor="company"> Company Name * </label>
-                            <input className='p-2 rounded-lg border border-gray-500 w-full' type="text" />
-
-                        </div>
-                    </div>
-
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <PasswordInput
-                            label="Password *"
-
-                            show={showPassword}
-                            toggle={() => setShowPassword(!showPassword)}
-                        />
-                        <PasswordInput
-                            label="Confirm Password *"
-                            show={showPassword}
-                            toggle={() => setShowPassword(!showPassword)}
-                        />
-                    </div>
-
-                    {/* Terms */}
-                    <div className="flex items-start gap-2 text-sm text-gray-600">
-                        <input type="checkbox" className="mt-1 cursor-pointer" />
-                        <p>
-                            I agree to the{' '}
-                            <span className="text-blue-600 cursor-pointer">Terms of Service</span>{' '}
-                            and{' '}
-                            <span className="text-blue-600 cursor-pointer">Privacy Policy</span>.
-                        </p>
-                    </div>
-
-                    {/* Submit */}
-                    <button
-                        type="submit"
-                        className="w-full bg-blue-600 text-white py-3 btn-primary rounded-lg"
-                    >
-                        Create Account
-                    </button>
-
-                    {/* Divider */}
-                    <div className="flex items-center gap-4 my-4">
-                        <div className="h-px bg-gray-200 flex-1" />
-                        <span className="text-xs text-gray-400">or sign in using</span>
-                        <div className="h-px bg-gray-200 flex-1" />
-                    </div>
-
-                    {/* Google */}
-                    <button
-                        type="button"
-                        className="w-full border py-3 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition cursor-pointer"
-                    >
-                        <img
-                            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                            alt="Google"
-                            className="w-4 h-4"
-                        />
-                        Continue with Google
-                    </button>
-                </form>
-            </div>
-        </section>
-    )
+  /* ---------------- SUCCESS ---------------- */
+  router.push(`/verify?email=${encodeURIComponent(email)}`)
 }
 
-// /* ---------------- Components ---------------- */
+
+
+  return (
+    <section className="min-h-screen flex items-center justify-center bg-gray-50 font-poppins">
+      <div className="w-full max-w-2xl bg-white p-8 py-12 rounded-xl shadow-sm my-10">
+        <div className="text-right text-sm mb-6">
+          <span className="text-gray-500">Have a PetoDesk? </span>
+          <Link href="/login" className="text-blue-600 font-medium hover:underline">SIGN IN</Link>
+        </div>
+        <div className='flex flex-col gap-2 pb-4'>
+          <h1 className="text-xl md:text-2xl font-semibold mb-2 text-center">
+            Create Your Account
+          </h1>
+          <p className='text-sm text-center'>Sign up with your email to get started. We’ll verify your email for security</p>
+
+        </div>
+
+        <form onSubmit={handleSignup} className="space-y-6">
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <div className='flex flex-col gap-3'>
+              <label className="text-md">Email Address *</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full p-3 border border-gray-500 rounded-md"
+
+                placeholder="Enter your email"
+              />
+            </div>
+            <div>
+              <PasswordInput
+                label="Password *"
+                value={password}
+                show={showPassword}
+                toggle={() => setShowPassword(!showPassword)}
+                onChange={(e: any) => setPassword(e.target.value)}
+              />
+            </div>
+
+            <div>
+
+              <PasswordInput
+                label="Confirm Password"
+                value={confirmPassword}
+                show={showPassword}
+                toggle={() => setShowPassword(!showPassword)}
+                onChange={(e: any) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+            <div className="mt-2 w-[50%] flex flex-col gap-3">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-gray-500 italic">Security Level: {strength.label}</span>
+              </div>
+              <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-300 ${strength.color}`}
+                  style={{ width: strength.width }}
+                ></div>
+              </div>
+              {passwordError && (
+                <p className="text-red-500 text-sm">{passwordError}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2 text-sm text-gray-600">
+            <input type="checkbox" className="mt-1 cursor-pointer" />
+            <p>
+              I agree to the{' '}
+              <span className="text-blue-600 cursor-pointer">Terms of Service</span>{' '}
+              and{' '}
+              <span className="text-blue-600 cursor-pointer">Privacy Policy</span>.
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg disabled:bg-blue-300"
+          >
+            {loading ? 'Creating Account...' : 'Create Account'}
+          </button>
+
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-4">
+            <div className="h-px bg-gray-200 flex-1" />
+            <span className="text-xs text-gray-400">or sign in using</span>
+            <div className="h-px bg-gray-200 flex-1" />
+          </div>
+
+          {/* Google */}
+          <button
+            type="button"
+            className="w-full border py-3 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition cursor-pointer"
+          >
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt="Google"
+              className="w-4 h-4"
+            />
+            Continue with Google
+          </button>
+
+        </form>
+
+      </div>
+    </section>
+  )
+}
+
 
 
 

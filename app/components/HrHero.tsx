@@ -5,7 +5,7 @@ export default function HrHero() {
   return (
     <div className="md:mt-6">
       <Hero
-        title="Manage Your Team Smarter with OserHR
+        title="Manage Your Team Smarter with PetoDesk
 Everything your business needs in one place"
         description="Track attendance, payroll, recruitment, performance, and benefits seamlessly,
 making HR simple and efficient."

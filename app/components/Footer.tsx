@@ -53,14 +53,14 @@ function Footer() {
 
             <li className='text-xl font-bold font-poppins pb-2'>Company</li>
             <li >
-              <li>
+              <p>
                 <a
                   href=""
                   className="inline-block border-b-2 border-transparent hover:border-orange-300 transition duration-300"
                 >
                   About
                 </a>
-              </li>
+              </p>
 
             </li>
 
