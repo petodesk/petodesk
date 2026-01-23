@@ -46,7 +46,7 @@ export default function CompanySetup() {
     }
 
     if (!feature || !industry) {
-      alert('Please select feature and industry')
+      alert('Please select feature and industry!')
       setLoading(false)
       return
     }
@@ -98,7 +98,7 @@ const { error: profileError } = await supabase
   })
 
 if (profileError) throw profileError
-
+ router.push('/')
     } catch (err: any) {
       alert(err.message)
     } finally {
