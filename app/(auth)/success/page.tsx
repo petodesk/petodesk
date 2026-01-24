@@ -23,8 +23,8 @@ export default function SuccessPage() {
         
         {/* Go to Home button */}
         <button className="w-full btn-primary text-white font-semibold py-4 px-4 rounded-xl text-lg transition duration-200 shadow-md hover:shadow-lg">
-            <Link href='/'>
-          Go to Home
+            <Link href='/dashboard'>
+          Go to Your Dashboard
 
             </Link>
         </button>

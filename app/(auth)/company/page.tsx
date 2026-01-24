@@ -98,7 +98,7 @@ const { error: profileError } = await supabase
   })
 
 if (profileError) throw profileError
- router.push('/')
+ router.push('/success')
     } catch (err: any) {
       alert(err.message)
     } finally {
