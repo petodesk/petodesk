@@ -111,10 +111,15 @@ export default function Home() {
                         {/* Continue Button */}
                         <button
                             type="submit"
-                            className="w-full bg-blue-600 text-white font-medium py-2.5 px-4 rounded-md btn-primary"
+                            disabled={loading}
+                            className="w-full bg-blue-600 text-white font-medium py-2.5 px-4 rounded-md btn-primary flex items-center justify-center gap-2 disabled:opacity-70"
                         >
-                            Continue
+                            {loading && (
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            )}
+                            {loading ? 'Redirecting…' : 'Continue'}
                         </button>
+
                     </form>
 
                     {/* Sign up Link */}
