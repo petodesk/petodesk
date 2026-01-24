@@ -7,7 +7,7 @@ import { useState } from "react";
 
 export default function Home() {
     const router = useRouter()
-    
+
     const supabase = createClient()
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -15,27 +15,46 @@ export default function Home() {
     const [password, setPassword] = useState('')
     const [email, setEmail] = useState('')
 
-const handleSignIn = async (e: React.FormEvent) => {
-  e.preventDefault()
-  setLoading(true)
+    const handleSignIn = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+        const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        })
 
-  setLoading(false)
+        setLoading(false)
 
-  if (error) {
-    alert(error.message)
-    return
-  }
+        if (error) {
+            alert(error.message)
+            return
+        }
 
-  // Successful login
-  router.push('/')
-}
+        // Successful login
+        router.push('/')
+    }
 
+    const handleForgotPassword = async (e: React.MouseEvent) => {
+        e.preventDefault();
 
+        if (!email) {
+            alert("Please enter your email address first.");
+            return;
+        }
+
+        setLoading(true);
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/reset-password`,
+        });
+        setLoading(false);
+
+        if (error) {
+            alert(error.message);
+        } else {
+            alert("Password reset link sent! Check your email.");
+        }
+    };
 
 
 
@@ -60,7 +79,7 @@ const handleSignIn = async (e: React.FormEvent) => {
                             <input
                                 type="email"
                                 value={email}
-                                onChange={(e:any)=>setEmail(e.target.value)}
+                                onChange={(e: any) => setEmail(e.target.value)}
                                 required
                                 className="w-full px-3 py-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Enter your email"
@@ -72,16 +91,21 @@ const handleSignIn = async (e: React.FormEvent) => {
                             <div className=" mb-1">
                                 <PasswordInput
                                     label="Password *"
-                                     value={password}
+                                    value={password}
                                     show={showPassword}
                                     toggle={() => setShowPassword(!showPassword)}
-                                    onChange={(e:any)=>setPassword(e.target.value)}
+                                    onChange={(e: any) => setPassword(e.target.value)}
                                 />
 
                             </div>
-                            <a href="#" className="text-sm text-blue-600 hover:text-blue-900">
+                            {/* Change the href="#" to onClick */}
+                            <button
+                                type="button"
+                                onClick={handleForgotPassword}
+                                className="text-sm text-blue-600 hover:text-blue-900 text-left"
+                            >
                                 Forgot password?
-                            </a>
+                            </button>
                         </div>
 
                         {/* Continue Button */}
