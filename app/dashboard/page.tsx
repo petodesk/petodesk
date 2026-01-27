@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
-import SuperAdminDash from '../components/dashboards/SuperAdminDash'
 import OwnerDash from '../components/dashboards/OwnerDash'
-import AdminDash from '../components/dashboards/AdminDash'
-import EmployeeDash from '../components/dashboards/EmployeeDash'
 
 // 2. This MUST be 'export default function'
 export default function DashboardPage() {
@@ -37,10 +34,8 @@ export default function DashboardPage() {
   return (
     <main className="">      
       <div className="">
-        {role === 'super_admin' && <SuperAdminDash />}
         {role === 'owner' && <OwnerDash/>}
-        {role === 'admin' && <AdminDash />}
-        {role === 'employee' && <EmployeeDash/>}
+        
         
         {/* Fallback in case role is missing */}
         {!role && <p className="text-red-500">No role assigned. Please contact support.</p>}
