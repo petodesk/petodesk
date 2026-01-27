@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { AddItemModal } from '@/app/components/SellerForm'
 import { createClient } from '@/app/utils/supabase/client'
-import { AddProductModal, ProductFormData } from '@/app/components/AddProductModal'
+import { AddProductModal } from '@/app/components/AddProductModal'
 import { HiDownload, HiSearch } from 'react-icons/hi'
 import Products from '@/app/types/products'
 
@@ -131,7 +130,7 @@ export default function inventoryPage() {
 
     const handleUndo = async () => {
 
-      const confirmDelete = confirm('do you want to retrieve this product ?')
+      const confirmDelete = confirm('do you want to retrieve this product!! ?')
       if (!confirmDelete) return
       await supabase.from('products').update({ deleted: false }).eq('id', product.id)
 
@@ -254,7 +253,7 @@ export default function inventoryPage() {
       {/* Table */}
       <div className="rounded-xl bg-white shadow-sm">
         <div className="flex items-center justify-between border-b px-4 py-3 text-sm font-medium mb-2">
-          <span>{dateFilter==='today'?"Today's":dateFilter=='yesterday' ? "Yasterday's":"This Week" } Added Products</span>
+          <span>{dateFilter === 'today' ? "Today's" : dateFilter == 'yesterday' ? "Yasterday's" : "This Week"} Added Products</span>
 
           <select
             value={dateFilter}
@@ -339,13 +338,13 @@ export default function inventoryPage() {
             </div>
           ))}
           {!loading && filteredProducts.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
-                    No products found for this period.
+            <tr>
+              <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
+                No products found for this period.
 
-                  </td>
-                </tr>
-              )}
+              </td>
+            </tr>
+          )}
         </div>
 
 
