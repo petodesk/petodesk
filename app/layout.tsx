@@ -11,7 +11,7 @@ const geistSans = Geist({
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"], 
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -30,7 +30,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${poppins.variable} antialiased`}
       >
         {children}
-        <Footer/>
+
       </body>
     </html>
   );

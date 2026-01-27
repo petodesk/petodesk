@@ -32,7 +32,7 @@ export default function Home() {
         }
 
         // Successful login
-        router.push('/')
+        router.push('/dashboard')
     }
 
     const handleForgotPassword = async (e: React.MouseEvent) => {
