@@ -29,7 +29,7 @@ const ownerLinks = [
   { label: 'Reports', href: '/dashboard/reports', icon: HiOutlineChartBar },
   { label: 'Recruitment', href: '/dashboard/recruitment', icon: HiOutlineUserPlus },
   { label: 'Employee', href: '/dashboard/employee', icon: HiOutlineUserCircle },
-  { label: 'Announcements', href: '/dashboard/announcements', icon: HiOutlineMegaphone },
+  { label: 'Company Feed', href: '/dashboard/company-feed', icon: HiOutlineMegaphone },
 ]
 
 export default function OwnerSidebar({
