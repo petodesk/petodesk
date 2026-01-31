@@ -270,7 +270,7 @@ export function AddProductModal({ open, onClose, product }: Props) {
             <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
             {/* modal */}
-            <div className="relative z-50 w-full max-w-4xl rounded-xl bg-white shadow-lg flex flex-col
+            <div className="relative z-50 w-full max-w-4xl rounded-xl pb-10 bg-white shadow-lg flex flex-col
                 max-h-[90vh]">
                 <div className="flex items-center justify-between border-b px-6 py-4">
                     <h2 className="text-lg font-semibold">{isEdit ? "Edit Product" : "Add Product"}</h2>
@@ -343,15 +343,7 @@ export function AddProductModal({ open, onClose, product }: Props) {
                                 <option value="carton">Carton</option>
                             </select>
                         </Field>
-                        <Field label="Product Image *" error={errors.quantity}>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={e => setImageFile(e.target.files?.[0] || null)}
-                                className="input"
-                            />
-
-                        </Field>
+        
                     </div>
                     {/* Variant toggle */}
                     <div className="mt-6 rounded-lg border p-4">
@@ -475,7 +467,7 @@ export function AddProductModal({ open, onClose, product }: Props) {
                 </div>
 
 
-                <div className="mt-8 flex justify-end gap-3">
+                <div className="mt-4 flex justify-end gap-3">
                     <button onClick={onClose} className="rounded border px-5 py-2 text-sm">
                         Cancel
                     </button>
@@ -507,8 +499,8 @@ function Field({
     children: React.ReactNode
 }) {
     return (
-        <div>
-            <label className="mb-1 block text-sm font-medium">{label}</label>
+        <div >
+            <label className="mb-1 text-sm font-medium text-start">{label}</label>
             {children}
             {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
         </div>
