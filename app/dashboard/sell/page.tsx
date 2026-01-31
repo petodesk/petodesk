@@ -26,7 +26,7 @@ type Sale = {
 
   profiles?: {
     full_name: string
-  }
+  }[]
   sale_items: {
     id: string
     quantity: number
@@ -36,12 +36,12 @@ type Sale = {
     cost_price: number
     discount: number
     discount_percent: number
-    tax_percent: number 
-    tax_amount:number  
+    tax_percent: number
+    tax_amount: number
     product_id: string
     products?: {
       name: string
-    }
+    }[]
   }[]
 
 }
@@ -55,7 +55,7 @@ export default function SellPage() {
   const [openModal, setOpenModal] = useState(false)
   const [allSalesOpen, setAllSalesOpen] = useState(false)
 
-  // 🔥 Receipt modal state
+  //  Receipt modal state
   const [receiptOpen, setReceiptOpen] = useState(false)
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
   const [company, setCompany] = useState<{ name: string; location: string } | null>(null)
@@ -245,74 +245,74 @@ export default function SellPage() {
 
 
     const saveEdit = async () => {
-  if (editQty === item.quantity) {
-    setEditingItemId(null)
-    return
-  }
+      if (editQty === item.quantity) {
+        setEditingItemId(null)
+        return
+      }
 
-  const diff = editQty - item.quantity
-  const price = item.selling_price
+      const diff = editQty - item.quantity
+      const price = item.selling_price
 
-  /* ---------- OLD VALUES ---------- */
-  const grossOld = price * item.quantity
-  const discountOld = (grossOld * item.discount_percent) / 100
-  const netOld = grossOld - discountOld
-  const taxOld = (netOld * item.tax_percent) / 100
-  const oldSubtotal = netOld + taxOld
+      /* ---------- OLD VALUES ---------- */
+      const grossOld = price * item.quantity
+      const discountOld = (grossOld * item.discount_percent) / 100
+      const netOld = grossOld - discountOld
+      const taxOld = (netOld * item.tax_percent) / 100
+      const oldSubtotal = netOld + taxOld
 
-  /* ---------- NEW VALUES ---------- */
-  const grossNew = price * editQty
-  const discountNew = (grossNew * item.discount_percent) / 100
-  const netNew = grossNew - discountNew
-  const taxNew = (netNew * item.tax_percent) / 100
-  const newSubtotal = netNew + taxNew
+      /* ---------- NEW VALUES ---------- */
+      const grossNew = price * editQty
+      const discountNew = (grossNew * item.discount_percent) / 100
+      const netNew = grossNew - discountNew
+      const taxNew = (netNew * item.tax_percent) / 100
+      const newSubtotal = netNew + taxNew
 
-  /* ---------- STOCK CHECK ---------- */
-  const { data: stockRow, error } = await supabase
-    .from('product_stock')
-    .select('quantity')
-    .eq('product_id', item.product_id)
-    .single()
+      /* ---------- STOCK CHECK ---------- */
+      const { data: stockRow, error } = await supabase
+        .from('product_stock')
+        .select('quantity')
+        .eq('product_id', item.product_id)
+        .single()
 
-  if (error || !stockRow) {
-    alert('Failed to update stock')
-    return
-  }
+      if (error || !stockRow) {
+        alert('Failed to update stock')
+        return
+      }
 
-  if (diff > 0 && stockRow.quantity < diff) {
-    alert('Not enough stock available')
-    return
-  }
+      if (diff > 0 && stockRow.quantity < diff) {
+        alert('Not enough stock available')
+        return
+      }
 
-  await supabase
-    .from('product_stock')
-    .update({
-      quantity: stockRow.quantity - diff,
-    })
-    .eq('product_id', item.product_id)
+      await supabase
+        .from('product_stock')
+        .update({
+          quantity: stockRow.quantity - diff,
+        })
+        .eq('product_id', item.product_id)
 
-  /* ---------- UPDATE SALE ITEM ---------- */
-  await supabase
-    .from('sale_items')
-    .update({
-      quantity: editQty,
-      discount: discountNew,     
-      tax_amount: taxNew,               
-      subtotal: newSubtotal,
-    })
-    .eq('id', item.id)
+      /* ---------- UPDATE SALE ITEM ---------- */
+      await supabase
+        .from('sale_items')
+        .update({
+          quantity: editQty,
+          discount: discountNew,
+          tax_amount: taxNew,
+          subtotal: newSubtotal,
+        })
+        .eq('id', item.id)
 
-  /* ---------- UPDATE SALE TOTAL ---------- */
-  await supabase
-    .from('sales')
-    .update({
-      total_amount: sale.total_amount - oldSubtotal + newSubtotal,
-    })
-    .eq('id', sale.id)
+      /* ---------- UPDATE SALE TOTAL ---------- */
+      await supabase
+        .from('sales')
+        .update({
+          total_amount: sale.total_amount - oldSubtotal + newSubtotal,
+        })
+        .eq('id', sale.id)
 
-  setEditingItemId(null)
-  fetchSales()
-}
+      setEditingItemId(null)
+      fetchSales()
+    }
 
 
 
@@ -349,7 +349,7 @@ export default function SellPage() {
         (i: any) => i.id !== item.id && i.status !== 'cancelled'
       )
 
-      const newTotal = remainingItems.reduce((sum:any, i:any) => {
+      const newTotal = remainingItems.reduce((sum: any, i: any) => {
         const gross = i.selling_price * i.quantity
         const discount = (gross * i.discount_percent) / 100
         const net = gross - discount
@@ -529,7 +529,7 @@ export default function SellPage() {
                         Product
                       </span>
                       <span className="font-medium text-gray-900">
-                        {item.products?.name}
+                        {item.products?.[0]?.name ?? '—'}
                       </span>
                     </div>
 
@@ -580,7 +580,8 @@ export default function SellPage() {
                         Sold By
                       </span>
                       <span className="text-gray-800">
-                        {sale.profiles?.full_name ?? '—'}
+                        {sale.profiles?.[0]?.full_name ?? '—'
+                        }
                       </span>
                     </div>
 
@@ -645,7 +646,8 @@ export default function SellPage() {
                         </td>
 
                         <td className="px-4 py-3">
-                          {item.products?.name}
+                          {item.products?.[0]?.name ?? '—'
+}
                         </td>
 
                         <td className="px-4 py-3">
@@ -674,7 +676,8 @@ export default function SellPage() {
                         </td>
 
                         <td className="px-4 py-3">
-                          {sale.profiles?.full_name ?? '—'}
+                          {sale.profiles?.[0]?.full_name ?? '—'
+                          }
                         </td>
 
                         <td
