@@ -6,7 +6,7 @@ type Sale = {
   id: string
   created_at: string
   total_amount: number
-  profiles?: { full_name: string }
+  profiles?: { full_name: string }[]
   sale_items: {
     status:string
     id: string
@@ -14,7 +14,7 @@ type Sale = {
     quantity: number
     selling_price: number
     discount: number
-    products?: { name: string }
+    products?: { name: string }[]
   }[]
 }
 
@@ -94,7 +94,7 @@ export default function AllSalesModal({
                                 Product
                               </span>
                               <span className="font-medium text-gray-900">
-                                {item.products?.name}
+                                {item.products?.[0]?.name ?? '—'}
                               </span>
                             </div>
 
@@ -145,7 +145,7 @@ export default function AllSalesModal({
                                 Sold By
                               </span>
                               <span className="text-gray-800">
-                                {sale.profiles?.full_name ?? '—'}
+                                {sale.profiles?.[0]?.full_name ?? '—'}
                               </span>
                             </div>
 
@@ -208,7 +208,8 @@ export default function AllSalesModal({
                         </td>
 
                         <td className="px-4 py-3">
-                          {item.products?.name}
+                          {item.products?.[0]?.name ?? '—'
+}
                         </td>
 
                         <td className="px-4 py-3">
@@ -237,7 +238,7 @@ export default function AllSalesModal({
                         </td>
 
                         <td className="px-4 py-3">
-                          {sale.profiles?.full_name ?? '—'}
+                          {sale.profiles?.[0]?.full_name ?? '—'}
                         </td>
 
                         <td
