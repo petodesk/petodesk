@@ -24,9 +24,10 @@ type Sale = {
   payment_method: string
   created_at: string
 
-  profiles?: {
-    full_name: string
-  }[]
+  profiles: {
+  full_name: string
+} | null
+
   sale_items: {
     id: string
     quantity: number
@@ -39,9 +40,10 @@ type Sale = {
     tax_percent: number
     tax_amount: number
     product_id: string
-    products?: {
-      name: string
-    }[]
+    products: {
+  name: string
+} | null
+
   }[]
 
 }
@@ -134,7 +136,7 @@ export default function SellPage() {
     total_amount,
     payment_method,
     created_at,
-    profiles ( full_name ),
+    profiles(full_name ),
     sale_items (
   id,
   quantity,
@@ -147,7 +149,7 @@ export default function SellPage() {
   cost_price,
   discount,
   product_id,
-  products ( name )
+  products(name )
 )
 
   `)
@@ -178,10 +180,11 @@ export default function SellPage() {
           item.discount
       })
     })
+    
 
+console.log(data)
 
-
-    setSales(data)
+    setSales(data as [])
     setTotalSales(salesTotal)
     setTotalProfit(profitTotal)
     setTotalTransactions(data.length)
@@ -234,12 +237,11 @@ export default function SellPage() {
     const supabase = createClient()
     const [open, setOpen] = useState(false)
 
-    const startEdit = () => {
-      setEditingItemId(rowId)
-      setEditQty(item.quantity)
-      setOpen(false)
-    }
-
+   const startEdit = () => {
+  setEditingItemId(rowId)
+  setEditQty(item.quantity)
+  setOpen(false)
+}
 
 
 
@@ -376,8 +378,7 @@ export default function SellPage() {
       setReceiptOpen(true)
       setOpen(false)
     }
-
-
+  
     return (
       <div className="relative">
         <button
@@ -529,7 +530,7 @@ export default function SellPage() {
                         Product
                       </span>
                       <span className="font-medium text-gray-900">
-                        {item.products?.[0]?.name ?? '—'}
+                        {item.products?.name}
                       </span>
                     </div>
 
@@ -580,8 +581,8 @@ export default function SellPage() {
                         Sold By
                       </span>
                       <span className="text-gray-800">
-                        {sale.profiles?.[0]?.full_name ?? '—'
-                        }
+                        {sale.profiles?.full_name ?? 'Unknown'}
+                        
                       </span>
                     </div>
 
@@ -646,7 +647,7 @@ export default function SellPage() {
                         </td>
 
                         <td className="px-4 py-3">
-                          {item.products?.[0]?.name ?? '—'
+                          {item.products?.name
 }
                         </td>
 
@@ -676,7 +677,7 @@ export default function SellPage() {
                         </td>
 
                         <td className="px-4 py-3">
-                          {sale.profiles?.[0]?.full_name ?? '—'
+                          {sale.profiles?.full_name 
                           }
                         </td>
 
@@ -751,7 +752,7 @@ export default function SellPage() {
 
     </section>
   )
-}
+
 
 /* ---------------- SUMMARY CARD ---------------- */
 function SummaryCard({
@@ -779,4 +780,4 @@ function SummaryCard({
     </div>
   )
 }
-
+}
