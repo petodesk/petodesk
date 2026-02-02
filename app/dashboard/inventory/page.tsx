@@ -6,14 +6,26 @@ import { AddProductModal } from '@/app/components/AddProductModal'
 import { HiDownload, HiSearch } from 'react-icons/hi'
 import Products from '@/app/types/products'
 
-type DateFilter = 'today' | 'yesterday' | 'week'
+type DateFilter =
+  | 'today'
+  | 'yesterday'
+  | 'week'
+  | 'lastWeek'
+  | 'thisMonth'
+  | 'lastMonth'
+  | 'thisYear'
+  | 'lastYear'
+
+
+type StockFilter = 'all' | 'in_stock' | 'low_stock' | 'out_of_stock'
+
+
 
 export const dynamic = 'force-dynamic'
 
 export default function inventoryPage() {
   const supabase = createClient()
 
-  const [show, setShow] = useState(false)
   const [openModal, setOpenModal] = useState(false)
 
   const [products, setProducts] = useState<Products[]>([])
@@ -21,6 +33,9 @@ export default function inventoryPage() {
   const [openAllProducts, setOpenAllProducts] = useState(false)
 
   const [dateFilter, setDateFilter] = useState<DateFilter>('today')
+  const [search, setSearch] = useState('')
+  const [stockFilter, setStockFilter] = useState<StockFilter>('all')
+
 
   // 🔹 Fetch today's sales
   const fetchAllProduct = useCallback(async () => {
@@ -51,7 +66,7 @@ export default function inventoryPage() {
       product_stock(quantity, status, unit_of_measure)
     `)
       .eq('company_id', profile!.company_id)
-      // .eq('deleted', false)
+      .eq('deleted', false)
 
       .order('created_at', { ascending: false })
 
@@ -66,6 +81,7 @@ export default function inventoryPage() {
   }, [supabase])
 
   const filteredProducts = products.filter((p) => {
+    /* ---------- DATE FILTER ---------- */
     const created = new Date(p.created_at)
     const now = new Date()
 
@@ -73,23 +89,82 @@ export default function inventoryPage() {
     const startOfYesterday = new Date(startOfToday)
     startOfYesterday.setDate(startOfToday.getDate() - 1)
 
+    /* Week */
     const startOfWeek = new Date(startOfToday)
     startOfWeek.setDate(startOfToday.getDate() - 6)
 
-    if (dateFilter === 'today') {
-      return created >= startOfToday
+    const startOfLastWeek = new Date(startOfWeek)
+    startOfLastWeek.setDate(startOfWeek.getDate() - 7)
+    const endOfLastWeek = new Date(startOfWeek)
+
+    /* Month */
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const endOfLastMonth = new Date(startOfThisMonth)
+
+    /* Year */
+    const startOfThisYear = new Date(now.getFullYear(), 0, 1)
+    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1)
+    const endOfLastYear = new Date(startOfThisYear)
+
+    let dateMatch = true
+
+    switch (dateFilter) {
+      case 'today':
+        dateMatch = created >= startOfToday
+        break
+
+      case 'yesterday':
+        dateMatch =
+          created >= startOfYesterday && created < startOfToday
+        break
+
+      case 'week':
+        dateMatch = created >= startOfWeek
+        break
+
+      case 'lastWeek':
+        dateMatch =
+          created >= startOfLastWeek && created < endOfLastWeek
+        break
+
+      case 'thisMonth':
+        dateMatch = created >= startOfThisMonth
+        break
+
+      case 'lastMonth':
+        dateMatch =
+          created >= startOfLastMonth && created < endOfLastMonth
+        break
+
+      case 'thisYear':
+        dateMatch = created >= startOfThisYear
+        break
+
+      case 'lastYear':
+        dateMatch =
+          created >= startOfLastYear && created < endOfLastYear
+        break
     }
 
-    if (dateFilter === 'yesterday') {
-      return created >= startOfYesterday && created < startOfToday
-    }
 
-    if (dateFilter === 'week') {
-      return created >= startOfWeek
-    }
+    /* ---------- SEARCH FILTER ---------- */
+    const query = search.toLowerCase()
+    const searchMatch =
+      p.name.toLowerCase().includes(query) ||
+      p.category?.toLowerCase().includes(query) ||
+      p.brand?.toLowerCase().includes(query)
 
-    return true
+    /* ---------- STOCK FILTER ---------- */
+    const stockStatus = p.product_stock[0]?.status
+
+    const stockMatch =
+      stockFilter === 'all' ||
+      stockFilter === stockStatus
+
+    return dateMatch && searchMatch && stockMatch
   })
+
 
 
 
@@ -112,8 +187,6 @@ export default function inventoryPage() {
   function ActionMenu({ product }: { product: any }) {
     const [open, setOpen] = useState(false)
     const [editOpen, setEditOpen] = useState(false)
-    const [viewOpen, setViewOpen] = useState(false)
-    const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
 
     const handleEdit = () => {
       setEditOpen(true)
@@ -201,11 +274,11 @@ export default function inventoryPage() {
       <div className=" flex flex-col gap-6 md:flex-row md:gap-20  mb-6">
         <button
           onClick={() => setOpenModal(true)}
-          className="flex flex-col md:flex-row items-center gap-2 rounded-lg bg-blue-600 w-full md:w-60  justify-center cursor-pointer px-4 py-2 text-sm font-medium text-white"
+          className="flex flex-col md:flex-row items-center gap-2 rounded-lg bg-blue-600 w-full md:h-10 md:w-60  justify-center cursor-pointer px-4 py-2 text-sm font-medium text-white"
         >
           + Add Product
         </button>
-        <button className='flex gap-2 items-center justify-center rounded-md bg-white px-4 py-4 max-sm:w-full '>
+        <button className='flex gap-2 items-center justify-center md:h-10 rounded-md bg-white px-4 py-4 max-sm:w-full '>
           <HiDownload className='cursor-pointer' /> uplaod from CSV
         </button>
         <div className='h-0 md:h-auto w-[30%]'>
@@ -218,16 +291,11 @@ export default function inventoryPage() {
         <SummaryCard
           label="Total Items"
           value={totalItems.toString()}
-          show={show}
-          onToggle={() => setShow(!show)}
         />
 
         <SummaryCard
           label="Total Stock Quantity"
           value={totalStock.toLocaleString()}
-          show={show}
-          onToggle={() => setShow(!show)}
-          bordered
         />
 
         <div className="flex flex-col gap-4 rounded-xl bg-white p-4 shadow-sm">
@@ -247,9 +315,32 @@ export default function inventoryPage() {
           </div>
         </div>
       </div>
-      <div className='flex items-center w-full rounded-xl bg-gray-200 p-3 mb-4'>
-        <HiSearch size={30} /> <input type="text" className='w-full outline-none' placeholder='Search' />
+      <div className="flex flex-col md:flex-row gap-3 mb-4">
+        {/* Search */}
+        <div className="flex items-center w-full rounded-xl bg-gray-100 px-3 py-2">
+          <HiSearch className="text-gray-500" size={22} />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, category, or brand"
+            className="w-full bg-transparent px-2 outline-none text-sm"
+          />
+        </div>
+
+        {/* Stock Filter */}
+        <select
+          value={stockFilter}
+          onChange={(e) => setStockFilter(e.target.value as StockFilter)}
+          className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm"
+        >
+          <option value="all">All Stock</option>
+          <option value="in_stock">In Stock</option>
+          <option value="low_stock">Low Stock</option>
+          <option value="out_of_stock">Out of Stock</option>
+        </select>
       </div>
+
       {/* Table */}
       <div className="rounded-xl bg-white shadow-sm">
         <div className="flex items-center justify-between border-b px-4 py-3 text-sm font-medium mb-2">
@@ -258,12 +349,18 @@ export default function inventoryPage() {
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-            className="rounded-md border border-gray-200 bg-white px-2 py-1 text-sm text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm"
           >
             <option value="today">Today</option>
             <option value="yesterday">Yesterday</option>
             <option value="week">This Week</option>
+            <option value="lastWeek">Last Week</option>
+            <option value="thisMonth">This Month</option>
+            <option value="lastMonth">Last Month</option>
+            <option value="thisYear">This Year</option>
+            <option value="lastYear">Last Year</option>
           </select>
+
         </div>
 
         {/* mobile card */}
@@ -402,7 +499,7 @@ export default function inventoryPage() {
               {!loading && filteredProducts.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
-                    No products found for this period.
+                    No products found for this match.
 
                   </td>
                 </tr>
@@ -431,21 +528,71 @@ export default function inventoryPage() {
 
       />
       {openAllProducts && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-[100%] md:w-[90%] max-w-7xl rounded-xl bg-white shadow-lg">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
+          <div className="flex h-[95vh] w-full max-w-7xl flex-col mt-40 overflow-hidden rounded-2xl bg-white shadow-xl">
 
             {/* Header */}
-            <div className="flex items-center justify-between border-b px-6 py-4 max-sm:mt-30">
-              <h2 className="text-lg font-semibold">All Products</h2>
-              <button
-                onClick={() => setOpenAllProducts(false)}
-                className="text-gray-500 hover:text-gray-800"
-              >
-                ✕
-              </button>
+            <div className="sticky top-0 z-10 bg-white border-b px-4 py-3">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+
+                <h2 className="text-lg font-semibold">All Products</h2>
+
+                {/* Filters */}
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+
+                  {/* Search */}
+                  <div className="flex items-center w-full sm:w-64 rounded-xl bg-gray-100 px-3 py-2">
+                    <HiSearch className="text-gray-500" size={18} />
+                    <input
+                      type="text"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search products"
+                      className="w-full bg-transparent px-2 text-sm outline-none"
+                    />
+                  </div>
+
+                  {/* Stock Filter */}
+                  <select
+                    value={stockFilter}
+                    onChange={(e) => setStockFilter(e.target.value as StockFilter)}
+                    className="rounded-xl border px-3 py-2 text-sm"
+                  >
+                    <option value="all">All Stock</option>
+                    <option value="in_stock">In Stock</option>
+                    <option value="low_stock">Low Stock</option>
+                    <option value="out_of_stock">Out of Stock</option>
+                  </select>
+
+                  {/* Date Filter */}
+                  <select
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value as DateFilter)}
+                    className="rounded-xl border px-3 py-2 text-sm"
+                  >
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="week">This Week</option>
+                    <option value="lastWeek">Last Week</option>
+                    <option value="thisMonth">This Month</option>
+                    <option value="lastMonth">Last Month</option>
+                    <option value="thisYear">This Year</option>
+                    <option value="lastYear">Last Year</option>
+                  </select>
+
+                  {/* Close */}
+                  <button
+                    onClick={() => setOpenAllProducts(false)}
+                    className="ml-auto text-gray-500 hover:text-gray-800"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
             </div>
+
             <div className="space-y-4  max-h-[80vh] overflow-y-auto  md:hidden">
-              {products.slice(0, 4).map((p) => (
+              {filteredProducts.map((p) => (
                 <div
                   key={p.id}
                   className="rounded-xl bg-white p-4 shadow-sm border space-y-3"
@@ -531,7 +678,7 @@ export default function inventoryPage() {
                 </thead>
 
                 <tbody>
-                  {products.map((p) => (
+                  {filteredProducts.map((p) => (
                     <tr key={p.id} className="border-t">
                       <td className="px-4 py-3">
                         {new Date(p.created_at).toLocaleDateString()}
@@ -560,6 +707,7 @@ export default function inventoryPage() {
                     </tr>
                   ))}
                 </tbody>
+                hey
               </table>
             </div>
           </div>
@@ -574,17 +722,13 @@ export default function inventoryPage() {
 function SummaryCard({
   label,
   value,
-  bordered = false,
 }: {
   label: string
   value: string
-  show: boolean
-  onToggle: () => void
-  bordered?: boolean
 }) {
   return (
     <div
-      className={`flex flex-row rounded-xl bg-white p-6 shadow-sm md:flex-col max-sm:items-center justify-between ${bordered ? 'border border-blue-500' : ''
+      className={`flex flex-row rounded-xl bg-white p-6 max-h-30 shadow-sm md:flex-col max-sm:items-center justify-between
         }`}
     >
       <p className="text-md font-semibold text-gray-700 font-poppins">{label}</p>

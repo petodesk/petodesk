@@ -44,7 +44,6 @@ export function AddProductModal({ open, onClose, product }: Props) {
 
     const supabase = createClient()
     const [isVariant, setIsVariant] = useState(false)
-    const [imageFile, setImageFile] = useState<File | null>(null)
 
 
     const [variant, setVariant] = useState<VariantData>({
@@ -209,11 +208,7 @@ export function AddProductModal({ open, onClose, product }: Props) {
 
                 if (error) throw error;
 
-                // If you have an image, update the product after it was successfully created
-                if (imageFile && data.id) {
-                    const imageUrl = await uploadProductImage(imageFile, data.id);
-                    await supabase.from('products').update({ image_url: imageUrl }).eq('id', data.id);
-                }
+
             }
             if (isEdit) {
                 await supabase.from('products')
@@ -343,7 +338,7 @@ export function AddProductModal({ open, onClose, product }: Props) {
                                 <option value="carton">Carton</option>
                             </select>
                         </Field>
-        
+
                     </div>
                     {/* Variant toggle */}
                     <div className="mt-6 rounded-lg border p-4">

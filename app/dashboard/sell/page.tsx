@@ -442,7 +442,7 @@ console.log(data)
 
         {/* Right: Range Selector */}
         <div className='flex gap-2 items-center'>
-          <h1>Filter by:</h1>
+          <h1>Filter by Time:</h1>
           <select
             value={range}
             onChange={(e) => setRange(e.target.value as Range)}
