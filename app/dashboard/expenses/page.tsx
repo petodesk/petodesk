@@ -6,6 +6,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import { AddExpendeModal } from '@/app/components/AddExpendeModal'
 import { AllExpensesModal } from '@/app/components/AllExpensesModal'
 import { HiSearch } from 'react-icons/hi'
+import { ViewExpensesModal } from '@/app/components/ViewModal'
 
 type Range =
   | 'today'
@@ -17,7 +18,7 @@ type Range =
   | 'this_year'
   | 'last_year'
 
-type Status = 'all' | 'paid'| 'Cancelled'| 'pending'
+type Status = 'all' | 'paid' | 'Cancelled' | 'pending'
 
 type Expense = {
   id: string
@@ -27,6 +28,7 @@ type Expense = {
   created_at: string
   title: string
   paid_to: string
+  image:string
   note: string
   receipt_number: string
   profiles?: {
@@ -49,6 +51,11 @@ export default function ExpensesPage() {
   const [openAllExpenses, setOpenAllExpenses] = useState(false)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<Status>('all')
+  const [openMore, setOpenMore] = useState(false)
+  const [ViewMore, setViewMore] = useState<Expense | null>(null)
+
+
+
   /* ---------------- DATE RANGE LOGIC ---------------- */
   const getRangeDates = (range: Range) => {
     const now = new Date()
@@ -125,6 +132,7 @@ export default function ExpensesPage() {
         paid_to,
         receipt_number,
         note,
+        image,
         created_at,
         profiles ( full_name ),
         category,
@@ -193,13 +201,8 @@ export default function ExpensesPage() {
       setEditExpense(expense)
     }
 
-    const handleDelete = async () => {
-      if (!confirm('Delete this expense?')) return
-
-      await supabase
-        .from('expenses')
-        .delete()
-        .eq('id', expense.id)
+    const handleViewMore = async () => {
+      setViewMore(expense)
 
       fetchExpenses()
     }
@@ -248,17 +251,17 @@ export default function ExpensesPage() {
                   Cancel
                 </li>
               )}
-              {expense.status !== "paid" && expense.status !== "Cancelled" && (
+            
                 <li
                   onClick={() => {
-                    handleDelete()
+                    handleViewMore()
                     setOpen(false)
                   }}
                   className="px-4 py-2 cursor-pointer hover:bg-gray-100 text-red-600"
                 >
-                  Delete
+                  View More
                 </li>
-              )}
+             
 
             </ul>
           </div>
@@ -273,29 +276,42 @@ export default function ExpensesPage() {
             }}
           />
         )}
+        {ViewMore && (
+
+          <ViewExpensesModal
+            open={true}
+            onClose={() =>{setViewMore(null)
+              fetchExpenses()
+
+            }}
+            expenses={ViewMore}
+
+          />
+        )}
+
 
 
       </div>
     )
   }
 
-  const filteredExpenses = expenses.filter((ex)=>{
-/* ---------- SEARCH FILTER ---------- */
+  const filteredExpenses = expenses.filter((ex) => {
+    /* ---------- SEARCH FILTER ---------- */
     const query = search.toLowerCase()
     const searchMatch =
       ex.title.toLowerCase().includes(query) ||
       ex.category?.toLowerCase().includes(query)
 
 
-/* ---------- STATUS FILTER ---------- */
+    /* ---------- STATUS FILTER ---------- */
     const stockStatus = ex.status
 
     const statusMatch =
-       filterStatus=== 'all' ||
+      filterStatus === 'all' ||
       filterStatus === stockStatus
 
 
-return searchMatch && statusMatch
+    return searchMatch && statusMatch
 
 
   })
@@ -360,16 +376,16 @@ return searchMatch && statusMatch
         {/* status Filter */}
         <div className='flex gap-2 items-center'>
           <h1>Filter by Status</h1>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value as Status)}
-          className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm"
-        >
-          <option value="all">All</option>
-          <option value="paid">Paid</option>
-          <option value="pending">Pending</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as Status)}
+            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm"
+          >
+            <option value="all">All</option>
+            <option value="paid">Paid</option>
+            <option value="pending">Pending</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
         </div>
       </div>
       {/* ---------------- EXPENSES TABLE ---------------- */}
@@ -550,6 +566,7 @@ return searchMatch && statusMatch
         expenses={expenses}
         ActionMenu={ActionMenu}
       />
+
       <button
         onClick={() => setOpenAllExpenses(true)}
         className="mt-4 w-full rounded-lg border border-gray-300 bg-white py-2 text-sm font-medium hover:bg-gray-50"

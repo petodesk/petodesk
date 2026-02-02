@@ -67,7 +67,6 @@ export default function SellPage() {
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<Status>('all')
 
-
   const [show, setShow] = useState(true)
   const [totalSales, setTotalSales] = useState(0)
   const [totalProfit, setTotalProfit] = useState(0)
@@ -187,7 +186,6 @@ export default function SellPage() {
     })
     
 
-console.log(data)
 
     setSales(data as [])
     setTotalSales(salesTotal)
@@ -231,7 +229,27 @@ console.log(data)
     fetchSales()
   }
 
+const filteredSales = sales.filter((sale) => {
+  const query = search.trim().toLowerCase()
 
+  /* ---------- SEARCH FILTER ---------- */
+  const searchMatch =
+    query === '' ||
+    sale.sale_items.some(
+      (item) =>
+        item.products?.name?.toLowerCase().includes(query)
+    ) ||
+    sale.profiles?.full_name?.toLowerCase().includes(query)
+
+  /* ---------- STATUS FILTER ---------- */
+  const statusMatch =
+    filterStatus === 'all' ||
+    sale.sale_items.some(
+      (item) => item.status === filterStatus
+    )
+
+  return searchMatch && statusMatch
+})
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [editQty, setEditQty] = useState(1)
@@ -432,24 +450,8 @@ console.log(data)
     )
   }
 
-  const filteredSales = sales.filter((sale) => {
-  const query = search.trim().toLowerCase()
 
-  /* ---------- SEARCH FILTER ---------- */
-  const searchMatch =
-    query === '' ||
-    sale.sale_items.some((item) =>
-      item.products?.name?.toLowerCase().includes(query)
-    ) ||
-    sale.profiles?.full_name?.toLowerCase().includes(query)
 
-  /* ---------- STATUS FILTER ---------- */
-  const statusMatch =
-    filterStatus === 'all' ||
-    sale.sale_items.some((item) => item.status === filterStatus)
-
-  return searchMatch && statusMatch
-})
 
   /* ---------------- UI ---------------- */
   return (
