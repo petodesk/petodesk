@@ -524,6 +524,7 @@ export function AddSaleModal({
   const [sellerId, setSellerId] = useState<string | null>(null)
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
 
   /* ---------------- FETCH USER ---------------- */
 
@@ -563,14 +564,17 @@ export function AddSaleModal({
   }, [])
 
   /* ---------------- DERIVED ---------------- */
-console.log(discountPercent)
-  const availableProducts = useMemo(() => {
-    return products.filter(
-      p => !cart.find(c => c.product.id === p.id)
-    )
-  }, [products, cart])
+  console.log(discountPercent)
+  const filteredProducts = useMemo(() => {
+    return products
+      .filter(p => !cart.some(c => c.product.id === p.id))
+      .filter(p =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+  }, [products, cart, searchTerm])
 
-  const selectedProduct = availableProducts.find(
+
+  const selectedProduct = filteredProducts.find(
     p => p.id === selectedProductId
   )
 
@@ -661,7 +665,7 @@ console.log(discountPercent)
         selling_price: price,
         cost_price: cost,
         discount,
-        discount_percent:discountPercent,
+        discount_percent: discountPercent,
         tax_percent: taxPercent,
         tax_amount: tax,
         subtotal: net + tax,
@@ -698,21 +702,47 @@ console.log(discountPercent)
 
           {/* PRODUCT INPUT */}
           <div className="flex flex-col md:flex-row justify-between gap-6 md:gap-20">
-            <div className='flex flex-col gap-2 w-full'>
-              <h1>Select Products</h1>
-              <select
-                value={selectedProductId}
-                onChange={e => setSelectedProductId(e.target.value)}
-                className="rounded border p-2"
-              >
-                <option value="">Select product</option>
-                {availableProducts.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+            <div className="flex flex-col gap-2 w-full">
+              <h1>Select Product</h1>
+
+              {/* Search input */}
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search product by name"
+                className="rounded border p-2 text-sm outline-none"
+              />
+
+              {/* Result list */}
+              {searchTerm && (
+                <div className="max-h-48 overflow-y-auto rounded-lg border bg-white shadow-sm">
+                  {filteredProducts.length === 0 && (
+                    <p className="p-3 text-sm text-gray-500">
+                      No products found
+                    </p>
+                  )}
+
+                  {filteredProducts.map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedProductId(p.id)
+                        setSearchTerm('')
+                      }}
+                      className="flex w-full justify-between px-4 py-2 text-left text-sm hover:bg-gray-100"
+                    >
+                      <span className="font-medium">{p.name}</span>
+                      <span className="text-gray-500">
+                        Stock: {p.product_stock[0]?.quantity}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+
             <div className='flex flex-col gap-2 w-full'>
 
               <h1>Discount(%)</h1>
@@ -730,15 +760,15 @@ console.log(discountPercent)
             <div className='flex flex-col gap-2 w-full'>
 
               <h1>Tax type</h1>
-             <input
-              type="number"
-              min={0}
-              max={100}
-              value={taxPercent}
-              onChange={e => setTaxPercent(+e.target.value)}
-              className="rounded border p-2"
-              placeholder="Tax / VAT %"
-            />
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={taxPercent}
+                onChange={e => setTaxPercent(+e.target.value)}
+                className="rounded border p-2"
+                placeholder="Tax / VAT %"
+              />
             </div>
             <div className='flex flex-col gap-2 w-full'>
               <h1>Payment Method</h1>
