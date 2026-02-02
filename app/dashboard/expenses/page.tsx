@@ -5,6 +5,7 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa'
 import { createClient } from '@/app/utils/supabase/client'
 import { AddExpendeModal } from '@/app/components/AddExpendeModal'
 import { AllExpensesModal } from '@/app/components/AllExpensesModal'
+import { HiSearch } from 'react-icons/hi'
 
 type Range =
   | 'today'
@@ -15,6 +16,8 @@ type Range =
   | 'last_month'
   | 'this_year'
   | 'last_year'
+
+type Status = 'all' | 'paid'| 'Cancelled'| 'pending'
 
 type Expense = {
   id: string
@@ -31,6 +34,7 @@ type Expense = {
   }
 }
 
+
 export default function ExpensesPage() {
   const supabase = createClient()
 
@@ -43,8 +47,8 @@ export default function ExpensesPage() {
   const [openEdit, setOpenEdit] = useState(false)
   const [editExpense, setEditExpense] = useState<Expense | null>(null)
   const [openAllExpenses, setOpenAllExpenses] = useState(false)
-
-
+  const [search, setSearch] = useState('')
+  const [filterStatus, setFilterStatus] = useState<Status>('all')
   /* ---------------- DATE RANGE LOGIC ---------------- */
   const getRangeDates = (range: Range) => {
     const now = new Date()
@@ -138,7 +142,6 @@ export default function ExpensesPage() {
 
     setExpenses(data as [])
 
-    // Calculate total expenses
     // Calculate total expenses for non-cancelled expenses only
     const total = data
       .filter(expense => expense.status !== 'Cancelled') // Filter out cancelled expenses
@@ -180,7 +183,7 @@ export default function ExpensesPage() {
       await supabase
         .from('expenses')
         .update({
-          status: "Paid"
+          status: "paid"
         })
         .eq('id', expense.id)
 
@@ -205,7 +208,7 @@ export default function ExpensesPage() {
       <div className="relative">
         <button
           onClick={() => setOpen(!open)}
-          className="px-2 py-1 text-gray-600 hover:text-gray-900"
+          className="px-2 py-1 text-gray-600 hover:text-gray-900 cursor-pointer"
         >
           ⋮
         </button>
@@ -276,6 +279,28 @@ export default function ExpensesPage() {
     )
   }
 
+  const filteredExpenses = expenses.filter((ex)=>{
+/* ---------- SEARCH FILTER ---------- */
+    const query = search.toLowerCase()
+    const searchMatch =
+      ex.title.toLowerCase().includes(query) ||
+      ex.category?.toLowerCase().includes(query)
+
+
+/* ---------- STATUS FILTER ---------- */
+    const stockStatus = ex.status
+
+    const statusMatch =
+       filterStatus=== 'all' ||
+      filterStatus === stockStatus
+
+
+return searchMatch && statusMatch
+
+
+  })
+
+
   /* ---------------- UI ---------------- */
   return (
     <section className="w-full px-6 py-6 bg-gray-50 min-h-screen">
@@ -291,7 +316,7 @@ export default function ExpensesPage() {
 
         {/* Right: Range Selector */}
         <div className='flex gap-2 items-center'>
-          <h1 className="text-sm text-gray-600">Filter by:</h1>
+          <h1 className="text-sm text-gray-600">Filter by Time:</h1>
           <select
             value={range}
             onChange={(e) => setRange(e.target.value as Range)}
@@ -319,8 +344,37 @@ export default function ExpensesPage() {
         />
       </div>
 
+      <div className="flex flex-col-reverse w-full md:flex-row gap-3 mb-4 items-center justify-between">
+        {/* Search */}
+        <div className="flex w-full items-center flex-1 rounded-xl bg-gray-100 px-3 py-2">
+          <HiSearch className="text-gray-500" size={22} />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by tilte or category"
+            className="w-full bg-transparent px-2  outline-none text-sm"
+          />
+        </div>
+
+        {/* status Filter */}
+        <div className='flex gap-2 items-center'>
+          <h1>Filter by Status</h1>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value as Status)}
+          className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm"
+        >
+          <option value="all">All</option>
+          <option value="paid">Paid</option>
+          <option value="pending">Pending</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+        </div>
+      </div>
       {/* ---------------- EXPENSES TABLE ---------------- */}
       <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+
         <div className="border-b px-4 py-3 text-sm font-medium mb-4 flex justify-between items-center">
           <span>
             Expense History
@@ -335,7 +389,7 @@ export default function ExpensesPage() {
 
         {/* mobile card */}
         <div className="space-y-4 md:hidden">
-          {expenses.slice(0, 4).map((ex) => (
+          {filteredExpenses.slice(0, 4).map((ex) => (
             <div
               key={ex.id}
               className="rounded-xl bg-white p-4 shadow-sm border space-y-3"
@@ -437,14 +491,14 @@ export default function ExpensesPage() {
                     Loading expenses...
                   </td>
                 </tr>
-              ) : expenses.length === 0 ? (
+              ) : filteredExpenses.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                     No expenses found for this period
                   </td>
                 </tr>
               ) : (
-                expenses.slice(0, 4).map((expense) => (
+                filteredExpenses.slice(0, 4).map((expense) => (
                   <tr key={expense.id} className="border-t hover:bg-gray-50">
                     <td className="px-4 py-3">
                       {new Date(expense.created_at).toLocaleDateString()}

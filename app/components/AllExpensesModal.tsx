@@ -45,7 +45,7 @@ export function AllExpensesModal({
           <h2 className="text-lg font-semibold">All Expenses</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 cursor-pointer"
           >
             ✕
           </button>

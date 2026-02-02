@@ -7,6 +7,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import { AddSaleModal } from '@/app/components/SellerForm'
 import ReceiptModal from '@/app/components/ReceiptModal'
 import AllSalesModal from '@/app/components/AllSalesModal'
+import { HiSearch } from 'react-icons/hi'
 
 type Range =
   | 'today'
@@ -47,6 +48,8 @@ type Sale = {
   }[]
 
 }
+type Status = 'all' | 'Sold'| 'Cancelled'
+
 
 export default function SellPage() {
   const supabase = createClient()
@@ -61,6 +64,8 @@ export default function SellPage() {
   const [receiptOpen, setReceiptOpen] = useState(false)
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
   const [company, setCompany] = useState<{ name: string; location: string } | null>(null)
+  const [search, setSearch] = useState('')
+  const [filterStatus, setFilterStatus] = useState<Status>('all')
 
 
   const [show, setShow] = useState(true)
@@ -379,6 +384,8 @@ console.log(data)
       setOpen(false)
     }
   
+
+     
     return (
       <div className="relative">
         <button
@@ -424,6 +431,25 @@ console.log(data)
       </div>
     )
   }
+
+  const filteredSales = sales.filter((sale) => {
+  const query = search.trim().toLowerCase()
+
+  /* ---------- SEARCH FILTER ---------- */
+  const searchMatch =
+    query === '' ||
+    sale.sale_items.some((item) =>
+      item.products?.name?.toLowerCase().includes(query)
+    ) ||
+    sale.profiles?.full_name?.toLowerCase().includes(query)
+
+  /* ---------- STATUS FILTER ---------- */
+  const statusMatch =
+    filterStatus === 'all' ||
+    sale.sale_items.some((item) => item.status === filterStatus)
+
+  return searchMatch && statusMatch
+})
 
   /* ---------------- UI ---------------- */
   return (
@@ -487,6 +513,35 @@ console.log(data)
 
 
       </div>
+
+
+       <div className="flex flex-col-reverse w-full md:flex-row gap-3 mb-4 items-center justify-between">
+              {/* Search */}
+              <div className="flex w-full items-center flex-1 rounded-xl bg-gray-100 px-3 py-2">
+                <HiSearch className="text-gray-500" size={22} />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by tilte or category"
+                  className="w-full bg-transparent px-2  outline-none text-sm"
+                />
+              </div>
+      
+              {/* status Filter */}
+              <div className='flex gap-2 items-center'>
+                <h1>Filter by Status</h1>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as Status)}
+                className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm"
+              >
+                <option value="all">All</option>
+                <option value="Sold">Sold</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+              </div>
+            </div>
       {/* ---------------- TRANSACTION TABLE ---------------- */}
       <div className="rounded-xl bg-white shadow-sm">
         <div className="border-b px-4 py-3 text-sm font-medium flex justify-between">
@@ -500,7 +555,7 @@ console.log(data)
         {/* ---------------- MOBILE SALES CARDS ---------------- */}
         <div className="space-y-4 md:hidden">
           {!loading &&
-            sales.slice(0, 5).flatMap((sale) =>
+            filteredSales.slice(0, 5).flatMap((sale) =>
               sale.sale_items.map((item) => {
                 const amount =
                   item.subtotal
@@ -632,7 +687,7 @@ console.log(data)
 
             <tbody>
               {!loading &&
-                sales.slice(0, 5).flatMap((sale) =>
+                filteredSales.slice(0, 5).flatMap((sale) =>
                   sale.sale_items.map((item, index) => {
                     const amount =
                       item.subtotal
