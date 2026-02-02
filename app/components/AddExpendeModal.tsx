@@ -49,6 +49,85 @@ export function AddExpendeModal({
     getUser()
   }, [])
 
+
+  const uploadReceipt = async (file: File, companyId: string) => {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${companyId}/${crypto.randomUUID()}.${fileExt}`
+
+    const { error } = await supabase.storage
+      .from('expense-receipts')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false,
+      })
+
+    if (error) throw error
+
+    const { data } = supabase.storage
+      .from('expense-receipts')
+      .getPublicUrl(fileName)
+
+    return data.publicUrl
+  }
+
+
+
+
+
+
+
+  // ✅ Save or update
+  const handleSave = async () => {
+   if (!title || !categroy || !amount || !paidTo || !receiptNumber) {
+    alert('Please fill all required fields')
+    return
+  }
+
+  if (!payerId || !userCompanyId) {
+    alert('User or company not found')
+    return
+  }
+    setLoading(true)
+
+    try {
+      let imageUrl = expense?.image ?? null
+
+      // 1️⃣ Upload image if selected
+      if (receiptImage) {
+        imageUrl = await uploadReceipt(receiptImage, userCompanyId)
+      }
+
+      // 2️⃣ Prepare payload
+      const payload = {
+        title,
+        paid_to: paidTo,
+        amount: Number(amount),
+        receipt_number: receiptNumber,
+        note,
+        image: imageUrl,
+        category: categroy,
+        added_by: payerId,
+        company_id: userCompanyId,
+      }
+
+      // 3️⃣ Insert or update
+      const query = isEdit
+        ? supabase.from('expenses').update(payload).eq('id', expense.id)
+        : supabase.from('expenses').insert(payload)
+
+      const { error } = await query
+      if (error) throw error
+
+      onClose()
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+
+
   const expensesCategory = [
     'Employee Salaries and Benefits',
     'Office Rent and Utilities',
@@ -157,6 +236,7 @@ export function AddExpendeModal({
             Cancel
           </button>
           <button
+          onClick={handleSave}
             disabled={loading}
             className="rounded-lg bg-blue-600 px-8 py-2 text-sm text-white
                        hover:bg-blue-700 disabled:opacity-60"
