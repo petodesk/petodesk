@@ -257,7 +257,7 @@ export default function ExpensesPage() {
                     handleViewMore()
                     setOpen(false)
                   }}
-                  className="px-4 py-2 cursor-pointer hover:bg-gray-100 text-red-600"
+                  className="px-4 py-2 cursor-pointer hover:bg-gray-100 text-blue-600"
                 >
                   View More
                 </li>
