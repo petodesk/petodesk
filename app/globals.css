@@ -50,21 +50,25 @@
 }
 
 
-@media print {
-  body * {
-    visibility: hidden;
-  }
+/* 🔒 PDF SAFE MODE — removes LAB / OKLCH colors */
+.pdf-mode *,
+.pdf-mode {
+  color: #000 !important;
+  background-color: #fff !important;
+  border-color: #ddd !important;
+  box-shadow: none !important;
+}
 
-  #receipt-content,
-  #receipt-content * {
-    visibility: visible;
-  }
+/* Fix tables */
+.pdf-mode table,
+.pdf-mode th,
+.pdf-mode td {
+  border-color: #ddd !important;
+}
 
-  #receipt-content {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-  }
+/* Disable Tailwind color variables */
+.pdf-mode {
+  --tw-text-opacity: 1 !important;
+  --tw-bg-opacity: 1 !important;
 }
 
