@@ -152,7 +152,7 @@ export function ViewInvoiceModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 overflow-y-auto">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 overflow-y-auto">
             <div className="relative w-full max-w-2xl rounded-xl bg-white p-10 mt-50 max-h-(80vh) text-black">
                 {/* Add CSS to ensure colors are safe */}
                 <style jsx>{`
