@@ -6,6 +6,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import { HiSearch } from 'react-icons/hi'
 import { AddInvoiceModal } from '@/app/components/AddInvoiceModal'
 import { ViewInvoiceModal } from '@/app/components/InvoiceModal'
+import { AllInvoiceModal } from '@/app/components/AllInvoiceModal'
 
 type Range =
   | 'today'
@@ -16,32 +17,34 @@ type Range =
   | 'last_month'
   | 'this_year'
   | 'last_year'
+type Status = 'all' | 'paid' | 'cancelled' | 'pending' | 'overdue'
 
-type Status = 'all' | 'paid' | 'cancelled' | 'pending'
+
 type InvoiceItem = {
-    item_name: string
-    quantity: number
-    item_type: string
-    unit_price: number
-    amount: number
-} 
+  item_name: string
+  quantity: number
+  item_type: string
+  unit_price: number
+  amount: number
+}
 type Invoices = {
   id: string
   invoice_number: string
   bill_to: string
   ship_to: string
   tax_rate: number
+  due_date: string
   tax_amount: number
   total: number
   created_at: string
   profiles?: { full_name: string }
   invoice_payments?: {
-    id: string, 
+    id: string,
     payment_status: string,
     bank_name: string,
     account_number: number,
     account_name: string
-  }[] 
+  }[]
   invoice_items: InvoiceItem[]
 }
 
@@ -161,7 +164,7 @@ export default function ExpensesPage() {
     }
 
     setInvoices(data as [])
-    
+
     // Calculate total Invoices for non-cancelled invoices only
     const total = data
       .reduce((sum, invoice) => sum + invoice.total, 0)
@@ -215,26 +218,51 @@ export default function ExpensesPage() {
     const [open, setOpen] = useState(false)
 
 
-    
+
     const handleEdit = () => {
       setEditInvoice(invoice)
       setOpenEdit(true)
     }
-    
+
+    const handleCancel = async () => {
+      if (!invoice.invoice_payments?.[0]?.id) {
+        console.error('No payment record found for this invoice')
+        return
+
+      }
+      try {
+        const { error } = await supabase
+          .from('invoice_payments')
+          .update({ payment_status: 'cancelled' })
+          .eq('id', invoice.invoice_payments[0]?.id)
+
+        if (error) throw error
+
+        // Refresh the invoices list
+        fetchInvoices()
+        setOpen(false)
+      } catch (error) {
+        console.error('Error cancelling invoice:', error)
+      }
+
+    }
+
+
+
     const handlePaid = async () => {
       if (!invoice.invoice_payments?.[0]?.id) {
         console.error('No payment record found for this invoice')
         return
       }
-      
+
       try {
         const { error } = await supabase
           .from('invoice_payments')
           .update({ payment_status: 'paid' })
           .eq('id', invoice.invoice_payments[0]?.id)
-          
+
         if (error) throw error
-        
+
         // Refresh the invoices list
         fetchInvoices()
         setOpen(false)
@@ -270,19 +298,28 @@ export default function ExpensesPage() {
                 Edit
               </li> */}
 
-{invoice?.invoice_payments?.[0]?.payment_status !== 'paid' &&
+              {invoice?.invoice_payments?.[0]?.payment_status !== 'paid' && invoice?.invoice_payments?.[0]?.payment_status !== 'cancelled' &&
 
-(
-<li
-                onClick={handlePaid}
-                className="px-4 py-2 cursor-pointer hover:bg-gray-100 text-green-600"
-              >
-                Make Paid
-              </li>
-)}
-              
+                (
+                  <li
+                    onClick={handlePaid}
+                    className="px-4 py-2 cursor-pointer hover:bg-gray-100 text-green-600"
+                  >
+                    Make Paid
+                  </li>
+                )}
 
-              
+
+              {invoice?.invoice_payments?.[0]?.payment_status !== 'cancelled' && invoice?.invoice_payments?.[0]?.payment_status !== 'paid' &&
+
+                (
+                  <li
+                    onClick={handleCancel}
+                    className="px-4 py-2 cursor-pointer hover:bg-gray-100 text-red-600"
+                  >
+                    Cancel
+                  </li>
+                )}
 
               <li
                 onClick={handleViewMore}
@@ -311,10 +348,18 @@ export default function ExpensesPage() {
       filterStatus === 'all' ||
       (filterStatus === 'cancelled' && paymentStatus === 'cancelled') ||
       (filterStatus === 'paid' && paymentStatus === 'paid') ||
-      (filterStatus === 'pending' && (!paymentStatus || paymentStatus === 'pending'))
+      (filterStatus === 'pending' && paymentStatus === 'pending') ||
+      (filterStatus === 'overdue' && paymentStatus === 'overdue')
 
     return searchMatch && statusMatch
   })
+
+
+  const paidCount = invoices.filter(inv => inv.invoice_payments?.[0]?.payment_status === 'paid').length
+  const cancelledCount = invoices.filter(inv => inv.invoice_payments?.[0]?.payment_status === 'cancelled').length
+  const pendingCount = invoices.filter(inv => !inv.invoice_payments?.[0]?.payment_status || inv.invoice_payments?.[0]?.payment_status === 'pending').length
+  const overDueCount = invoices.filter(inv => inv.invoice_payments?.[0]?.payment_status === 'overdue').length
+
 
 
   /* ---------------- UI ---------------- */
@@ -351,13 +396,35 @@ export default function ExpensesPage() {
       </div>
 
       {/* Summary card */}
-      <div className="mb-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-20 mb-6">
         <SummaryCard
           label="Total Invoices"
           value={`₦${totalExpenses.toLocaleString()}`}
           show={show}
           onToggle={() => setShow(!show)}
         />
+
+        <div className="grid grid-cols-2  gap-4 rounded-xl bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="h-4 w-4 rounded-sm bg-green-500"></div>
+            <p className="text-gray-700">Paid: {paidCount}</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="h-4 w-4 rounded-sm bg-red-500"></div>
+            <p className="text-gray-700">Cancelled: {cancelledCount}</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="h-4 w-4 rounded-sm bg-yellow-500"></div>
+            <p className="text-gray-700">Pending: {pendingCount}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="h-4 w-4 rounded-sm bg-red-500"></div>
+            <p className="text-gray-700">Over Due: {overDueCount}</p>
+          </div>
+        </div>
+
       </div>
 
       <div className="flex flex-col-reverse w-full md:flex-row gap-3 mb-4 items-center justify-between">
@@ -385,10 +452,11 @@ export default function ExpensesPage() {
             <option value="paid">Paid</option>
             <option value="pending">Pending</option>
             <option value="cancelled">Cancelled</option>
+            <option value="overdue">Overdue</option>
           </select>
         </div>
       </div>
-      
+
       {/* ---------------- INVOICES TABLE ---------------- */}
       <div className="rounded-xl bg-white shadow-sm overflow-hidden">
         <div className="border-b px-4 py-3 text-sm font-medium mb-4 flex justify-between items-center">
@@ -449,15 +517,17 @@ export default function ExpensesPage() {
 
               <div className="flex items-center justify-between">
                 <p className="text-md font-semibold text-gray-700 mb-1">Status</p>
-                <span className={`capitalize px-2 py-1 rounded-full text-xs ${
-                  inv.invoice_payments?.[0]?.payment_status === 'paid' 
+                <span className={`capitalize px-2 py-1 rounded-full text-xs ${inv.invoice_payments?.[0]?.payment_status === 'paid'
                     ? 'bg-green-100 text-green-800'
                     : inv.invoice_payments?.[0]?.payment_status === 'cancelled'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {inv.invoice_payments?.[0]?.payment_status || 'pending'}
+                      ? 'bg-red-100 text-red-800'
+                      : inv.invoice_payments?.[0]?.payment_status === 'overdue'
+                        ? 'bg-orange-100 text-orange-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                  {inv.invoice_payments?.[0]?.payment_status || 'Unpaid'}
                 </span>
+
               </div>
             </div>
           ))}
@@ -513,13 +583,12 @@ export default function ExpensesPage() {
                       ₦{invoice.total.toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`capitalize px-2 py-1 rounded-full text-xs ${
-                        invoice.invoice_payments?.[0]?.payment_status === 'paid' 
-                          ? 'bg-green-100 text-green-800'
-                          : invoice.invoice_payments?.[0]?.payment_status === 'cancelled'
+                      <span className={`capitalize px-2 py-1 rounded-full text-xs ${invoice.invoice_payments?.[0]?.payment_status === 'paid'
+                        ? 'bg-green-100 text-green-800'
+                        : invoice.invoice_payments?.[0]?.payment_status === 'cancelled'
                           ? 'bg-red-100 text-red-800'
                           : 'bg-yellow-100 text-yellow-800'
-                      }`}>
+                        }`}>
                         {invoice.invoice_payments?.[0]?.payment_status || 'pending'}
                       </span>
                     </td>
@@ -535,15 +604,15 @@ export default function ExpensesPage() {
       </div>
 
       <AddInvoiceModal open={openModal} onClose={handleModalClose} />
-      
+
       {editInvoice && (
-        <AddInvoiceModal 
-          open={openEdit} 
+        <AddInvoiceModal
+          open={openEdit}
           onClose={handleModalClose}
           invoices={editInvoice}
         />
       )}
-      
+
       {ViewMore && (
         <ViewInvoiceModal
           open={true}
@@ -557,14 +626,27 @@ export default function ExpensesPage() {
         />
       )}
 
-      {/* <button
+
+       <button
         onClick={() => setOpenAllInvoices(true)}
         className="mt-4 w-full rounded-lg border border-gray-300 bg-white py-2 text-sm font-medium hover:bg-gray-50">
         View All Invoices
-      </button> */}
+      </button> 
+
+      {openAllInvoices && ( 
+        <AllInvoiceModal
+          open={openAllInvoices}
+          onClose={() => setOpenAllInvoices(false)}
+          invoices={invoices}
+          loading={loading}
+          ActionMenu={ActionMenu}
+        />
+      )}
+
     </section>
   )
 }
+
 
 /* ---------------- SUMMARY CARD COMPONENT ---------------- */
 function SummaryCard({
