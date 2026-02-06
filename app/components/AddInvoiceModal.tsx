@@ -37,7 +37,6 @@ export function AddInvoiceModal({
     const isEdit = !!invoices
 
     /* ---------------- INVOICE FORM ---------------- */
-    const [invoiceNo, setInvoiceNo] = useState(invoices?.invoice_number ?? '')
     const [billTo, setBillTo] = useState(invoices?.bill_to ?? '')
     const [shipTo, setShipTo] = useState(invoices?.ship_to ?? '')
     const [dueDate, setDueDate] = useState(invoices?.due_date ?? '')
@@ -92,6 +91,38 @@ export function AddInvoiceModal({
         init()
     }, [])
 
+
+    const generateInvoiceNumber = async () => {
+        const { data, error } = await supabase
+            .rpc('generate_invoice_number', {
+                p_company_id: companyId,
+            })
+
+        if (error) throw error
+        return data
+    }
+    
+
+    useEffect(() => {
+  if (!isEdit || !invoices?.invoice_items) return
+
+  setItems(
+    invoices.invoice_items.map((i: any) => ({
+      item_type: i.item_type,
+      product_id: i.product_id,
+      name: i.item_name,
+      quantity: i.quantity,
+      unit_price: i.unit_price,
+      total: i.amount,
+    }))
+  )
+}, [isEdit, invoices])
+
+
+
+
+
+
     /* ---------------- AUTO PRICE FOR PRODUCT ---------------- */
     useEffect(() => {
         if (itemType === 'product') {
@@ -122,9 +153,12 @@ export function AddInvoiceModal({
         }
 
         setItems(prev => {
-            const existing = prev.find(
-                i => i.product_id === productId && i.item_type === itemType
-            )
+            const existing = prev.find(i => {
+                if (itemType === 'product') {
+                    return i.product_id === productId
+                }
+                return i.item_type === 'service' && i.name === name
+            })
 
             if (existing) {
                 const newQty = existing.quantity + quantity
@@ -163,6 +197,7 @@ export function AddInvoiceModal({
             ]
         })
 
+        // reset inputs
         setSelectedProductId('')
         setServiceName('')
         setQuantity(1)
@@ -188,21 +223,50 @@ export function AddInvoiceModal({
 
     /* ---------------- SAVE ---------------- */
     const handleSave = async () => {
-        if (!invoiceNo || !billTo || !shipTo || !dueDate) {
+        if (!billTo || !shipTo || !dueDate) {
             alert('Fill required fields')
             return
         }
 
         if (!creatorId || !companyId) return
-
         setLoading(true)
 
         try {
-            /* 1️⃣ CREATE INVOICE */
-            const { data: invoice, error } = await supabase
+            if (isEdit) {
+                /* ✏️ UPDATE INVOICE ONLY */
+                await supabase
+                    .from('invoices')
+                    .update({
+                        bill_to: billTo,
+                        ship_to: shipTo,
+                        due_date: dueDate,
+                        tax_rate: taxRate,
+                        tax_amount: taxAmount,
+                        total: grandTotal,
+                    })
+                    .eq('id', invoices.id)
+
+                /* ✏️ UPDATE PAYMENT INFO */
+                await supabase
+                    .from('invoice_payments')
+                    .update({
+                        bank_name: bankName,
+                        account_name: accountName,
+                        account_number: accountNumber,
+                    })
+                    .eq('invoice_id', invoices.id)
+
+                onClose()
+                return
+            }
+
+            /* ➕ CREATE MODE (unchanged) */
+            const invoiceNumber = await generateInvoiceNumber()
+
+            const { data: invoice } = await supabase
                 .from('invoices')
                 .insert({
-                    invoice_number: invoiceNo,
+                    invoice_number: invoiceNumber,
                     bill_to: billTo,
                     ship_to: shipTo,
                     due_date: dueDate,
@@ -215,9 +279,6 @@ export function AddInvoiceModal({
                 .select()
                 .single()
 
-            if (error) throw error
-
-            /* 2️⃣ INSERT ITEMS */
             if (items.length) {
                 await supabase.from('invoice_items').insert(
                     items.map(i => ({
@@ -232,7 +293,6 @@ export function AddInvoiceModal({
                 )
             }
 
-            /* 3️⃣ DEDUCT STOCK (PRODUCT ONLY) */
             for (const item of items) {
                 if (item.item_type === 'product' && item.product_id) {
                     const product = products.find(p => p.id === item.product_id)
@@ -240,14 +300,11 @@ export function AddInvoiceModal({
 
                     await supabase
                         .from('product_stock')
-                        .update({
-                            quantity: currentQty - item.quantity,
-                        })
+                        .update({ quantity: currentQty - item.quantity })
                         .eq('product_id', item.product_id)
                 }
             }
 
-            /* 4️⃣ PAYMENT INFO */
             await supabase.from('invoice_payments').insert({
                 invoice_id: invoice.id,
                 bank_name: bankName,
@@ -301,151 +358,162 @@ export function AddInvoiceModal({
 
             <div className="relative z-50 w-full max-w-4xl bg-white mt-25 rounded-xl max-h-[90vh] flex flex-col">
                 <div className="px-6 py-4 border-b flex justify-between">
-                    <h2 className="font-semibold">Add Invoice</h2>
+                    <h2 className="font-semibold">
+                        {isEdit ? 'Edit Invoice' : 'Add Invoice'}
+                    </h2>
+
                     <button onClick={onClose}>✕</button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input label="Invoice No *" value={invoiceNo} onChange={setInvoiceNo} />
+
+
                     <Input label="Bill To *" value={billTo} onChange={setBillTo} />
                     <Input label="Ship To *" value={shipTo} onChange={setShipTo} />
                     <Input label="Due Date *" type="date" value={dueDate} onChange={setDueDate} />
+                    {
+                        !isEdit && (
+                            <>
+                                <div className="md:col-span-2 flex gap-2">
+                                    <button onClick={() => setItemType('product')} className={`px-4 py-2 rounded ${itemType === 'product' ? 'bg-blue-600 text-white' : 'border'}`}>Product</button>
+                                    <button onClick={() => setItemType('service')} className={`px-4 py-2 rounded ${itemType === 'service' ? 'bg-blue-600 text-white' : 'border'}`}>Service</button>
+                                </div>
+                                {itemType === 'product' ? (
+                                    <div className="flex flex-col gap-1 w-full">
+                                        <h1>Select Product</h1>
 
-                    <div className="md:col-span-2 flex gap-2">
-                        <button onClick={() => setItemType('product')} className={`px-4 py-2 rounded ${itemType === 'product' ? 'bg-blue-600 text-white' : 'border'}`}>Product</button>
-                        <button onClick={() => setItemType('service')} className={`px-4 py-2 rounded ${itemType === 'service' ? 'bg-blue-600 text-white' : 'border'}`}>Service</button>
-                    </div>
-                    {itemType === 'product' ? (
-                        <div className="flex flex-col gap-1 w-full">
-                            <h1>Select Product</h1>
+                                        {/* Search input */}
+                                        <input
+                                            type="text"
+                                            value={productSearch}
+                                            onChange={(e) => setProductSearch(e.target.value)}
+                                            placeholder="Search product by name"
+                                            className="rounded border p-2 text-sm outline-none"
+                                        />
 
-                            {/* Search input */}
-                            <input
-                                type="text"
-                                value={productSearch}
-                                onChange={(e) => setProductSearch(e.target.value)}
-                                placeholder="Search product by name"
-                                className="rounded border p-2 text-sm outline-none"
-                            />
+                                        {/* Result list */}
+                                        {productSearch && (
+                                            <div className="max-h-48 overflow-y-auto rounded-lg border bg-white shadow-sm">
+                                                {filteredProducts.length === 0 && (
+                                                    <p className="p-3 text-sm text-gray-500">
+                                                        No products found
+                                                    </p>
+                                                )}
 
-                            {/* Result list */}
-                            {productSearch && (
-                                <div className="max-h-48 overflow-y-auto rounded-lg border bg-white shadow-sm">
-                                    {filteredProducts.length === 0 && (
-                                        <p className="p-3 text-sm text-gray-500">
-                                            No products found
-                                        </p>
-                                    )}
+                                                {filteredProducts.map(p => (
+                                                    <button
+                                                        key={p.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedProductId(p.id)
+                                                            setProductSearch('')
+                                                        }}
+                                                        className="flex w-full justify-between px-4 py-2 text-left text-sm hover:bg-gray-100"
+                                                    >
+                                                        <span className="font-medium">{p.name}</span>
+                                                        <span className="text-gray-500">
+                                                            Stock: {p.product_stock[0]?.quantity}
+                                                        </span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
 
-                                    {filteredProducts.map(p => (
-                                        <button
-                                            key={p.id}
-                                            type="button"
-                                            onClick={() => {
-                                                setSelectedProductId(p.id)
-                                                setProductSearch('')
-                                            }}
-                                            className="flex w-full justify-between px-4 py-2 text-left text-sm hover:bg-gray-100"
-                                        >
-                                            <span className="font-medium">{p.name}</span>
-                                            <span className="text-gray-500">
-                                                Stock: {p.product_stock[0]?.quantity}
-                                            </span>
-                                        </button>
+                                ) : (
+                                    <Input label="Service Name *" value={serviceName} onChange={setServiceName} />
+                                )}
+
+                                <Input className='mt-2' label="Unit Price *" type="number" value={unitPrice} disabled={itemType === 'product'} onChange={(v: any) => setUnitPrice(Number(v))} />
+
+                                <button onClick={addItem} className="md:col-span-2 bg-gray-900 text-white py-2 rounded">
+                                    Add Item
+                                </button>
+
+                                <div className="md:col-span-2 space-y-2">
+                                    {items.map((item, idx) => (
+                                        <div className=" flex flex-col gap-5 rounded-lg border bg-gray-50 p-4 ">
+
+                                            <div
+                                                key={idx}
+                                                className="flex flex-col gap-6 sm:flex-row justify-between text-sm">
+
+                                                {/* PRODUCT INFO */}
+                                                <div className='flex md:flex-col md:gap-4 justify-between'>
+                                                    <div>
+                                                        <p>{item.item_type === 'product' ? 'Product Name' : 'Service Name'}</p>
+                                                        <p className="font-semibold mt-2">
+                                                            {item.name}
+                                                        </p>
+                                                    </div>
+
+                                                    <div>
+                                                        {item.item_type === 'product' ? 'Unit Price' : 'Service Fee'}
+                                                        <p className="text-gray-500 mt-2">
+                                                            ₦{item.unit_price}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {item.item_type === 'product' && (
+                                                    <div className='flex md:flex-col md:gap-4 justify-between'>
+                                                        <div>
+                                                            <p>Product Quantity</p>
+                                                            <div className="flex items-center gap-3">
+                                                                <button
+                                                                    onClick={() => updateQty(idx, -1)}
+                                                                    className="rounded border p-1 mt-2 cursor-pointer"
+                                                                >
+                                                                    <HiMinus />
+                                                                </button>
+
+                                                                <span className="w-4 text-center font-medium">
+                                                                    {item.quantity}
+                                                                </span>
+
+                                                                <button
+                                                                    onClick={() => updateQty(idx, 1)}
+                                                                    className="rounded border p-1 mt-2 cursor-pointer"
+                                                                >
+                                                                    <HiPlus />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+
+                                                    </div>
+                                                )}
+
+
+                                                {/* SUBTOTAL */}
+                                                <div className='flex md:flex-col md:gap-4 justify-between'>
+                                                    <div>
+
+
+                                                        <p className="text-gray-500">Subtotal</p>
+                                                        <p className="font-semibold text-green-600 mt-2">
+                                                            ₦{item.total.toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        {/* REMOVE */}
+                                                        <button
+                                                            onClick={() => removeFromCart(idx)}
+                                                            className="text-red-500 text-sm cursor-pointer"
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
-                            )}
-                        </div>
-
-                    ) : (
-                        <Input label="Service Name *" value={serviceName} onChange={setServiceName} />
-                    )}
-
-                    <Input className='mt-2' label="Unit Price *" type="number" value={unitPrice} disabled={itemType === 'product'} onChange={(v:any) => setUnitPrice(Number(v))} />
-
-                    <button onClick={addItem} className="md:col-span-2 bg-gray-900 text-white py-2 rounded">
-                        Add Item
-                    </button>
-
-                    <div className="md:col-span-2 space-y-2">
-                        {items.map((item, idx) => (
-                            <div className=" flex flex-col gap-5 rounded-lg border bg-gray-50 p-4 ">
-
-                                <div
-                                    key={idx}
-                                    className="flex flex-col gap-6 sm:flex-row justify-between text-sm">
-
-                                    {/* PRODUCT INFO */}
-                                    <div className='flex md:flex-col md:gap-4 justify-between'>
-                                        <div>
-                                            <p>Product Name</p>
-                                            <p className="font-semibold mt-2">
-                                                {item.name}
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            Product price
-                                            <p className="text-gray-500 mt-2">
-                                                ₦{item.unit_price}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    {item.item_type === 'product' && (
-                                        <div className='flex md:flex-col md:gap-4 justify-between'>
-                                            <div>
-                                                <p>Product Quantity</p>
-                                                <div className="flex items-center gap-3">
-                                                    <button
-                                                        onClick={() => updateQty(idx, -1)}
-                                                        className="rounded border p-1 mt-2 cursor-pointer"
-                                                    >
-                                                        <HiMinus />
-                                                    </button>
-
-                                                    <span className="w-4 text-center font-medium">
-                                                        {item.quantity}
-                                                    </span>
-
-                                                    <button
-                                                        onClick={() => updateQty(idx, 1)}
-                                                        className="rounded border p-1 mt-2 cursor-pointer"
-                                                    >
-                                                        <HiPlus />
-                                                    </button>
-                                                </div>
-                                            </div>
 
 
-                                        </div>
-                                    )}
-
-
-                                    {/* SUBTOTAL */}
-                                    <div className='flex md:flex-col md:gap-4 justify-between'>
-                                        <div>
-
-
-                                            <p className="text-gray-500">Subtotal</p>
-                                            <p className="font-semibold text-green-600 mt-2">
-                                                ₦{subtotal.toLocaleString()}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            {/* REMOVE */}
-                                            <button
-                                                onClick={() => removeFromCart(idx)}
-                                                className="text-red-500 text-sm cursor-pointer"
-                                            >
-                                                Remove
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                            </>
+                        )
+                    }
 
                     <Input label="Tax %" value={taxRate} onChange={setTaxRate} />
                     <Input label="Subtotal" value={subtotal} disabled />
@@ -463,7 +531,8 @@ export function AddInvoiceModal({
 
                 <div className="px-6 py-4 border-t flex justify-end">
                     <button onClick={handleSave} disabled={loading} className="bg-blue-600 text-white px-8 py-2 rounded">
-                        {loading ? 'Saving…' : 'Save'}
+                     {loading ? 'Saving…' : isEdit ? 'Update' : 'Save'}
+
                     </button>
                 </div>
             </div>
