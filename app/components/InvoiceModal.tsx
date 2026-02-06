@@ -153,7 +153,7 @@ export function ViewInvoiceModal({
 
     return (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 overflow-y-auto">
-            <div className="relative w-full max-w-2xl rounded-xl bg-white p-10 mt-50 max-h-(80vh) text-black">
+            <div className="relative w-full max-w-2xl rounded-xl bg-white max-sm:p-4 p-10 mt-50 max-h-(80vh) text-black">
                 {/* Add CSS to ensure colors are safe */}
                 <style jsx>{`
                     @media print {
@@ -194,9 +194,9 @@ export function ViewInvoiceModal({
                         </div>
 
                         <div className="text-right">
-                            <h2 className="text-2xl font-bold">INVOICE</h2>
+                            <h2 className="text-xl md:text-2xl font-bold">INVOICE</h2>
                             <p className="text-sm text-gray-600" style={{ color: '#4b5563' }}>
-                                #INV-{invoice.invoice_number}
+                                {invoice.invoice_number}
                             </p>
                             <p className="text-sm mt-2">
                                 Invoice Date:{' '}
@@ -208,14 +208,14 @@ export function ViewInvoiceModal({
                     {/* Bill / Ship */}
                     <div className="grid grid-cols-2 gap-10 mb-8 justify-center">
                         <div className='border border-gray-300 pb-4'>
-                            <p className="bg-blue-200 px-2 w-full py-1 text-sm font-medium" style={{ backgroundColor: '#bfdbfe' }}>
+                            <p className="bg-blue-200 px-2 w-full py-1 max-sm:text-xs font-medium" style={{ backgroundColor: '#bfdbfe' }}>
                                 BILL TO
                             </p>
                             <p className="mt-2 px-2 text-sm capitalize">{invoice.bill_to}</p>
                         </div>
 
                         <div className='border border-gray-300 pb-4'>
-                            <p className="bg-blue-200 w-full px-2 py-1 text-sm font-medium" style={{ backgroundColor: '#bfdbfe' }}>
+                            <p className="bg-blue-200 w-full px-2 py-1 max-sm:text-xs text-sm font-medium" style={{ backgroundColor: '#bfdbfe' }}>
                                 SHIP TO
                             </p>
                             <p className="mt-2 px-2 text-sm capitalize">{invoice.ship_to}</p>
@@ -226,10 +226,10 @@ export function ViewInvoiceModal({
                     <table className="w-full text-sm border mb-8">
                         <thead>
                             <tr className="bg-blue-200 text-left" style={{ backgroundColor: '#bfdbfe' }}>
-                                <th className="p-2">Item Description</th>
-                                <th className="p-2 text-center">Quantity</th>
-                                <th className="p-2 text-right">Unit Price</th>
-                                <th className="p-2 text-right">Amount</th>
+                                <th className="text-xs p-2">Item Description</th>
+                                <th className="text-sm p-2 text-center">Quantity</th>
+                                <th className="text-sm p-2 text-right">Unit Price</th>
+                                <th className="text-sm p-2 text-right">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -249,19 +249,19 @@ export function ViewInvoiceModal({
                     </table>
 
                     {/* Totals */}
-                    <div className="flex justify-between items-end">
-                        <div className="text-sm">
-                            <p className="mb-4 text-md font-semibold">Thanks for your business</p>
-                            <p className="text-md font-semibold">Please make payment to the account below:</p>
+                    <div className="flex justify-between items-end max-sm:w-full">
+                        <div className="text-sm max-sm:w-70">
+                            <p className="mb-4 md:text-md font-semibold">Thanks for your business</p>
+                            <p className="md:text-md font-semibold">Please make payment to the account below:</p>
                             <p className="mt-3 font-medium">{invoice.invoice_payments?.[0]?.bank_name}</p>
-                            <p className="text-md text-gray-900">{invoice.invoice_payments?.[0]?.account_name}</p>
-                            <p className="text-md text-gray-900">{invoice.invoice_payments?.[0]?.account_number}</p>
+                            <p className="md:text-md text-gray-900">{invoice.invoice_payments?.[0]?.account_name}</p>
+                            <p className="md:text-md text-gray-900">{invoice.invoice_payments?.[0]?.account_number}</p>
                         </div>
 
-                        <div className="text-sm w-64">
+                        <div className="text-sm w-44">
                             <div className="flex justify-between mb-2">
-                                <span className="text-gray-800 font-bold">SUBTOTAL</span>
-                                <span className="text-md font-semibold">{subtotal.toLocaleString()}</span>
+                                <span className="text-gray-800 md:font-bold">SUBTOTAL</span>
+                                <span className="md:text-md font-semibold">{subtotal.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between mb-2">
                                 <span>TAX ({invoice.tax_rate}%)</span>
@@ -269,21 +269,18 @@ export function ViewInvoiceModal({
                             </div>
                             <div className="flex justify-between font-bold text-lg">
                                 <span>TOTAL</span>
-                                <span className="text-md font-semibold">{invoice.total.toLocaleString()}</span>
+                                <span className="md:text-md font-semibold">{invoice.total.toLocaleString()}</span>
                             </div>
-                            <p className="text-right mt-4 font-bold">NGN</p>
-                            <p className="text-right font-bold text-xl">
-                                {invoice.total.toLocaleString()}
-                            </p>
+                            
                         </div>
                     </div>
                 </div>
 
                 {/* Actions - Separate container that won't be in PDF */}
-                <div className="flex justify-between pdf-exclude no-print">
+                <div className="flex gap-4 md:justify-between pdf-exclude no-print">
                     <button
                         onClick={onClose}
-                        className="rounded-lg border px-10 py-2 text-sm"
+                        className="rounded-lg border px-2 md:px-10 py-2 text-sm"
                     >
                         Cancel
                     </button>
@@ -291,7 +288,7 @@ export function ViewInvoiceModal({
                     <div className="flex gap-3">
                         <button
                             onClick={() => window.print()}
-                            className="rounded-lg border px-6 py-2 text-sm"
+                            className="rounded-lg border px-2 md:px-6 py-2 text-sm"
                         >
                             Print
                         </button>

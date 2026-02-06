@@ -288,7 +288,9 @@ export default function ExpensesPage() {
         {open && (
           <div className="absolute right-0 z-20 w-40 rounded-lg border bg-white shadow-lg">
             <ul className="text-sm">
-              {/* <li
+              {invoice?.invoice_payments?.[0]?.payment_status !== 'paid' && invoice?.invoice_payments?.[0]?.payment_status !== 'cancelled' &&
+
+              <li
                 onClick={() => {
                   handleEdit()
                   setOpen(false)
@@ -296,7 +298,8 @@ export default function ExpensesPage() {
                 className="px-4 py-2 cursor-pointer hover:bg-gray-100"
               >
                 Edit
-              </li> */}
+              </li> 
+  }
 
               {invoice?.invoice_payments?.[0]?.payment_status !== 'paid' && invoice?.invoice_payments?.[0]?.payment_status !== 'cancelled' &&
 
