@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
 import OwnerSidebar from '../components/sidebars/OwnerSidebar'
 import DashHeader from '../components/DashHeader'
+import { AdminSidebar } from '../components/sidebars/AdminSidebar'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
@@ -68,6 +69,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 >
   {role === 'owner' &&(
     <OwnerSidebar
+      userName={userProfile?.full_name}
+      onClose={() => setIsSidebarOpen(false)}
+    />
+  
+  )}
+   {role === 'admin' &&(
+    <AdminSidebar
       userName={userProfile?.full_name}
       onClose={() => setIsSidebarOpen(false)}
     />
