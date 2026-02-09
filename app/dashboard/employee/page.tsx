@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
 import { HiSearch } from 'react-icons/hi'
 import { AddEmployModal } from '@/app/components/AddEmployModal'
+import { Router } from 'next/router'
+import Link from 'next/dist/client/link'
 
 type Range =
   | 'today'
@@ -182,9 +184,11 @@ export default function EmployeesPage() {
         {open && (
           <div className="absolute right-0 z-20 w-40 rounded-lg border bg-white shadow-lg">
             <ul className="text-md">
-              <li className="px-4 py-2 cursor-pointer text-blue-600 hover:bg-gray-100">View</li>
-
-            </ul>
+              <Link href={`/dashboard/employee/${employee.id}`}>
+                <li
+                  className="px-4 py-2 cursor-pointer text-blue-600 hover:bg-gray-100">View</li>
+              </Link>
+              </ul>
           </div>
         )}
       </div>
@@ -324,7 +328,6 @@ export default function EmployeesPage() {
 
       {openModal && (
         <AddEmployModal
-          open={openModal}
           onClose={handleModalClose}
         />
       )}
