@@ -31,7 +31,7 @@ export default function CompanySetup() {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) router.push('/login')
     })
-  }, [router])
+  }, [router, supabase])
 
   /* ---------------- Submit ---------------- */
   const handleCreateCompany = async (e: React.FormEvent) => {
@@ -54,53 +54,30 @@ export default function CompanySetup() {
     setPhoneError('')
 
     try {
-const { data: sessionData } = await supabase.auth.getSession()
-const user = sessionData.session?.user
-if (!user) throw new Error('Not authenticated')
+      const { data: sessionData } = await supabase.auth.getSession()
+      const user = sessionData.session?.user
+      if (!user) throw new Error('Not authenticated')
 
-/* ---- PREVENT DUPLICATE COMPANY ---- */
-const { data: existingCompany } = await supabase
-  .from('companies')
-  .select('id')
-  .eq('owner_id', user.id)
-  .single()
+      /* ---- SINGLE RPC CALL ---- */
+      const { error: rpcError } = await supabase.rpc(
+        'create_company_and_profile',
+        {
+          p_company_name: companyName,
+          p_industry: industry,
+          p_service_type: feature,
+          p_size: size,
+          p_location: location,
+          p_full_name: fullName,
+          p_phone: phone,
+          p_email: user.email,
+        }
+      )
 
-if (existingCompany) {
-  router.push('/')
-  return
-}
+      if (rpcError) throw rpcError
 
-/* ---- CREATE COMPANY ---- */
-const { data: company, error: companyError } = await supabase
-  .from('companies')
-  .insert({
-    name: companyName,
-    industry,
-    service_type: feature,
-    owner_id: user.id,
-    size,
-    location,
-  })
-  .select()
-  .single()
-
-if (companyError) throw companyError
-
-/* ---- UPSERT PROFILE ---- */
-const { error: profileError } = await supabase
-  .from('profiles')
-  .upsert({
-    id: user.id,
-    full_name: fullName,
-    phone,
-    email: user.email,
-    company_id: company.id,
-  })
-
-if (profileError) throw profileError
- router.push('/success')
+      router.push('/success')
     } catch (err: any) {
-      alert(err.message)
+      alert(err.message || 'Something went wrong')
     } finally {
       setLoading(false)
     }
@@ -199,7 +176,7 @@ if (profileError) throw profileError
             </div>
           </div>
 
-          {/* Location (auto) */}
+          {/* Location */}
           <div className="flex flex-col gap-2 md:w-1/2">
             <label>Company Location</label>
             <input

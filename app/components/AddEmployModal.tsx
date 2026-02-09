@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
 import { createEmployeeAction } from '../actions/employee'
+import warning_icon from '../assets/warning.png'
+import Image from 'next/image'
 
 export function AddEmployModal({
-    open,
     onClose,
     employee
 }: {
-    open: boolean
     onClose: () => void
     employee?: any
 }) {
@@ -19,55 +19,55 @@ export function AddEmployModal({
 
     // form state
     // Employee table fields
-    const [name, setName] = useState('')
-    const [role, setRole] = useState('')
-    const [department, setDepartment] = useState('')
-    const [email, setEmail] = useState('')
+    const [name, setName] = useState(employee?.name ?? '')
+    const [role, setRole] = useState(employee?.role ?? '')
+    const [department, setDepartment] = useState(employee?.department ?? '')
+    const [email, setEmail] = useState(employee?.email ?? '')
     const [birthDate, setBirthDate] = useState(employee?.birth_date ?? '')
     const [phone, setPhone] = useState<string | null>(employee?.phone ?? null)
-    const [alternativePhone, setAlternativePhone] = useState<string | null>(null)
-    const [homeAddress1, setHomeAddress1] = useState<string | null>(null)
-    const [homeAddress2, setHomeAddress2] = useState<string | null>(null)
-    const [userCompanyId, setUserCompanyId] = useState<string | null>(null)
-    const [AddedBy, setAddedBy] = useState<string | null>(null)
+    const [alternativePhone, setAlternativePhone] = useState<string | null>(employee?.alternative_phone ?? null)
+    const [homeAddress1, setHomeAddress1] = useState<string | null>(employee?.home_address1 ?? null)
+    const [homeAddress2, setHomeAddress2] = useState<string | null>(employee?.home_address2 ?? null)
+    const [userCompanyId, setUserCompanyId] = useState<string | null>(employee?.user_company_id ?? null)
+    const [AddedBy, setAddedBy] = useState<string | null>(employee?.added_by ?? null)
     //employee info table fields
-    const [joinedDate, setJoinedDate] = useState<string | null>(null)
-    const [contractType, setContractType] = useState<string | null>(null)
-    const [contractEndDate, setContractEndDate] = useState<string | null>(null)
-    const [contractStartDate, setContractStartDate] = useState<string | null>(null)
-    const [probationEndDate, setProbationEndDate] = useState<string | null>(null)
-    const [nextPromotionDate, setNextPromotionDate] = useState<string | null>(null)
-    const [employeeStatus, setEmployeeStatus] = useState<string | null>(null)
+    const [joinedDate, setJoinedDate] = useState<string | null>(employee?.employee_info?.[0]?.joined_date ?? null)
+    const [contractType, setContractType] = useState<string | null>(employee?.employee_info?.[0]?.contract_type ?? null)
+    const [contractEndDate, setContractEndDate] = useState<string | null>(employee?.employee_info?.[0]?.contract_end_date ?? null)
+    const [contractStartDate, setContractStartDate] = useState<string | null>(employee?.employee_info?.[0]?.contract_start_date ?? null)
+    const [probationEndDate, setProbationEndDate] = useState<string | null>(employee?.employee_info?.[0]?.probation_end_date ?? null)
+    const [nextPromotionDate, setNextPromotionDate] = useState<string | null>(employee?.employee_info?.[0]?.next_promotion_date ?? null)
+    const [employeeStatus, setEmployeeStatus] = useState<string | null>(employee?.employee_info?.[0]?.employee_status ?? null)
 
     //salary info table fields
-    const [salaryType, setSalaryType] = useState<string | null>(null)
-    const [baseSalary, setBaseSalary] = useState<string | null>(null)
-    const [allowances, setAllowances] = useState<string | null>(null)
-    const [allowancesTypes, setAllowancesTypes] = useState<string | null>(null)
-    const [deductions, setDeductions] = useState<string | null>(null)
-    const [netSalary, setNetSalary] = useState<string | null>(null)
-    const [bankName, setBankName] = useState<string | null>(null)
-    const [bankAccountNumber, setBankAccountNumber] = useState<string | null>(null)
-    const [bankAccountName, setBankAccountName] = useState<string | null>(null)
-    const [bankRoutingNumber, setBankRoutingNumber] = useState<string | null>(null)
+    const [salaryType, setSalaryType] = useState<string | null>(employee?.salary?.[0]?.salary_type ?? null)
+    const [baseSalary, setBaseSalary] = useState<string | null>(employee?.salary?.[0]?.base_salary ?? null)
+    const [allowances, setAllowances] = useState<string | null>(employee?.salary?.[0]?.allowance ?? null)
+    const [allowancesTypes, setAllowancesTypes] = useState<string | null>(employee?.salary?.[0]?.allowance_types ?? null)
+    const [deductions, setDeductions] = useState<string | null>(employee?.salary?.[0]?.deductions ?? null)
+    const [netSalary, setNetSalary] = useState<string | null>(employee?.salary?.[0]?.net_salary ?? null)
+    const [bankName, setBankName] = useState<string | null>(employee?.salary?.[0]?.bank_name ?? null)
+    const [bankAccountNumber, setBankAccountNumber] = useState<string | null>(employee?.salary?.[0]?.account_number ?? null)
+    const [bankAccountName, setBankAccountName] = useState<string | null>(employee?.salary?.[0]?.account_name ?? null)
+    const [bankRoutingNumber, setBankRoutingNumber] = useState<string | null>(employee?.salary?.[0]?.bank_routing_number ?? null)
 
     // reference fields
-    const [emergencyContactName, setEmergencyContactName] = useState<string | null>(null)
-    const [emergencyContactPhone, setEmergencyContactPhone] = useState<string | null>(null)
-    const [emergencyContactPhone2, setEmergencyContactPhone2] = useState<string | null>(null)
-    const [emergencyContactRelationship, setEmergencyContactRelationship] = useState<string | null>(null)
-    const [emergencyContactEmail, setEmergencyContactEmail] = useState<string | null>(null)
-    const [emergencyContactCompany, setEmergencyContactCompany] = useState<string | null>(null)
-    
-    const [emergencyContactAddress, setEmergencyContactAddress] = useState<string | null>(null)
-    const [company, setCompany] = useState<string | null>(null)
+    const [emergencyContactName, setEmergencyContactName] = useState<string | null>(employee?.employee_reference?.[0]?.name ?? null)
+    const [emergencyContactPhone, setEmergencyContactPhone] = useState<string | null>(employee?.employee_reference?.[0]?.phone1 ?? null)
+    const [emergencyContactPhone2, setEmergencyContactPhone2] = useState<string | null>(employee?.employee_reference?.[0]?.phone2 ?? null)
+    const [emergencyContactRelationship, setEmergencyContactRelationship] = useState<string | null>(employee?.employee_reference?.[0]?.relationship ?? null)
+    const [emergencyContactEmail, setEmergencyContactEmail] = useState<string | null>(employee?.employee_reference?.[0]?.email ?? null)
+    const [emergencyContactCompany, setEmergencyContactCompany] = useState<string | null>(employee?.employee_reference?.[0]?.company ?? null)
+
+    const [emergencyContactAddress, setEmergencyContactAddress] = useState<string | null>(employee?.employee_reference?.[0]?.address ?? null)
+    const [company, setCompany] = useState<string | null>(employee?.employee_reference?.[0]?.company ?? null)
     const [notes, setNotes] = useState<string>('')
     // assessment fields
-    const [interViewScore, setInterviewScore] = useState<string | null>(null)
-    const [test, setTest] = useState<string | null>(null)
-    const [hiringNote, setHiringNote] = useState<string>('')
-    const [stage, setStage] = useState<string | null>(null)
-    const [interviewerName, setInterviewerName] = useState<string | null>(null)
+    const [interViewScore, setInterviewScore] = useState<string | null>(employee?.assessment?.[0]?.interview_score ?? null)
+    const [test, setTest] = useState<string | null>(employee?.assessment?.[0]?.test ?? null)
+    const [hiringNote, setHiringNote] = useState<string>(employee?.assessment?.[0]?.hiring_note ?? '')
+    const [stage, setStage] = useState<string | null>(employee?.assessment?.[0]?.stage ?? null)
+    const [interviewerName, setInterviewerName] = useState<string | null>(employee?.assessment?.[0]?.interviewer_namnull)
     const [loading, setLoading] = useState(false)
 
     const supabse = createClient()
@@ -105,7 +105,7 @@ export function AddEmployModal({
             employeeStatus, salaryType, baseSalary, allowances, allowancesTypes,
             deductions, netSalary, bankName, bankAccountNumber, bankAccountName,
             bankRoutingNumber, emergencyContactName, emergencyContactPhone,
-            emergencyContactPhone2, emergencyContactRelationship, emergencyContactEmail,emergencyContactCompany,
+            emergencyContactPhone2, emergencyContactRelationship, emergencyContactEmail, emergencyContactCompany,
             emergencyContactAddress, notes, interViewScore, test, stage,
             interviewerName, hiringNote
         })
@@ -143,7 +143,7 @@ export function AddEmployModal({
             />
 
             {/* Modal */}
-            <div className="relative z-50 mx-4 w-full max-w-7xl mt-10 max-h-[80vh] rounded-xl bg-white shadow-lg flex flex-col">
+            <div className="relative z-50 mx-4 w-full max-w-7xl md:mt-30 max-h-[90vh] rounded-xl bg-white shadow-lg flex flex-col">
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b">
@@ -237,6 +237,44 @@ export function AddEmployModal({
                                 </div>
                             </div>
 
+                            <div className='mt-6'>
+                                <h1 className="text-lg font-bold text-center mb-6">Documents</h1>
+
+                                <div className='grid grid-cols-1 md:grid-cols-3 gap-6 lg:grid-cols-5'>
+                                    {/* Mapping logic for your documents */}
+                                    {[
+                                        "Probation / Appointment Letter",
+                                        "Confirmation / Offer Letter",
+                                        "ID",
+                                        "Certificates",
+                                        "Profile Picture"
+                                    ].map((title, index) => (
+                                        <div key={index} className="flex flex-col gap-2">
+                                            <h1 className="text-sm font-medium text-gray-700">{title}</h1>
+                                            <label className="flex flex-col items-center justify-center  h-14 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                    {/* File Icon */}
+                                                    <svg className="w-8 h-8 mb-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                </div>
+                                                {/* Hidden actual file input */}
+                                                <input disabled type="file" className="hidden" />
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* The Premium Warning Box */}
+                                <div className="mt-8 flex items-center p-4 text-sm text-red-800 border border-red-100 rounded-xl bg-red-50" role="alert">
+                                    <Image src={warning_icon} alt="Warning" className="w-8 h-8 mr-2" />
+                                    <div className="text-center w-full font-medium">
+                                        Uploading documents or profile images is a premium feature. <br />
+                                        To add files, please upgrade your account. For assistance, contact support.
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
 
 
@@ -257,7 +295,7 @@ export function AddEmployModal({
                         disabled={loading}
                         onClick={handleSaveEmployee}
                         className="rounded-lg bg-blue-600 px-8 py-2 text-sm text-white
-             hover:bg-blue-700 disabled:opacity-60"
+                              hover:bg-blue-700 disabled:opacity-60"
                     >
                         {loading ? 'Saving…' : 'Save'}
                     </button>
@@ -292,8 +330,8 @@ function Input({
         <div>
             <label className="mb-1 block text-sm font-medium">{label}</label>
             <input
-                type={type}
-                value={value}
+                type={type} 
+                 value={value ?? ''}
                 disabled={disabled}
                 onChange={(e) => onChange?.(e.target.value)}
                 className="w-full rounded-lg border px-3 py-2 text-sm outline-none

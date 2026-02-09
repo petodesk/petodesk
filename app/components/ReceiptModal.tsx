@@ -39,6 +39,7 @@ export default function ReceiptModal({
       .from(el)
       .save()
   }
+  console.log('Rendering ReceiptModal with sale:', sale, '  and company:', company)
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/40">
