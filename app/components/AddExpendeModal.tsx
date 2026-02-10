@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
+import { toast } from 'react-toastify'
 
 export function AddExpendeModal({
   open,
@@ -79,7 +80,7 @@ export function AddExpendeModal({
   // ✅ Save or update
   const handleSave = async () => {
    if (!title || !categroy || !amount || !paidTo || !receiptNumber) {
-    alert('Please fill all required fields')
+    toast.error('Please fill all required fields')
     return
   }
 
@@ -163,9 +164,13 @@ export function AddExpendeModal({
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Input label="Expense Title *" value={title} onChange={settitle} />
+            <Input
+            
+            required
+            label="Expense Title *" value={title} onChange={settitle} />
             
             <Select
+            required
               label="Expense Category *"
               options={expensesCategory}
               value={categroy}
@@ -173,6 +178,7 @@ export function AddExpendeModal({
             />
 
             <Input
+            required
               label="Amount *"
               type="number"
               value={amount}
@@ -180,18 +186,22 @@ export function AddExpendeModal({
             />
 
             <Input
+            required
               label="Paid to / Vendor *"
               value={paidTo}
               onChange={setPiadTo}
             />
 
             <Input
+              required
               label="Receipt Number"
               value={receiptNumber}
               onChange={setReceiptNumber}
             />
 
-            <Input label="Note" value={note} onChange={setNote} />
+            <Input
+            required
+             label="Note" value={note} onChange={setNote} />
 
             {/* File Upload */}
             <div className="col-span-1 md:col-span-2 flex flex-col gap-4 md:flex-row md:items-end">
@@ -254,12 +264,14 @@ export function AddExpendeModal({
 function Input({
   label,
   value,
+  required = false,
   onChange,
   type = 'text',
   disabled = false,
 }: {
   label: string
   value: any
+  required?: boolean
   onChange?: (v: string) => void
   type?: string
   disabled?: boolean
@@ -271,6 +283,7 @@ function Input({
         type={type}
         value={value}
         disabled={disabled}
+        required={required}
         onChange={(e) => onChange?.(e.target.value)}
         className="w-full rounded-lg border px-3 py-2 text-sm outline-none
                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500
@@ -285,11 +298,13 @@ function Input({
 function Select({
   label,
   value,
+  required = false,
   onChange,
   options,
 }: {
   label: string
   value: string
+  required?: boolean
   onChange: (v: string) => void
   options: string[]
 }) {

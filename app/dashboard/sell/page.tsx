@@ -411,7 +411,7 @@ const filteredSales = sales.filter((sale) => {
           onClick={() => setOpen(!open)}>⋮</button>
 
         {open && (
-          <div className="absolute right-0 z-20 w-40 rounded-lg border bg-white shadow">
+          <div className="absolute right-0 z-20 w-40 rounded-lg border bg-white shadow-lg">
             <ul className="text-sm">
               {item.status !== 'Cancelled' && (
                 editingItemId === rowId ? (

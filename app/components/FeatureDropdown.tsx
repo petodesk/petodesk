@@ -48,9 +48,9 @@ export default function FeatureDropdown({ value, onChange }: FeatureDropdownProp
 
       {open && (
         <div className="absolute z-50 mt-2 max-w-xl bg-white border rounded-lg shadow-lg p-4 space-y-4">
-            <span className="text-gray-700">
-          {selected ? selected.title : 'Pick the features that suit your business'}
-        </span>
+          <span className="text-gray-700">
+            {selected ? selected.title : 'Pick the features that suit your business'}
+          </span>
           {features.map(feature => (
             <label
               key={feature.id}

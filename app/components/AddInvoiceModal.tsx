@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
 import { HiMinus, HiPlus } from 'react-icons/hi'
-
+import { toast } from 'react-toastify'
 type ItemType = 'product' | 'service'
 
 type Product = {
@@ -223,8 +223,8 @@ export function AddInvoiceModal({
 
     /* ---------------- SAVE ---------------- */
     const handleSave = async () => {
-        if (!billTo || !shipTo || !dueDate) {
-            alert('Fill required fields')
+        if (!billTo || !shipTo || !dueDate || !bankName || !accountName || !accountNumber) {
+            toast.error('Fill required fields')
             return
         }
 
@@ -233,7 +233,7 @@ export function AddInvoiceModal({
 
         try {
             if (isEdit) {
-                /* ✏️ UPDATE INVOICE ONLY */
+                /*  UPDATE INVOICE ONLY */
                 await supabase
                     .from('invoices')
                     .update({
@@ -246,7 +246,7 @@ export function AddInvoiceModal({
                     })
                     .eq('id', invoices.id)
 
-                /* ✏️ UPDATE PAYMENT INFO */
+                /*  UPDATE PAYMENT INFO */
                 await supabase
                     .from('invoice_payments')
                     .update({
@@ -523,14 +523,15 @@ export function AddInvoiceModal({
                     <Input label="Account Number" value={accountNumber} onChange={setAccountNumber} />
 
                 </div>
-                <div className="flex flex-col items-end mr-20">
-                    <h1>Subtotal = {subtotal}</h1>
-                    <h1>Tax ({taxRate}%) = {taxAmount.toLocaleString()}</h1>
-                    <h1>Total = {grandTotal}</h1>
+                <div className="flex flex-col items-end justify-end gap-1 rounded-lg border bg-gray-50 p-4 w-max">
+                    <h1 className='text-lg text-gray-900'>Subtotal = ₦{subtotal.toLocaleString()}</h1>
+                    <h1 className='text-lg text-gray-900'>Tax ({taxRate}%) = ₦{taxAmount.toLocaleString()}</h1>
+                    <h1 className='text-lg text-gray-900'>Total = ₦{grandTotal.toLocaleString()}</h1>
                 </div>
 
-                <div className="px-6 py-4 border-t flex justify-end">
-                    <button onClick={handleSave} disabled={loading} className="bg-blue-600 text-white px-8 py-2 rounded">
+                <div className="px-6 py-4 mb-4 border-t flex justify-end">
+                    <button disabled={loading} onClick={onClose} className="mr-2 px-4 py-2 border rounded cursor-pointer">Cancel</button>
+                    <button onClick={handleSave} disabled={loading} className="bg-blue-600 text-white px-8 py-2 rounded cursor-pointer disabled:opacity-70">
                      {loading ? 'Saving…' : isEdit ? 'Update' : 'Save'}
 
                     </button>
