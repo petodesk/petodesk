@@ -8,6 +8,7 @@ import IndustryDropdown from '@/app/components/IndustryDropdown'
 import CustomPhoneInput from '@/app/components/PhoneInput'
 import { createClient } from '@/app/utils/supabase/client'
 import { validatePhone } from '@/app/utils/validatePhone'
+import { ClipLoader } from 'react-spinners'
 
 export default function CompanySetup() {
   const supabase = createClient()
@@ -192,7 +193,11 @@ export default function CompanySetup() {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-3 rounded-lg disabled:bg-blue-300"
           >
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? 
+            <div className="flex items-center justify-center gap-2">
+              <ClipLoader size={20} color="#ffffff" />
+              <span>Creating Company...</span>
+            </div> : 'Create Company Account'}
           </button>
 
         </form>

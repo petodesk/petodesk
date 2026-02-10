@@ -477,12 +477,12 @@ export default function ExpensesPage() {
             </div>
           ))}
           {!loading && expenses.length === 0 && (
-            <tr>
-              <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
-                No Expense found for this period.
+            <>
+              <p className="px-4 py-10 text-center text-gray-400">
+                No Expense found for this filter.
 
-              </td>
-            </tr>
+              </p>
+            </>
           )}
         </div>
 
@@ -510,7 +510,7 @@ export default function ExpensesPage() {
               ) : filteredExpenses.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                    No expenses found for this period
+                    No expenses found for this filter.
                   </td>
                 </tr>
               ) : (

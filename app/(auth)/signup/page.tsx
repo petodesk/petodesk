@@ -5,6 +5,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PasswordInput from '@/app/components/PasswordInpup'
 import { createClient } from '@/app/utils/supabase/client'
+import { ClipLoader } from 'react-spinners'
+import { toast } from "react-toastify";
+
 
 export default function Signup() {
   const router = useRouter()
@@ -52,14 +55,16 @@ const handleSignup = async (e: React.FormEvent) => {
 
   /* ---------------- EMAIL ALREADY EXISTS ---------------- */
   if (!error && data.user && data.user.identities?.length === 0) {
-    alert('An account with this email already exists. Please sign in.')
-    router.push('/login')
+    toast.error('An account with this email already exists. Please sign in.')
+    setTimeout(() => {
+        router.push('/login')
+    }, 2000)
     return
   }
 
 
   if (error) {
-    alert(error.message)
+    toast.error(error.message)
     return
   }
 
@@ -92,6 +97,7 @@ const handleSignup = async (e: React.FormEvent) => {
                 type="email"
                 required
                 value={email}
+                disabled={loading}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full p-3 border border-gray-500 rounded-md"
 
@@ -102,6 +108,7 @@ const handleSignup = async (e: React.FormEvent) => {
               <PasswordInput
                 label="Password *"
                 value={password}
+                disabled={loading}
                 show={showPassword}
                 toggle={() => setShowPassword(!showPassword)}
                 onChange={(e: any) => setPassword(e.target.value)}
@@ -113,6 +120,7 @@ const handleSignup = async (e: React.FormEvent) => {
               <PasswordInput
                 label="Confirm Password"
                 value={confirmPassword}
+                disabled={loading}
                 show={showPassword}
                 toggle={() => setShowPassword(!showPassword)}
                 onChange={(e: any) => setConfirmPassword(e.target.value)}
@@ -135,7 +143,7 @@ const handleSignup = async (e: React.FormEvent) => {
           </div>
 
           <div className="flex items-start gap-2 text-sm text-gray-600">
-            <input type="checkbox" className="mt-1 cursor-pointer" />
+            <input disabled={loading} type="checkbox" className="mt-1 cursor-pointer" />
             <p>
               I agree to the{' '}
               <span className="text-blue-600 cursor-pointer">Terms of Service</span>{' '}
@@ -147,9 +155,13 @@ const handleSignup = async (e: React.FormEvent) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg disabled:bg-blue-300"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg disabled:bg-blue-300 cursor-pointer flex items-center justify-center gap-2 font-medium"
           >
-            {loading ? 'Creating Account....' : 'Create Account'}
+            {loading ? 
+            <div className="flex items-center justify-center gap-2">
+              <ClipLoader size={20} color="#ffffff" />
+              <span>Creating Account...</span>
+            </div> : 'Create Account'}
           </button>
 
 
@@ -162,6 +174,7 @@ const handleSignup = async (e: React.FormEvent) => {
 
           {/* Google */}
           <button
+          disabled={loading}
             type="button"
             className="w-full border py-3 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition cursor-pointer"
           >

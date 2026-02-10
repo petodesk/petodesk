@@ -4,6 +4,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import OwnerSidebar from '../components/sidebars/OwnerSidebar'
 import DashHeader from '../components/DashHeader'
 import { AdminSidebar } from '../components/sidebars/AdminSidebar'
+import { Loading } from '../components/Loading'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
@@ -35,9 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-white text-blue-600 font-medium">
-        Loading PetoDesk...
-      </div>
+      <Loading />
     )
   }
 

@@ -4,7 +4,8 @@ import { createClient } from "@/app/utils/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
+import { toast } from "react-toastify";
+import { ClipLoader } from "react-spinners";
 export default function Home() {
     const router = useRouter()
 
@@ -27,7 +28,7 @@ export default function Home() {
         setLoading(false)
 
         if (error) {
-            alert(error.message)
+            toast.error(error.message)
             return
         }
 
@@ -50,7 +51,7 @@ export default function Home() {
         setLoading(false);
 
         if (error) {
-            alert(error.message);
+            toast.error(error.message);
         } else {
             alert("Password reset link sent! Check your email.");
         }
@@ -81,6 +82,7 @@ export default function Home() {
                                 value={email}
                                 onChange={(e: any) => setEmail(e.target.value)}
                                 required
+                                disabled={loading}
                                 className="w-full px-3 py-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Enter your email"
                             />
@@ -92,6 +94,7 @@ export default function Home() {
                                 <PasswordInput
                                     label="Password *"
                                     value={password}
+                                    disabled={loading}
                                     show={showPassword}
                                     toggle={() => setShowPassword(!showPassword)}
                                     onChange={(e: any) => setPassword(e.target.value)}
@@ -114,10 +117,13 @@ export default function Home() {
                             disabled={loading}
                             className="w-full bg-blue-600 text-white font-medium py-2.5 px-4 rounded-md btn-primary flex items-center justify-center gap-2 disabled:opacity-70"
                         >
-                            {loading && (
-                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                            )}
-                            {loading ? 'Redirecting…' : 'Continue'}
+
+                            {loading ? <ClipLoader
+                            color="white"
+                                size={20}
+                                aria-label="Loading Spinner"
+                                data-testid="loader"
+                            /> : 'Continue'}
                         </button>
 
                     </form>

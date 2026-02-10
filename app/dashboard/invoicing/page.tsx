@@ -7,6 +7,7 @@ import { HiSearch } from 'react-icons/hi'
 import { AddInvoiceModal } from '@/app/components/AddInvoiceModal'
 import { ViewInvoiceModal } from '@/app/components/InvoiceModal'
 import { AllInvoiceModal } from '@/app/components/AllInvoiceModal'
+import { toast } from 'react-toastify'
 
 type Range =
   | 'today'
@@ -158,7 +159,7 @@ export default function ExpensesPage() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error fetching invoices:', error)
+      toast.error('Error fetching invoices: ' + error.message)
       setLoading(false)
       return
     }
@@ -226,7 +227,7 @@ export default function ExpensesPage() {
 
     const handleCancel = async () => {
       if (!invoice.invoice_payments?.[0]?.id) {
-        console.error('No payment record found for this invoice')
+        toast.error('No payment record found for this invoice')
         return
 
       }
@@ -242,6 +243,7 @@ export default function ExpensesPage() {
         fetchInvoices()
         setOpen(false)
       } catch (error) {
+        toast.error('Error cancelling invoice')
         console.error('Error cancelling invoice:', error)
       }
 
@@ -251,7 +253,7 @@ export default function ExpensesPage() {
 
     const handlePaid = async () => {
       if (!invoice.invoice_payments?.[0]?.id) {
-        console.error('No payment record found for this invoice')
+        toast.error('No payment record found for this invoice')
         return
       }
 
@@ -267,6 +269,7 @@ export default function ExpensesPage() {
         fetchInvoices()
         setOpen(false)
       } catch (error) {
+        toast.error('Error marking as paid')
         console.error('Error marking as paid:', error)
       }
     }

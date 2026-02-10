@@ -17,10 +17,13 @@ export function AddEmployModal({
     const supabase = createClient()
     const isEdit = !!employee
 
+    const [allowanceCart, setAllowanceCart] = useState<{ type: string, amount: number }[]>([]);
+    const [tempType, setTempType] = useState('Transport');
+    const [tempAmount, setTempAmount] = useState(0);
     // form state
     // Employee table fields
     const [name, setName] = useState(employee?.name ?? '')
-    const [role, setRole] = useState(employee?.role ?? '')
+    const [role, setRole] = useState(employee?.role ?? 'employee')
     const [department, setDepartment] = useState(employee?.department ?? '')
     const [email, setEmail] = useState(employee?.email ?? '')
     const [birthDate, setBirthDate] = useState(employee?.birth_date ?? '')
@@ -37,19 +40,18 @@ export function AddEmployModal({
     const [contractStartDate, setContractStartDate] = useState<string | null>(employee?.employee_info?.[0]?.contract_start_date ?? null)
     const [probationEndDate, setProbationEndDate] = useState<string | null>(employee?.employee_info?.[0]?.probation_end_date ?? null)
     const [nextPromotionDate, setNextPromotionDate] = useState<string | null>(employee?.employee_info?.[0]?.next_promotion_date ?? null)
-    const [employeeStatus, setEmployeeStatus] = useState<string | null>(employee?.employee_info?.[0]?.employee_status ?? null)
+    const [employeeStatus, setEmployeeStatus] = useState<string | null>(employee?.employee_info?.[0]?.employee_status ?? 'pending')
 
     //salary info table fields
     const [salaryType, setSalaryType] = useState<string | null>(employee?.salary?.[0]?.salary_type ?? null)
     const [baseSalary, setBaseSalary] = useState<string | null>(employee?.salary?.[0]?.base_salary ?? null)
     const [allowances, setAllowances] = useState<string | null>(employee?.salary?.[0]?.allowance ?? null)
-    const [allowancesTypes, setAllowancesTypes] = useState<string | null>(employee?.salary?.[0]?.allowance_types ?? null)
-    const [deductions, setDeductions] = useState<string | null>(employee?.salary?.[0]?.deductions ?? null)
-    const [netSalary, setNetSalary] = useState<string | null>(employee?.salary?.[0]?.net_salary ?? null)
+
+    const [tax_rate, setTax_rate] = useState<string | null>(employee?.salary?.[0]?.tax_rate ?? null)
+    const [pension_rate, setPensionRate] = useState<string | null>(employee?.salary?.[0]?.pension_rate ?? null)
     const [bankName, setBankName] = useState<string | null>(employee?.salary?.[0]?.bank_name ?? null)
     const [bankAccountNumber, setBankAccountNumber] = useState<string | null>(employee?.salary?.[0]?.account_number ?? null)
     const [bankAccountName, setBankAccountName] = useState<string | null>(employee?.salary?.[0]?.account_name ?? null)
-    const [bankRoutingNumber, setBankRoutingNumber] = useState<string | null>(employee?.salary?.[0]?.bank_routing_number ?? null)
 
     // reference fields
     const [emergencyContactName, setEmergencyContactName] = useState<string | null>(employee?.employee_reference?.[0]?.name ?? null)
@@ -60,17 +62,15 @@ export function AddEmployModal({
     const [emergencyContactCompany, setEmergencyContactCompany] = useState<string | null>(employee?.employee_reference?.[0]?.company ?? null)
 
     const [emergencyContactAddress, setEmergencyContactAddress] = useState<string | null>(employee?.employee_reference?.[0]?.address ?? null)
-    const [company, setCompany] = useState<string | null>(employee?.employee_reference?.[0]?.company ?? null)
     const [notes, setNotes] = useState<string>('')
     // assessment fields
     const [interViewScore, setInterviewScore] = useState<string | null>(employee?.assessment?.[0]?.interview_score ?? null)
     const [test, setTest] = useState<string | null>(employee?.assessment?.[0]?.test ?? null)
     const [hiringNote, setHiringNote] = useState<string>(employee?.assessment?.[0]?.hiring_note ?? '')
     const [stage, setStage] = useState<string | null>(employee?.assessment?.[0]?.stage ?? null)
-    const [interviewerName, setInterviewerName] = useState<string | null>(employee?.assessment?.[0]?.interviewer_namnull)
+    const [interviewerName, setInterviewerName] = useState<string | null>(employee?.assessment?.[0]?.interviewer_name ?? null)
     const [loading, setLoading] = useState(false)
 
-    const supabse = createClient()
 
     useEffect(() => {
         const getUser = async () => {
@@ -91,22 +91,72 @@ export function AddEmployModal({
         getUser()
     }, [])
 
+
+
+
+
+    const addToCart = () => {
+        if (!tempType || tempAmount <= 0) return;
+        setAllowanceCart([...allowanceCart, { type: tempType, amount: tempAmount }]);
+        setTempType('');
+        setTempAmount(0);
+    };
+
+
+    const removeFromCart = (index: number) => {
+        setAllowanceCart(allowanceCart.filter((_, i) => i !== index));
+    };
+
+
+
+
     const handleSaveEmployee = async () => {
         if (!email || !name || !role) {
-            alert("Please fill in required fields (Name, Email, Role)")
+            alert("Please fill in required fields ")
             return
         }
+        // Inside handleSaveEmployee
+        const allowancesString = allowanceCart.map(a => a.amount).join(',');
+        const allowanceTypesString = allowanceCart.map(a => a.type).join(',');
+
+
 
         setLoading(true)
         const result = await createEmployeeAction({
-            name, role, department, email, phone, alternativePhone, birthDate,
-            homeAddress1, homeAddress2, userCompanyId, joinedDate, contractType,
-            contractStartDate, contractEndDate, probationEndDate, nextPromotionDate,
-            employeeStatus, salaryType, baseSalary, allowances, allowancesTypes,
-            deductions, netSalary, bankName, bankAccountNumber, bankAccountName,
-            bankRoutingNumber, emergencyContactName, emergencyContactPhone,
-            emergencyContactPhone2, emergencyContactRelationship, emergencyContactEmail, emergencyContactCompany,
-            emergencyContactAddress, notes, interViewScore, test, stage,
+            name,
+            role,
+            department,
+            email,
+            phone,
+            alternativePhone,
+            birthDate,
+            homeAddress1,
+            homeAddress2,
+            //personal info
+            userCompanyId,
+            joinedDate,
+            contractType,
+            contractStartDate,
+            contractEndDate,
+            probationEndDate,
+            nextPromotionDate,
+            employeeStatus,
+            // Salary Details
+            salaryType, baseSalary,
+            tax_rate, pension_rate,
+           allowancesJson: allowanceCart, // Pass the allowanceCart array directly
+            //bank details
+            bankName, bankAccountNumber,
+            bankAccountName,
+            // Reference Details
+            emergencyContactName,
+            emergencyContactPhone,
+            emergencyContactPhone2,
+            emergencyContactRelationship,
+            emergencyContactEmail,
+            emergencyContactCompany,
+            emergencyContactAddress,
+            notes, interViewScore, test, stage,
             interviewerName, hiringNote
         })
 
@@ -132,7 +182,12 @@ export function AddEmployModal({
         'Operations',
         'Legal',
     ]
-    const employeeStatusOptions = ['Active', 'On Leave', 'Resigned', 'Terminated',]
+    const EmployeeStatus = [
+        'pending',
+        'active',
+        'on_leave',
+        'suspended',
+        'inactive',]
     return (
 
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -143,7 +198,7 @@ export function AddEmployModal({
             />
 
             {/* Modal */}
-            <div className="relative z-50 mx-4 w-full max-w-7xl md:mt-30 max-h-[90vh] rounded-xl bg-white shadow-lg flex flex-col">
+            <div className="relative z-50 mx-4 w-full max-w-7xl mt-20 max-h-[90vh] rounded-xl bg-white shadow-lg flex flex-col">
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b">
@@ -180,29 +235,57 @@ export function AddEmployModal({
                         <div className="border-b pb-4">
                             <h1 className="text-lg font-semibold">Employment Information</h1>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                                <Input label="Company" value={company} onChange={setCompany} />
-                                <Select options={employeeStatusOptions} label="Employee Status *" value={employeeStatus} onChange={setEmployeeStatus} />
+                                <Select options={EmployeeStatus} label="Employee Status *" value={employeeStatus} onChange={setEmployeeStatus} />
                                 <Input type='date' label="Date Joined" value={joinedDate} onChange={setJoinedDate} />
                                 <Select options={['Permanent', 'Temporary', 'Contract']} label="Contract Type *" value={contractType} onChange={setContractType} />
                                 <Input label="Contract Start Date" type="date" value={contractStartDate} onChange={setContractStartDate} />
                                 <Input label="Contract End Date" type="date" value={contractEndDate} onChange={setContractEndDate} />
                                 <Input label="Probation End Date" type="date" value={probationEndDate} onChange={setProbationEndDate} />
                                 <Input label="Next Promotion Date" type="date" value={nextPromotionDate} onChange={setNextPromotionDate} />
+                            </div>
+                        </div>
+
+                        <div className=" pb-4">
+                            <h1 className="text-lg font-semibold">Salary Information</h1>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                                 <Select label="Salary Type" options={['Monthly', 'Weekly', 'Daily']} value={salaryType} onChange={setSalaryType} />
                                 <Input label="Base Salary" type="number" value={baseSalary} onChange={setBaseSalary} />
-                                <Select label="Allowances Types" options={['Housing', 'Transport', 'Food', 'Medical', 'Other']} value={allowancesTypes} onChange={setAllowancesTypes} />
-                                <Input label="Allowance" type="number" value={allowances} onChange={setAllowances} />
-                                <Input label="Deductions" type="number" value={deductions} onChange={setDeductions} />
-                                <Input label="Net Salary" type="number" value={netSalary} onChange={setNetSalary} />
+                                <div className='flex flex-col gap-2 rounded-lg border p-4'>
+                                    {/* UI to Add Allowance */}
+                                    <Select label="Allowances Types" options={['Housing', 'Transport', 'Food', 'Medical', 'Other']} value={tempType} onChange={setTempType} />
+                                    <div className='flex flex-col gap-2'>
+                                        <h1>Allowance Amount</h1>
+
+                                        <div className='flex gap-2'>
+
+                                            <input className='input' type="number" value={tempAmount} onChange={(e) => setTempAmount(Number(e.target.value))} />
+                                            <button className='btn-primary rounded-md text-white p-2' type="button" onClick={addToCart}>Add</button>
+
+
+                                        </div>
+
+                                    </div>
+
+                                    {/* List (The "Cart") */}
+                                    <ul>
+                                        {allowanceCart.map((item, i) => (
+                                            <li key={i} className='flex justify-between'>
+                                                {item.type}: ${item.amount}
+                                                <button className='size-4 text-red-500 hover:text-red-700 cursor-pointer' onClick={() => removeFromCart(i)}>x</button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <Input label="Tax %" type="number" value={tax_rate} onChange={setTax_rate} />
+                                <Input label="Pension%" type="number" value={pension_rate} onChange={setPensionRate} />
                                 <Input label="Bank Name" value={bankName} onChange={setBankName} />
                                 <Input label="Bank Account Number" value={bankAccountNumber} onChange={setBankAccountNumber} />
                                 <Input label="Bank Account Name" value={bankAccountName} onChange={setBankAccountName} />
-                                <Input label="Bank Routing Number" value={bankRoutingNumber} onChange={setBankRoutingNumber} />
                             </div>
 
 
                         </div>
-                        <div className="border-b pb-4">
+                        <div className="pb-4">
 
                             <h1 className="text-lg font-semibold">Reference Information</h1>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -330,8 +413,8 @@ function Input({
         <div>
             <label className="mb-1 block text-sm font-medium">{label}</label>
             <input
-                type={type} 
-                 value={value ?? ''}
+                type={type}
+                value={value ?? ''}
                 disabled={disabled}
                 onChange={(e) => onChange?.(e.target.value)}
                 className="w-full rounded-lg border px-3 py-2 text-sm outline-none
@@ -359,7 +442,7 @@ function Select({
         <div>
             <label className="mb-1 block text-sm font-medium">{label}</label>
             <select
-                value={value}
+                value={value ?? ''}
                 onChange={(e) => onChange(e.target.value)}
                 className="w-full rounded-lg border px-3 py-2 text-sm outline-none
                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500"

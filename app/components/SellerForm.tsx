@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
 import { HiPlus, HiMinus } from 'react-icons/hi'
+import { toast } from 'react-toastify'
+import ClipLoader from 'react-spinners/ClipLoader'
 
 /* ---------------- TYPES ---------------- */
 
@@ -123,7 +125,7 @@ export function AddSaleModal({
     if (!selectedProduct) return
 
     if (quantity > stockQty) {
-      alert('Requested quantity exceeds stock')
+      toast.error('Requested quantity exceeds stock')
       return
     }
 
@@ -229,6 +231,7 @@ export function AddSaleModal({
               {/* Search input */}
               <input
                 type="text"
+                required
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search product by name"
@@ -495,7 +498,12 @@ export function AddSaleModal({
             disabled={loading}
             className="rounded bg-green-600 px-6 py-2 text-white cursor-pointer"
           >
-            {loading ? 'Saving…' : 'Sale'}
+            {loading ? 
+            <div>
+              <ClipLoader size={20} color="#ffffff" />
+              <span className="ml-2">Saving…</span>
+            </div>
+            : 'Sale'}
           </button>
         </div>
       </div>

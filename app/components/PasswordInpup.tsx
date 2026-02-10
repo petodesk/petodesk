@@ -3,6 +3,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa"
 interface PasswordInputProps {
     label: string
     show: boolean
+    disabled?: boolean
     toggle: () => void
     value: string 
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void 
@@ -13,7 +14,8 @@ export default function PasswordInput({
     show,
     toggle,
     value,
-    onChange
+    onChange,
+    disabled
 }: PasswordInputProps) {
     return (
         <div className="font-poppins">
@@ -26,6 +28,7 @@ export default function PasswordInput({
                     value={value} 
                     onChange={onChange} 
                     required
+                    disabled={disabled}
                 className="w-full p-3 border border-gray-500 rounded-md mt-3"
 
                 />

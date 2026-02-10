@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
 import { HiSearch } from 'react-icons/hi'
 import { AddEmployModal } from '@/app/components/AddEmployModal'
-import { Router } from 'next/router'
 import Link from 'next/dist/client/link'
 
 type Range =
@@ -99,7 +98,6 @@ export default function EmployeesPage() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error(error)
       setLoading(false)
       return
     }
@@ -314,7 +312,7 @@ export default function EmployeesPage() {
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 text-xs rounded-full 
                     ${emp.employee_info?.[0]?.employee_status === 'Active' ? 'bg-green-100 text-green-800' : emp.employee_info?.[0]?.employee_status === 'on_leave' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
-                        {emp.employee_info?.[0]?.employee_status || 'Unknown'}
+                        {emp.employee_info?.[0]?.employee_status || 'pending'}
                       </span>
                     </td>
                     <td className="px-4 py-3"><ActionMenu employee={emp} /></td>
