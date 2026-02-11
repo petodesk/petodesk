@@ -5,6 +5,8 @@ import { createClient } from '@/app/utils/supabase/client'
 import { HiSearch } from 'react-icons/hi'
 import { AddEmployModal } from '@/app/components/AddEmployModal'
 import Link from 'next/link'
+import { FadeLoader } from 'react-spinners'
+import { AllEmployeeModal } from '@/app/components/AllEmployeeModal'
 
 type Range = 'today' | 'this_week' | 'this_month' | 'this_year' | 'all'
 
@@ -20,6 +22,7 @@ type Employee = {
   created_at: string
   email: string
   phone: string
+  alt_phone?: string
   image?: string
   // Changed to handle both object or array returns from Supabase
   employee_info?: {
@@ -38,8 +41,9 @@ export default function EmployeesPage() {
 
   const [range, setRange] = useState<Range>('this_year') // Changed default to this_year for better visibility
   const [employees, setEmployees] = useState<Employee[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [openModal, setOpenModal] = useState(false)
+  const [openAllEmployeesModal, setOpenAllEmployeesModal] = useState(false)
   const [search, setSearch] = useState('')
   const [leaves, setLeaves] = useState<LeaveRequest[]>([])
 
@@ -231,7 +235,14 @@ export default function EmployeesPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center">Loading...</td></tr>
+                <tr><td colSpan={7} className="px-4 py-10 text-center justify-center">
+                <FadeLoader
+                style={{width:4}}
+                color={"#3B82F6"}
+                loading={loading}
+              />  
+                
+                </td></tr>
               ) : filteredEmployees.map((emp) => (
                 <tr key={emp.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-3">{new Date(emp.created_at).toLocaleDateString()}</td>
@@ -240,7 +251,7 @@ export default function EmployeesPage() {
                     <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">{emp.role}</span>
                   </td>
                   <td className="px-4 py-3">{emp.employee_id_slug || 'N/A'}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 capitalize">
                     <StatusBadge status={getStatus(emp)} />
                   </td>
                   <td className="px-4 py-3">
@@ -276,9 +287,9 @@ export default function EmployeesPage() {
 
                 </p>
 
-                <td className="px-4 py-3">
+                <p className="px-4 py-3">
                     <Link href={`/dashboard/employee/${emp.id}`} className="text-blue-600 hover:underline">View</Link>
-                  </td>
+                  </p>
 
 
               </div>
@@ -375,17 +386,28 @@ export default function EmployeesPage() {
           )}
 
         </div>
+        <div className="px-6 py-4 flex  justify-end">
+          {!loading && filteredEmployees.length > 1 && (
+            <button
+              onClick={() => setOpenAllEmployeesModal(true)}
+              className="text-blue-600 hover:underline text-sm mt-2 md:mt-0 cursor-pointer"  
+            >
+              View All Employees
+            </button>
+          )}
+        </div>
 
       </div>
 
       {openModal && <AddEmployModal onClose={handleModalClose} />}
+      {openAllEmployeesModal && <AllEmployeeModal loading={loading} onClose={() => setOpenAllEmployeesModal(false)} employees={employees} />} 
     </section>
   )
 }
 
 function StatusBadge({ status }: { status: string }) {
   const colorMap: Record<string, string> = {
-    Active: 'bg-green-100 text-green-800',
+    active: 'bg-green-100 text-green-800',
     on_leave: 'bg-yellow-100 text-yellow-800',
     terminated: 'bg-red-100 text-red-800',
     inactive: 'bg-gray-100 text-gray-800',
@@ -407,7 +429,7 @@ function SummaryCard({ label1, label2, label3, label4, value1, value2, value3, v
         { l: label3, v: value3 },
         { l: label4, v: value4 }
       ].map((item, i) => item.l && (
-        <div key={i} className='flex items-center justify-between py-1'>
+        <div key={i} className='flex items-center justify-between p-2 shadow-sm'>  
           <p className="text-sm text-gray-600">{item.l}</p>
           <p className="text-sm font-semibold">{item.v}</p>
         </div>
