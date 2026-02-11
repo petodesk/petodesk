@@ -17,6 +17,7 @@ export function AddEmployModal({
     const supabase = createClient()
     const isEdit = !!employee
 
+
     const [allowanceCart, setAllowanceCart] = useState<{ type: string, amount: number }[]>([]);
     const [tempType, setTempType] = useState('Transport');
     const [tempAmount, setTempAmount] = useState(0);
@@ -26,52 +27,51 @@ export function AddEmployModal({
     const [role, setRole] = useState(employee?.role ?? 'employee')
     const [department, setDepartment] = useState(employee?.department ?? '')
     const [email, setEmail] = useState(employee?.email ?? '')
-    const [birthDate, setBirthDate] = useState(employee?.birth_date ?? '')
+    const [birthDate, setBirthDate] = useState(employee?.birthday ?? '')
     const [phone, setPhone] = useState<string | null>(employee?.phone ?? null)
-    const [alternativePhone, setAlternativePhone] = useState<string | null>(employee?.alternative_phone ?? null)
+    const [alternativePhone, setAlternativePhone] = useState<string | null>(employee?.alt_phone ?? null)
     const [homeAddress1, setHomeAddress1] = useState<string | null>(employee?.home_address1 ?? null)
     const [homeAddress2, setHomeAddress2] = useState<string | null>(employee?.home_address2 ?? null)
     const [userCompanyId, setUserCompanyId] = useState<string | null>(employee?.user_company_id ?? null)
     const [AddedBy, setAddedBy] = useState<string | null>(employee?.added_by ?? null)
     //employee info table fields
-    const [joinedDate, setJoinedDate] = useState<string | null>(employee?.employee_info?.[0]?.joined_date ?? null)
-    const [contractType, setContractType] = useState<string | null>(employee?.employee_info?.[0]?.contract_type ?? null)
-    const [contractEndDate, setContractEndDate] = useState<string | null>(employee?.employee_info?.[0]?.contract_end_date ?? null)
-    const [contractStartDate, setContractStartDate] = useState<string | null>(employee?.employee_info?.[0]?.contract_start_date ?? null)
-    const [probationEndDate, setProbationEndDate] = useState<string | null>(employee?.employee_info?.[0]?.probation_end_date ?? null)
-    const [nextPromotionDate, setNextPromotionDate] = useState<string | null>(employee?.employee_info?.[0]?.next_promotion_date ?? null)
-    const [employeeStatus, setEmployeeStatus] = useState<string | null>(employee?.employee_info?.[0]?.employee_status ?? 'pending')
+    const [joinedDate, setJoinedDate] = useState<string | null>(employee?.employee_info?.joined_date ?? null)
+    const [contractType, setContractType] = useState<string | null>(employee?.employee_info?.contract_type ?? null)
+    const [contractEndDate, setContractEndDate] = useState<string | null>(employee?.employee_info?.contract_end_date ?? null)
+    const [contractStartDate, setContractStartDate] = useState<string | null>(employee?.employee_info?.contract_start_date ?? null)
+    const [probationEndDate, setProbationEndDate] = useState<string | null>(employee?.employee_info?.probation_end_date ?? null)
+    const [nextPromotionDate, setNextPromotionDate] = useState<string | null>(employee?.employee_info?.next_promotion_date ?? null)
+    const [employeeStatus, setEmployeeStatus] = useState<string | null>(employee?.employee_info?.employee_status ?? 'pending')
 
     //salary info table fields
-    const [salaryType, setSalaryType] = useState<string | null>(employee?.salary?.[0]?.salary_type ?? null)
-    const [baseSalary, setBaseSalary] = useState<string | null>(employee?.salary?.[0]?.base_salary ?? null)
-    const [allowances, setAllowances] = useState<string | null>(employee?.salary?.[0]?.allowance ?? null)
+    const [salaryType, setSalaryType] = useState<string | null>(employee?.salary?.salary_type ?? null)
+    const [baseSalary, setBaseSalary] = useState<string | null>(employee?.salary?.base_salary ?? null)
 
-    const [tax_rate, setTax_rate] = useState<string | null>(employee?.salary?.[0]?.tax_rate ?? null)
-    const [pension_rate, setPensionRate] = useState<string | null>(employee?.salary?.[0]?.pension_rate ?? null)
-    const [bankName, setBankName] = useState<string | null>(employee?.salary?.[0]?.bank_name ?? null)
-    const [bankAccountNumber, setBankAccountNumber] = useState<string | null>(employee?.salary?.[0]?.account_number ?? null)
-    const [bankAccountName, setBankAccountName] = useState<string | null>(employee?.salary?.[0]?.account_name ?? null)
+    const [tax_rate, setTax_rate] = useState<string | null>(employee?.salary?.tax_rate ?? null)
+    const [pension_rate, setPensionRate] = useState<string | null>(employee?.salary?.pension_rate ?? null)
+    const [bankName, setBankName] = useState<string | null>(employee?.salary?.bank_name ?? null)
+    const [bankAccountNumber, setBankAccountNumber] = useState<string | null>(employee?.salary?.account_number ?? null)
+    const [bankAccountName, setBankAccountName] = useState<string | null>(employee?.salary?.account_name ?? null)
 
     // reference fields
-    const [emergencyContactName, setEmergencyContactName] = useState<string | null>(employee?.employee_reference?.[0]?.name ?? null)
-    const [emergencyContactPhone, setEmergencyContactPhone] = useState<string | null>(employee?.employee_reference?.[0]?.phone1 ?? null)
-    const [emergencyContactPhone2, setEmergencyContactPhone2] = useState<string | null>(employee?.employee_reference?.[0]?.phone2 ?? null)
-    const [emergencyContactRelationship, setEmergencyContactRelationship] = useState<string | null>(employee?.employee_reference?.[0]?.relationship ?? null)
-    const [emergencyContactEmail, setEmergencyContactEmail] = useState<string | null>(employee?.employee_reference?.[0]?.email ?? null)
-    const [emergencyContactCompany, setEmergencyContactCompany] = useState<string | null>(employee?.employee_reference?.[0]?.company ?? null)
+    const [emergencyContactName, setEmergencyContactName] = useState<string | null>(employee?.employee_reference?.name ?? null)
+    const [emergencyContactPhone, setEmergencyContactPhone] = useState<string | null>(employee?.employee_reference?.phone1 ?? null)
+    const [emergencyContactPhone2, setEmergencyContactPhone2] = useState<string | null>(employee?.employee_reference?.phone2 ?? null)
+    const [emergencyContactRelationship, setEmergencyContactRelationship] = useState<string | null>(employee?.employee_reference?.relationship ?? null)
+    const [emergencyContactEmail, setEmergencyContactEmail] = useState<string | null>(employee?.employee_reference?.email ?? null)
+    const [emergencyContactCompany, setEmergencyContactCompany] = useState<string | null>(employee?.employee_reference?.company ?? null)
 
-    const [emergencyContactAddress, setEmergencyContactAddress] = useState<string | null>(employee?.employee_reference?.[0]?.address ?? null)
+    const [emergencyContactAddress, setEmergencyContactAddress] = useState<string | null>(employee?.employee_reference?.address ?? null)
     const [notes, setNotes] = useState<string>('')
     // assessment fields
-    const [interViewScore, setInterviewScore] = useState<string | null>(employee?.assessment?.[0]?.interview_score ?? null)
-    const [test, setTest] = useState<string | null>(employee?.assessment?.[0]?.test ?? null)
-    const [hiringNote, setHiringNote] = useState<string>(employee?.assessment?.[0]?.hiring_note ?? '')
-    const [stage, setStage] = useState<string | null>(employee?.assessment?.[0]?.stage ?? null)
-    const [interviewerName, setInterviewerName] = useState<string | null>(employee?.assessment?.[0]?.interviewer_name ?? null)
+    const [interViewScore, setInterviewScore] = useState<string | null>(employee?.assessment?.interview_score ?? null)
+    const [test, setTest] = useState<string | null>(employee?.assessment?.test ?? '')
+    const [hiringNote, setHiringNote] = useState<string>(employee?.assessment?.hiring_note ?? '')
+    const [stage, setStage] = useState<string | null>(employee?.assessment?.stage ?? null)
+    const [interviewerName, setInterviewerName] = useState<string | null>(employee?.assessment?.interviewer_name ?? null)
     const [loading, setLoading] = useState(false)
 
-
+console.log("Employee prop:", employee) // Debug log to check the employee prop
     useEffect(() => {
         const getUser = async () => {
             const { data: { user } } = await supabase.auth.getUser()
@@ -112,17 +112,21 @@ export function AddEmployModal({
 
     const handleSaveEmployee = async () => {
         if (!email || !name || !role) {
-            alert("Please fill in required fields ")
+            alert("Please fill in required fields")
             return
         }
-        // Inside handleSaveEmployee
-        const allowancesString = allowanceCart.map(a => a.amount).join(',');
-        const allowanceTypesString = allowanceCart.map(a => a.type).join(',');
-
-
 
         setLoading(true)
+        const authUserId = employee?.auth_user_id ?? null
+        const employeeSlug = employee?.employee_id_slug ?? null
+
         const result = await createEmployeeAction({
+            // 🔥 Critical for Edit Mode
+            employeeId: isEdit ? employee.id : null,
+            authUserId: authUserId,
+            employeeSlug: employeeSlug,
+
+            // Personal
             name,
             role,
             department,
@@ -132,8 +136,9 @@ export function AddEmployModal({
             birthDate,
             homeAddress1,
             homeAddress2,
-            //personal info
             userCompanyId,
+
+            // Employment
             joinedDate,
             contractType,
             contractStartDate,
@@ -141,14 +146,18 @@ export function AddEmployModal({
             probationEndDate,
             nextPromotionDate,
             employeeStatus,
-            // Salary Details
-            salaryType, baseSalary,
-            tax_rate, pension_rate,
-           allowancesJson: allowanceCart, // Pass the allowanceCart array directly
-            //bank details
-            bankName, bankAccountNumber,
+
+            // Salary
+            salaryType,
+            baseSalary,
+            tax_rate,
+            pension_rate,
+            allowancesJson: allowanceCart,
+            bankName,
+            bankAccountNumber,
             bankAccountName,
-            // Reference Details
+
+            // Emergency
             emergencyContactName,
             emergencyContactPhone,
             emergencyContactPhone2,
@@ -156,18 +165,34 @@ export function AddEmployModal({
             emergencyContactEmail,
             emergencyContactCompany,
             emergencyContactAddress,
-            notes, interViewScore, test, stage,
-            interviewerName, hiringNote
+            notes,
+
+            // Assessment
+            interViewScore,
+            test,
+            stage,
+            interviewerName,
+            hiringNote
         })
 
         if (result.success) {
-            alert("Employee added and Auth user created!")
+            alert(isEdit ? "Employee updated!" : "Employee added!")
             onClose()
         } else {
             alert(`Error: ${result.error}`)
         }
+
         setLoading(false)
     }
+
+
+    useEffect(() => {
+        if (employee?.salary?.allowances) {
+            setAllowanceCart(employee.salary.allowances)
+        } else {
+            setAllowanceCart([])
+        }
+    }, [employee])
 
 
 
@@ -220,7 +245,6 @@ export function AddEmployModal({
                             <h1 className="text-lg font-semibold">Personal Information</h1>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                                 <Input label=" Name *" value={name} onChange={setName} />
-                                <Select options={['admin', 'employee']} label="Role *" value={role} onChange={setRole} />
                                 <Select options={departments} label="Department *" value={department} onChange={setDepartment} />
                                 <Input label="Email *" value={email} onChange={setEmail} />
                                 <Input label="Phone" value={phone} onChange={setPhone} />

@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
 import { AddEmployModal } from '@/app/components/AddEmployModal';
+import Link from 'next/dist/client/link';
 
 type Employee = {
     id: string;
@@ -93,12 +94,41 @@ export default function EmployeeDetailsPage() {
         getFullDetails();
     }, [id]);
 
+    const handleModalClose = () => {
+        setOpen(false);
+        // Refetch employee details after closing the modal to get updated data
+        supabase
+            .from('employees')
+            .select(`
+                *,
+                employee_info (*),
+                salary (*),
+                assessment (*),
+                employee_reference (*)
+            `)
+            .eq('id', id)
+            .single()
+            .then(({ data, error }) => {
+                if (error) {
+                    console.error(error);
+                    return;
+                }
+                setEmployee({
+                    ...data,
+                    employee_info: Array.isArray(data.employee_info) ? data.employee_info[0] : data.employee_info ?? null,
+                    salary: Array.isArray(data.salary) ? data.salary[0] : data.salary ?? null,
+                    assessment: Array.isArray(data.assessment) ? data.assessment[0] : data.assessment ?? null,
+                    employee_reference: Array.isArray(data.employee_reference) ? data.employee_reference[0] : data.employee_reference ?? null,
+                });
+            });
+    };
+
     if (!employee) return <div className="p-10 text-center text-gray-500">Loading profile...</div>;
 
     // --- FINANCIAL LOGIC (Fixing the numeric fetch) ---
     const salaryData = employee?.salary;
     const allowancesArr = Array.isArray(salaryData?.allowances) ? salaryData.allowances : [];
-    
+
     // Convert strings to Numbers to ensure toLocaleString() and math works
     const totalAllowance = allowancesArr.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
     const taxAmount = Number(salaryData?.tax_amount) || 0;
@@ -163,7 +193,12 @@ export default function EmployeeDetailsPage() {
 
     return (
         <section className="w-full px-6 py-6 bg-gray-50 max-h-screen overflow-y-auto scrollbar-none">
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-20">
+                <button className='btn-secondary rounded-lg p-2'>
+                    <Link href="/dashboard/employee" className="text-gray-600 hover:text-gray-800 text-white text-sm">
+                        &larr; Back to Employees
+                    </Link>
+                </button>
                 <button
                     onClick={() => setOpen(true)}
                     className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
@@ -180,7 +215,7 @@ export default function EmployeeDetailsPage() {
                 <SummaryCard title="Performance Index" items={performanceIndex} />
                 <SummaryCard title="Behavior Indicators" items={behaviorIndicators} />
             </div>
-            
+
             <SummaryCard title="Retention Insights" items={retentionData} />
 
             <div className='mt-6 rounded-lg bg-white p-6 shadow-sm mb-6'>
@@ -310,7 +345,7 @@ export default function EmployeeDetailsPage() {
                 </div>
             </div>
 
-            {open && <AddEmployModal onClose={() => setOpen(false)} employee={employee} />}
+            {open && <AddEmployModal onClose={handleModalClose} employee={employee} />}
         </section>
     )
 }
@@ -322,7 +357,7 @@ function SummaryCard({ title, items }: { title: string, items: { label: string, 
             {items.map((item, index) => (
                 <div key={index} className='flex items-center justify-between gap-2 py-2 border-b last:border-0 border-gray-100'>
                     <p className="text-sm text-gray-600">{item.label}</p>
-                    <p className="text-sm font-semibold text-gray-800">{item.value || '—'}</p>
+                    <p className="text-sm font-semibold text-gray-800 capitalize">{item.value || '—'}</p>
                 </div>
             ))}
         </div>
