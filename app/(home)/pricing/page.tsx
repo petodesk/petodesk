@@ -1,6 +1,6 @@
 import Header from '@/app/components/Header'
 import PricingCard from '@/app/components/PricingCard'
-
+import Footer from '@/app/components/Footer'
 const pricingPlans = [
   {
     title: 'Inventory – Simple Start',
@@ -97,6 +97,8 @@ workflows, and the modules you need - Inventory, HR, or both.
         ))}
       </div>
     </section>
+      <Footer/>
+
     </>
   )
 }
