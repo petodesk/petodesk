@@ -17,6 +17,8 @@ export default function PayrollTrigger() {
   const [currentBatchStatus, setCurrentBatchStatus] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 const [lastPayPeriod, setLastPayPeriod] = useState<string | null>(null);
+const [availablePeriods, setAvailablePeriods] = useState<string[]>([]);
+const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -36,13 +38,33 @@ const [lastPayPeriod, setLastPayPeriod] = useState<string | null>(null);
 
 
 
-  useEffect(() => {
-    if (!userCompanyId) return;
+ useEffect(() => {
+  if (!userCompanyId) return;
+  fetchPayroll();
+  fetchAvailablePeriods();
+}, [userCompanyId]);
 
+const fetchAvailablePeriods = async () => {
+  if (!userCompanyId) return;
 
-    fetchPayroll();
-  }, [userCompanyId]);
+  const { data, error } = await supabase
+    .from("payroll_batches")
+    .select("pay_period")
+    .eq("company_id", userCompanyId)
+    .eq("status", "draft");
 
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  const periods = data?.map(p => p.pay_period) || [];
+  setAvailablePeriods(periods);
+
+  if (periods.length > 0) {
+    setSelectedPeriod(periods[0]); // auto-select first
+  }
+};
   const filteredPayrolls = payrolls.filter((p) => {
     const name =
       `${p.employee.name ?? ''}`.toLowerCase();
@@ -214,28 +236,42 @@ if (!batchStatus) {
   /* Finalize Payroll */
 
 
-  const handleFinalizePayroll = async () => {
-    if (!userCompanyId) return;
-    if (!lastPayPeriod) return;
+ const handleFinalizePayroll = async () => {
+  if (!userCompanyId) return;
+  if (!selectedPeriod) {
+    toast.error("No draft payroll period selected.");
+    return;
+  }
 
-    try {
-      await supabase.from('payroll_batches')
-        .update({ status: 'finalized' })
-        .eq('company_id', userCompanyId)
-        .eq('pay_period', lastPayPeriod);
-      setCurrentBatchStatus('finalized');
-      toast.success("Payroll finalized successfully.");
-    } catch (err) {
-      console.error(err);
-      toast.error("Error finalizing payroll.");
-    }
+  try {
+    // Finalize batch
+    const { error } = await supabase
+      .from("payroll_batches")
+      .update({ status: "finalized" })
+      .eq("company_id", userCompanyId)
+      .eq("pay_period", selectedPeriod);
 
+    if (error) throw error;
 
-  };
+    // Optional: lock payroll rows too
+    await supabase
+      .from("payroll")
+      .update({ status: "approved" })
+      .eq("company_id", userCompanyId)
+      .eq("pay_period", selectedPeriod);
 
-  /* -------------------------------------------------- */
-  /* Update Payroll Status */
-  /* -------------------------------------------------- */
+    toast.success(`Payroll ${selectedPeriod} finalized successfully.`);
+
+    fetchAvailablePeriods();
+    fetchPayroll();
+
+  } catch (err) {
+    console.error(err);
+    toast.error("Error finalizing payroll.");
+  }
+};
+
+  
 
 
   function ActionMenu({ payroll }: any) {
@@ -285,21 +321,30 @@ if (!batchStatus) {
             <ul className="py-1 text-sm">
 
               <li
-                onClick={() => updatePayrollStatus("paid")}
+                onClick={() => {
+                  updatePayrollStatus("paid")
+                  setOpen(false)
+                }}
                 className="cursor-pointer px-4 py-2 hover:bg-gray-100"
               >
                 Mark as Paid
               </li>
 
               <li
-                onClick={() => updatePayrollStatus("onhold")}
+                onClick={() => {
+                  updatePayrollStatus("onhold")
+                  setOpen(false)
+                }}
                 className="cursor-pointer px-4 py-2 hover:bg-gray-100"
               >
                 Hold
               </li>
 
               <li
-                onClick={viewPayslip}
+                onClick={() => {
+                  viewPayslip()
+                  setOpen(false)
+                } }
                 className="cursor-pointer px-4 py-2 hover:bg-gray-100"
               >
                 View Payslip
@@ -332,21 +377,31 @@ if (!batchStatus) {
               <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-white shadow-lg z-50">
                 <ul className="py-2 text-sm">
                   <li
-                    onClick={() => handleRunPayroll("Weekly")}
+                    onClick={() => 
+                      
+                      {handleRunPayroll("Weekly")
+                      setDropdownOpen(false)
+                      }}
                     className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                   >
                     Run Weekly Payroll
                   </li>
 
                   <li
-                    onClick={() => handleRunPayroll("biweekly")}
+                    onClick={() => {
+                      handleRunPayroll("biweekly");
+                      setDropdownOpen(false);
+                    }}
                     className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                   >
                     Run Bi-Weekly Payroll
                   </li>
 
                   <li
-                    onClick={() => handleRunPayroll("Monthly")}
+                    onClick={() => {
+                      handleRunPayroll("Monthly");
+                      setDropdownOpen(false);
+                    }}
                     className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                   >
                     Run Monthly Payroll
@@ -364,18 +419,33 @@ if (!batchStatus) {
         <div className='flex items-center'>
 
 
-          <button
-            disabled={currentBatchStatus === 'finalized'}
-            onClick={() => handleFinalizePayroll()}
-            className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors sm:w-auto cursor-pointer ${currentBatchStatus === 'finalized'
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-          >
-            {
-              `Finalize Runned Payroll`
-            }
-          </button>
+         <div className="flex gap-2 items-center">
+
+  <select
+    value={selectedPeriod}
+    onChange={(e) => setSelectedPeriod(e.target.value)}
+    className="rounded-lg border px-3 py-2 text-sm"
+  >
+    {availablePeriods.length === 0 ? (
+      <option value="">No Draft Payroll</option>
+    ) : (
+      availablePeriods.map(period => (
+        <option key={period} value={period}>
+          {period}
+        </option>
+      ))
+    )}
+  </select>
+
+  <button
+    disabled={!selectedPeriod}
+    onClick={handleFinalizePayroll}
+    className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
+  >
+    Finalize Selected
+  </button>
+
+</div>
         </div>
       </div>
 
