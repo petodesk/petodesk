@@ -272,7 +272,7 @@ console.log("Employee prop:", employee) // Debug log to check the employee prop
                         <div className=" pb-4">
                             <h1 className="text-lg font-semibold">Salary Information</h1>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                                <Select label="Salary Type" options={['Monthly', 'Weekly', 'Daily']} value={salaryType} onChange={setSalaryType} />
+                                <Select label="Salary Type" options={['Monthly', 'Weekly', 'Daily', 'Biweekly']} value={salaryType} onChange={setSalaryType} />
                                 <Input label="Base Salary" type="number" value={baseSalary} onChange={setBaseSalary} />
                                 <div className='flex flex-col gap-2 rounded-lg border p-4'>
                                     {/* UI to Add Allowance */}
