@@ -1,5 +1,6 @@
 'use client';
 
+import { formatNumber } from '@/app/utils/numberFormatter';
 import { createClient } from '@/app/utils/supabase/client';
 import { useEffect, useState } from 'react';
 import { HiSearch } from 'react-icons/hi';
@@ -378,7 +379,7 @@ setProcessingPayroll(false);
 
 
   return (
-    <section className="w-full px-6 py-6 bg-gray-50 min-h-screen">
+    <section className="w-full px-2 md:px-6 py-6 bg-gray-50 min-h-screen">
       {/* ---------------- TOP ACTION BAR ---------------- */}
       <div className='flex flex-col md:flex-row justify-between'>
 
@@ -464,7 +465,7 @@ setProcessingPayroll(false);
             <button
               disabled={!selectedPeriod}
               onClick={handleFinalizePayroll}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
+              className="rounded-lg bg-blue-600 max-sm:text-md px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
             >
               {availablePeriods.length === 0 ? (
                 <option value="">No Runned Payroll</option>
@@ -480,7 +481,7 @@ setProcessingPayroll(false);
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 lg:grid-cols-4 md:gap-10 mb-6">
         <SummaryCard
           label="Total Payroll this Month"
-          value={totalPayroll.toLocaleString()}
+          value= {formatNumber(totalPayroll)}
         />
         <SummaryCard
           label="Employees Paid"
@@ -488,11 +489,11 @@ setProcessingPayroll(false);
         />
         <SummaryCard
           label="Total Deductions"
-          value={totalDeductions.toLocaleString()}
+          value={formatNumber(totalDeductions)}
         />
         <SummaryCard
           label="Net Payroll Amount"
-          value={totalNet.toLocaleString()}
+          value={formatNumber(totalNet)}
         />
 
 
@@ -736,10 +737,10 @@ function SummaryCard({
 
 }) {
   return (
-    <div className="rounded-xl bg-white p-4 shadow-sm">
-      <p className="text-sm text-gray-500">{label}</p>
+    <div className="max-sm:flex max-sm:flex-row items-center justify-between rounded-xl bg-white p-4 shadow-sm">
+      <p className="text-md">{label}</p>
       <div className="flex items-center justify-between">
-        <p className="mt-2 text-2xl font-bold text-gray-800">
+        <p className="mt-2 text-xl md:text-2xl font-bold text-gray-800">
           {value}
         </p>
       </div>
