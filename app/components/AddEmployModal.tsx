@@ -5,6 +5,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import { createEmployeeAction } from '../actions/employee'
 import warning_icon from '../assets/warning.png'
 import Image from 'next/image'
+import { toast } from 'react-toastify'
 
 export function AddEmployModal({
     onClose,
@@ -70,8 +71,7 @@ export function AddEmployModal({
     const [stage, setStage] = useState<string | null>(employee?.assessment?.stage ?? null)
     const [interviewerName, setInterviewerName] = useState<string | null>(employee?.assessment?.interviewer_name ?? null)
     const [loading, setLoading] = useState(false)
-
-console.log("Employee prop:", employee) // Debug log to check the employee prop
+    const [errors, setErrors] = useState<Record<string, string>>({});
     useEffect(() => {
         const getUser = async () => {
             const { data: { user } } = await supabase.auth.getUser()
@@ -94,6 +94,117 @@ console.log("Employee prop:", employee) // Debug log to check the employee prop
 
 
 
+    const validateForm = () => {
+        const newErrors: Record<string, string> = {};
+
+        // Personal
+        if (!name?.trim()) newErrors.name = "Name is required";
+        if (!department?.trim()) newErrors.department = "Department is required";
+
+        if (!email?.trim()) {
+            newErrors.email = "Email is required";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            newErrors.email = "Invalid email format";
+        }
+        if(!phone?.trim() || !alternativePhone?.trim()) newErrors.phone = "Phone number is required";
+        if(phone && !/^\+?[0-9]{7,15}$/.test(phone)) {
+            newErrors.phone = "Invalid phone number format";
+        }
+        if(alternativePhone && !/^\+?[0-9]{7,15}$/.test(alternativePhone)) {
+            newErrors.alternativePhone = "Invalid alternative phone number format";
+        }
+        if(!birthDate) newErrors.birth_date = "Birth date is required";
+        if(!homeAddress1?.trim() || !homeAddress2?.trim()) newErrors.home_address_1 = "Home address is required";
+
+
+        if (!employeeStatus?.trim())
+            newErrors.employeeStatus = "Employee status is required";
+            if(!joinedDate) newErrors.joined_date = "Joined date is required";
+
+        // Employment
+        if (!contractType?.trim())
+            newErrors.contractType = "Contract type is required";
+        if(!contractStartDate) newErrors.contract_start_date = "Contract start date is required";
+        if(!contractEndDate) newErrors.contract_end_date = "Contract end date is required";
+        if(!probationEndDate) newErrors.probation_end_date = "Probation end date is required";
+        if(!nextPromotionDate) newErrors.next_promotion_date = "Next promotion date is required";
+        // Salary
+        if (!salaryType?.trim())
+            newErrors.salaryType = "Salary type is required";
+
+        if (!baseSalary || Number(baseSalary) <= 0)
+            newErrors.baseSalary = "Base salary must be greater than 0";
+
+        if (tax_rate && Number(tax_rate) < 0)
+            newErrors.tax_rate = "Tax cannot be negative";
+
+        if (pension_rate && Number(pension_rate) < 0)
+            newErrors.pension_rate = "Pension cannot be negative";
+
+        if (!bankName?.trim()) newErrors.bankName = "Bank name required";
+        if (!bankAccountNumber?.trim())
+            newErrors.bankAccountNumber = "Account number required";
+        if (!bankAccountName?.trim())
+            newErrors.bankAccountName = "Account name required";
+
+        // Emergency
+        if (!emergencyContactName?.trim())
+            newErrors.emergencyContactName = "Emergency contact name required";
+
+        if (!emergencyContactRelationship?.trim())
+            newErrors.emergencyContactRelationship = "Relationship required";
+
+        if (!emergencyContactPhone?.trim())
+            newErrors.emergencyContactPhone = "Emergency phone required";
+
+        // Assessment
+        if (!test?.trim()) newErrors.test = "Test required";
+        if (!stage?.trim()) newErrors.stage = "Stage required";
+
+        setErrors(newErrors);
+
+        return Object.keys(newErrors).length === 0;
+    };
+
+
+
+    const checkFormValidity = () => {
+  const phoneRegex = /^\+?[0-9]{7,15}$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  return (
+    name?.trim() &&
+    department?.trim() &&
+    email?.trim() &&
+    emailRegex.test(email) &&
+    phone?.trim() &&
+    phoneRegex.test(phone) &&
+    alternativePhone?.trim() &&
+    phoneRegex.test(alternativePhone) &&
+    birthDate &&
+    homeAddress1?.trim() &&
+    homeAddress2?.trim() &&
+    employeeStatus?.trim() &&
+    joinedDate &&
+    contractType?.trim() &&
+    contractStartDate &&
+    contractEndDate &&
+    probationEndDate &&
+    nextPromotionDate &&
+    salaryType?.trim() &&
+    baseSalary &&
+    Number(baseSalary) > 0 &&
+    bankName?.trim() &&
+    bankAccountNumber?.trim() &&
+    bankAccountName?.trim() &&
+    emergencyContactName?.trim() &&
+    emergencyContactRelationship?.trim() &&
+    emergencyContactPhone?.trim() &&
+    test?.trim() &&
+    stage?.trim()
+  );
+};
+const isFormValid = checkFormValidity();
 
     const addToCart = () => {
         if (!tempType || tempAmount <= 0) return;
@@ -111,10 +222,7 @@ console.log("Employee prop:", employee) // Debug log to check the employee prop
 
 
     const handleSaveEmployee = async () => {
-        if (!email || !name || !role) {
-            alert("Please fill in required fields")
-            return
-        }
+        if (!validateForm()) return;
 
         setLoading(true)
         const authUserId = employee?.auth_user_id ?? null
@@ -176,10 +284,10 @@ console.log("Employee prop:", employee) // Debug log to check the employee prop
         })
 
         if (result.success) {
-            alert(isEdit ? "Employee updated!" : "Employee added!")
+            toast.success(isEdit ? "Employee updated!" : "Employee added!")
             onClose()
         } else {
-            alert(`Error: ${result.error}`)
+            toast.error(`Error: ${result.error}`)
         }
 
         setLoading(false)
@@ -223,7 +331,7 @@ console.log("Employee prop:", employee) // Debug log to check the employee prop
             />
 
             {/* Modal */}
-            <div className="relative z-50 mx-4 w-full max-w-7xl mt-20 max-h-[90vh] rounded-xl bg-white shadow-lg flex flex-col">
+            <div className="relative z-50 mx-4 w-full max-w-7xl mt-20 max-sm:pb-10 max-h-[90vh] rounded-xl bg-white shadow-lg flex flex-col">
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b">
@@ -244,14 +352,14 @@ console.log("Employee prop:", employee) // Debug log to check the employee prop
                         <div className="border-b pb-4">
                             <h1 className="text-lg font-semibold">Personal Information</h1>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                                <Input label=" Name *" value={name} onChange={setName} />
-                                <Select options={departments} label="Department *" value={department} onChange={setDepartment} />
-                                <Input label="Email *" value={email} onChange={setEmail} />
-                                <Input label="Phone" value={phone} onChange={setPhone} />
-                                <Input label="Alternative Phone" value={alternativePhone} onChange={setAlternativePhone} />
-                                <Input label="Birth Date" type="date" value={birthDate} onChange={setBirthDate} />
-                                <Input label="Home Address 1" value={homeAddress1} onChange={setHomeAddress1} />
-                                <Input label="Home Address 2" value={homeAddress2} onChange={setHomeAddress2} />
+                                <Input error={errors.name} label=" Name *" value={name} onChange={setName} />
+                                <Select error={errors.department} options={departments} label="Department *" value={department} onChange={setDepartment} />
+                                <Input error={errors.email} label="Email *" value={email} onChange={setEmail} />
+                                <Input error={errors.phone} label="Phone" value={phone} onChange={setPhone} />
+                                <Input error={errors.alternative_phone} label="Alternative Phone" value={alternativePhone} onChange={setAlternativePhone} />
+                                <Input error={errors.birth_date} label="Birth Date" type="date" value={birthDate} onChange={setBirthDate} />
+                                <Input error={errors.home_address_1} label="Home Address 1" value={homeAddress1} onChange={setHomeAddress1} />
+                                <Input error={errors.home_address_2} label="Home Address 2" value={homeAddress2} onChange={setHomeAddress2} />
                             </div>
 
                         </div>
@@ -259,13 +367,13 @@ console.log("Employee prop:", employee) // Debug log to check the employee prop
                         <div className="border-b pb-4">
                             <h1 className="text-lg font-semibold">Employment Information</h1>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                                <Select options={EmployeeStatus} label="Employee Status *" value={employeeStatus} onChange={setEmployeeStatus} />
-                                <Input type='date' label="Date Joined" value={joinedDate} onChange={setJoinedDate} />
-                                <Select options={['Permanent', 'Temporary', 'Contract']} label="Contract Type *" value={contractType} onChange={setContractType} />
-                                <Input label="Contract Start Date" type="date" value={contractStartDate} onChange={setContractStartDate} />
-                                <Input label="Contract End Date" type="date" value={contractEndDate} onChange={setContractEndDate} />
-                                <Input label="Probation End Date" type="date" value={probationEndDate} onChange={setProbationEndDate} />
-                                <Input label="Next Promotion Date" type="date" value={nextPromotionDate} onChange={setNextPromotionDate} />
+                                <Select error={errors.employee_status} options={EmployeeStatus} label="Employee Status *" value={employeeStatus} onChange={setEmployeeStatus} />
+                                <Input error={errors.joined_date} type='date' label="Date Joined" value={joinedDate} onChange={setJoinedDate} />
+                                <Select error={errors.contract_type} options={['Permanent', 'Temporary', 'Contract']} label="Contract Type *" value={contractType} onChange={setContractType} />
+                                <Input error={errors.contract_start_date} label="Contract Start Date" type="date" value={contractStartDate} onChange={setContractStartDate} />
+                                <Input error={errors.contract_end_date} label="Contract End Date" type="date" value={contractEndDate} onChange={setContractEndDate} />
+                                <Input error={errors.probation_end_date} label="Probation End Date" type="date" value={probationEndDate} onChange={setProbationEndDate} />
+                                <Input error={errors.next_promotion_date} label="Next Promotion Date" type="date" value={nextPromotionDate} onChange={setNextPromotionDate} />
                             </div>
                         </div>
 
@@ -276,13 +384,13 @@ console.log("Employee prop:", employee) // Debug log to check the employee prop
                                 <Input label="Base Salary" type="number" value={baseSalary} onChange={setBaseSalary} />
                                 <div className='flex flex-col gap-2 rounded-lg border p-4'>
                                     {/* UI to Add Allowance */}
-                                    <Select label="Allowances Types" options={['Housing', 'Transport', 'Food', 'Medical', 'Other']} value={tempType} onChange={setTempType} />
+                                    <Select  label="Allowances Types" options={['Housing', 'Transport', 'Food', 'Medical', 'Other']} value={tempType} onChange={setTempType} />
                                     <div className='flex flex-col gap-2'>
                                         <h1>Allowance Amount</h1>
 
                                         <div className='flex gap-2'>
 
-                                            <input className='input' type="number" value={tempAmount} onChange={(e) => setTempAmount(Number(e.target.value))} />
+                                            <input required className='input' type="number" value={tempAmount} onChange={(e) => setTempAmount(Number(e.target.value))} />
                                             <button className='btn-primary rounded-md text-white p-2' type="button" onClick={addToCart}>Add</button>
 
 
@@ -300,11 +408,11 @@ console.log("Employee prop:", employee) // Debug log to check the employee prop
                                         ))}
                                     </ul>
                                 </div>
-                                <Input label="Tax %" type="number" value={tax_rate} onChange={setTax_rate} />
-                                <Input label="Pension%" type="number" value={pension_rate} onChange={setPensionRate} />
-                                <Input label="Bank Name" value={bankName} onChange={setBankName} />
-                                <Input label="Bank Account Number" value={bankAccountNumber} onChange={setBankAccountNumber} />
-                                <Input label="Bank Account Name" value={bankAccountName} onChange={setBankAccountName} />
+                                <Input error={errors.tax_rate} label="Tax %" type="number" value={tax_rate} onChange={setTax_rate} />
+                                <Input error={errors.pension_rate} label="Pension%" type="number" value={pension_rate} onChange={setPensionRate} />
+                                <Input error={errors.bank_name} label="Bank Name" value={bankName} onChange={setBankName} />
+                                <Input error={errors.bank_account_number} label="Bank Account Number" value={bankAccountNumber} onChange={setBankAccountNumber} />
+                                <Input error={errors.bank_account_name} label="Bank Account Name" value={bankAccountName} onChange={setBankAccountName} />
                             </div>
 
 
@@ -313,13 +421,13 @@ console.log("Employee prop:", employee) // Debug log to check the employee prop
 
                             <h1 className="text-lg font-semibold">Reference Information</h1>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                <Input label="Emergency Contact Name" value={emergencyContactName} onChange={setEmergencyContactName} />
-                                <Input label="Emergency Contact Phone" value={emergencyContactPhone} onChange={setEmergencyContactPhone} />
-                                <Input label="Emergency Contact Phone 2" value={emergencyContactPhone2} onChange={setEmergencyContactPhone2} />
-                                <Input label="Emergency Contact Email" value={emergencyContactEmail} onChange={setEmergencyContactEmail} />
-                                <Input label="Emergency Contact Company" value={emergencyContactCompany} onChange={setEmergencyContactCompany} />
-                                <Input label="Emergency Contact Address" value={emergencyContactAddress} onChange={setEmergencyContactAddress} />
-                                <Select options={['Spouse', 'Parent', 'Sibling', 'Friend', 'Uncle']} label="Emergency Contact Relationship *" value={emergencyContactRelationship} onChange={setEmergencyContactRelationship} />
+                                <Input error={errors.emergency_contact_name} label="Emergency Contact Name" value={emergencyContactName} onChange={setEmergencyContactName} />
+                                <Input error={errors.emergency_contact_phone} label="Emergency Contact Phone" value={emergencyContactPhone} onChange={setEmergencyContactPhone} />
+                                <Input error={errors.emergency_contact_phone2} label="Emergency Contact Phone 2" value={emergencyContactPhone2} onChange={setEmergencyContactPhone2} />
+                                <Input error={errors.emergency_contact_email} label="Emergency Contact Email" value={emergencyContactEmail} onChange={setEmergencyContactEmail} />
+                                <Input error={errors.emergency_contact_company} label="Emergency Contact Company" value={emergencyContactCompany} onChange={setEmergencyContactCompany} />
+                                <Input error={errors.emergency_contact_address} label="Emergency Contact Address" value={emergencyContactAddress} onChange={setEmergencyContactAddress} />
+                                <Select error={errors.emergency_contact_relationship} options={['Spouse', 'Parent', 'Sibling', 'Friend', 'Uncle']} label="Emergency Contact Relationship *" value={emergencyContactRelationship} onChange={setEmergencyContactRelationship} />
                                 <div className='w-full'>
                                     <label className="mb-1 block text-sm font-medium">Note</label>
                                     <textarea name="Hiring Note" id="hiringNote" value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
@@ -332,11 +440,11 @@ console.log("Employee prop:", employee) // Debug log to check the employee prop
                         <div className="border-b pb-4">
                             <h1 className="text-lg font-semibold">Recruitment & Assessment</h1>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 ">
-                                <Input label="Interview Score" value={interViewScore} onChange={setInterviewScore} />
-                                <Select options={['Appitude', 'Technical', 'Skill Assessment']} label="Test *" value={test} onChange={setTest} />
-                                <Input label="Interviewer" value={interviewerName} onChange={setInterviewerName} />
+                                <Input error={errors.interviewScore} label="Interview Score" value={interViewScore} onChange={setInterviewScore} />
+                                <Select error={errors.test} options={['Appitude', 'Technical', 'Skill Assessment']} label="Test *" value={test} onChange={setTest} />
+                                <Input error={errors.interviewerName} label="Interviewer" value={interviewerName} onChange={setInterviewerName} />
 
-                                <Select options={['Applied', 'Interviewed', 'Selected', 'Onboarded']} label="Stage *" value={stage} onChange={setStage} />
+                                <Select error={errors.stage} options={['Applied', 'Interviewed', 'Selected', 'Onboarded']} label="Stage *" value={stage} onChange={setStage} />
                                 <div className='w-full'>
                                     <label className="mb-1 block text-sm font-medium">Hiring Note</label>
                                     <textarea name="Hiring Note" id="hiringNote" value={hiringNote} onChange={(e) => setHiringNote(e.target.value)} className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
@@ -399,12 +507,15 @@ console.log("Employee prop:", employee) // Debug log to check the employee prop
                         Cancel
                     </button>
                     <button
-                        disabled={loading}
+                        disabled={loading || !isFormValid}
                         onClick={handleSaveEmployee}
-                        className="rounded-lg bg-blue-600 px-8 py-2 text-sm text-white
-                              hover:bg-blue-700 disabled:opacity-60"
+                        className={`rounded-lg px-8 py-2 text-sm text-white transition
+                                 ${loading || !isFormValid
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-blue-600 hover:bg-blue-700"
+                            }`}
                     >
-                        {loading ? 'Saving…' : 'Save'}
+                        {loading ? "Saving…" : "Save"}
                     </button>
 
                 </div>
@@ -421,65 +532,81 @@ console.log("Employee prop:", employee) // Debug log to check the employee prop
 /* ---------------- INPUT ---------------- */
 
 function Input({
-    label,
-    value,
-    onChange,
-    type = 'text',
-    disabled = false,
+  label,
+  value,
+  onChange,
+  type = "text",
+  disabled = false,
+  error,
 }: {
-    label: string
-    value: any
-    onChange?: (v: string) => void
-    type?: string
-    disabled?: boolean
+  label: string;
+  value: any;
+  onChange?: (v: string) => void;
+  type?: string;
+  disabled?: boolean;
+  error?: string;
 }) {
-    return (
-        <div>
-            <label className="mb-1 block text-sm font-medium">{label}</label>
-            <input
-                type={type}
-                value={value ?? ''}
-                disabled={disabled}
-                onChange={(e) => onChange?.(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none
-                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                   disabled:bg-gray-100"
-            />
-        </div>
-    )
+  return (
+    <div>
+      <label className="mb-1 block text-sm font-medium">{label}</label>
+      <input
+        type={type}
+        value={value ?? ""}
+        disabled={disabled}
+        onChange={(e) => onChange?.(e.target.value)}
+        className={`w-full rounded-lg border px-3 py-2 text-sm outline-none
+          ${
+            error
+              ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+              : "focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          }
+          disabled:bg-gray-100`}
+      />
+      {error && (
+        <p className="text-xs text-red-500 mt-1">{error}</p>
+      )}
+    </div>
+  );
 }
 
 /* ---------------- SELECT ---------------- */
 
 function Select({
-    label,
-    value,
-    onChange,
-    options,
+  label,
+  value,
+  onChange,
+  options,
+  error,
 }: {
-    label: string
-    value: any
-    onChange: (v: string) => void
-    options: string[]
+  label: string;
+  value: any;
+  onChange: (v: string) => void;
+  options: string[];
+  error?: string;
 }) {
-    return (
-        <div>
-            <label className="mb-1 block text-sm font-medium">{label}</label>
-            <select
-                value={value ?? ''}
-                onChange={(e) => onChange(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none
-                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-                <option value="">Select</option>
-                {options.map((opt) => (
-                    <option key={opt} value={opt}>
-                        {opt}
-                    </option>
-                ))}
-            </select>
-        </div>
-
-    )
-
+  return (
+    <div>
+      <label className="mb-1 block text-sm font-medium">{label}</label>
+      <select
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full rounded-lg border px-3 py-2 text-sm outline-none
+          ${
+            error
+              ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+              : "focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          }`}
+      >
+        <option value="">Select</option>
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+      {error && (
+        <p className="text-xs text-red-500 mt-1">{error}</p>
+      )}
+    </div>
+  );
 }
