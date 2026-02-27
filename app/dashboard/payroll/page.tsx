@@ -16,9 +16,9 @@ export default function PayrollTrigger() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentBatchStatus, setCurrentBatchStatus] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-const [lastPayPeriod, setLastPayPeriod] = useState<string | null>(null);
-const [availablePeriods, setAvailablePeriods] = useState<string[]>([]);
-const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  const [lastPayPeriod, setLastPayPeriod] = useState<string | null>(null);
+  const [availablePeriods, setAvailablePeriods] = useState<string[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -38,33 +38,33 @@ const [selectedPeriod, setSelectedPeriod] = useState<string>("");
 
 
 
- useEffect(() => {
-  if (!userCompanyId) return;
-  fetchPayroll();
-  fetchAvailablePeriods();
-}, [userCompanyId]);
+  useEffect(() => {
+    if (!userCompanyId) return;
+    fetchPayroll();
+    fetchAvailablePeriods();
+  }, [userCompanyId]);
 
-const fetchAvailablePeriods = async () => {
-  if (!userCompanyId) return;
+  const fetchAvailablePeriods = async () => {
+    if (!userCompanyId) return;
 
-  const { data, error } = await supabase
-    .from("payroll_batches")
-    .select("pay_period")
-    .eq("company_id", userCompanyId)
-    .eq("status", "draft");
+    const { data, error } = await supabase
+      .from("payroll_batches")
+      .select("pay_period")
+      .eq("company_id", userCompanyId)
+      .eq("status", "draft");
 
-  if (error) {
-    console.error(error);
-    return;
-  }
+    if (error) {
+      console.error(error);
+      return;
+    }
 
-  const periods = data?.map(p => p.pay_period) || [];
-  setAvailablePeriods(periods);
+    const periods = data?.map(p => p.pay_period) || [];
+    setAvailablePeriods(periods);
 
-  if (periods.length > 0) {
-    setSelectedPeriod(periods[0]); // auto-select first
-  }
-};
+    if (periods.length > 0) {
+      setSelectedPeriod(periods[0]); // auto-select first
+    }
+  };
   const filteredPayrolls = payrolls.filter((p) => {
     const name =
       `${p.employee.name ?? ''}`.toLowerCase();
@@ -95,8 +95,6 @@ const fetchAvailablePeriods = async () => {
   );
 
 
-
-
   const handleRunPayroll = async (frequency: string) => {
     const now = new Date();
     const year = now.getFullYear();
@@ -112,8 +110,8 @@ const fetchAvailablePeriods = async () => {
     }
 
     if (frequency === "Weekly") {
-      payrollName = `Week ${week} ${year} Payroll`;
-      payPeriod = `${year}-W${week}`;
+      payrollName = `Week ${week}-${String(month).padStart(2, "0")}-${year} Payroll`;
+      payPeriod = `${year}-${String(month).padStart(2, "0")}-W${week}`;
     }
 
     if (frequency === "Biweekly") {
@@ -121,84 +119,102 @@ const fetchAvailablePeriods = async () => {
       payrollName = `Bi-Week ${biWeek} ${year} Payroll`;
       payPeriod = `${year}-BW${biWeek}`;
     }
+    setLastPayPeriod(payPeriod);
+    setProcessingPayroll(true);
 
-setLastPayPeriod(payPeriod);
-    try {
-      const { data } = await supabase
-  .from('payroll_batches')
-  .select('status')
-  .eq('company_id', userCompanyId)
-  .eq('pay_period', payPeriod)
-  .single();
+try {
+  if (!userCompanyId) {
+    toast.error("User company not found.");
+    setProcessingPayroll(false);
+    return;
+  }
 
-const batchStatus = data?.status || null;
-setCurrentBatchStatus(batchStatus);
+  // ✅ 1️⃣ FIRST — Fetch employees
+  const { data: activeEmployees, error } = await supabase
+    .from("employees")
+    .select(`
+      id,
+      role,
+      company_id,
+      employee_info!inner(employee_status),
+      salary!inner(
+        base_salary,
+        allowances,
+        deduction,
+        net_salary,
+        salary_type
+      )
+    `)
+    .eq("company_id", userCompanyId)
+    .eq("employee_info.employee_status", "active")
+    .eq("salary.salary_type", frequency);
 
-if (!batchStatus) {
-        await supabase.from('payroll_batches').insert({
-          company_id: userCompanyId,
-          pay_period: payPeriod,
-          status: 'draft'
-        });
+  if (error) throw error;
 
-        setCurrentBatchStatus('draft');
-      }
+  // STOP HERE if no employees
+  if (!activeEmployees || activeEmployees.length === 0) {
+    toast.error(`No active ${frequency} employees found.`);
+    setProcessingPayroll(false);
+    return; // THIS PREVENTS EMPTY BATCH
+  }
+
+  // ✅ 2️⃣ NOW check if batch exists
+  const { data: existingBatch } = await supabase
+    .from("payroll_batches")
+    .select("id, status")
+    .eq("company_id", userCompanyId)
+    .eq("pay_period", payPeriod)
+    .maybeSingle();
+
+  if (existingBatch?.status === "finalized") {
+    toast.error(`Payroll for ${payPeriod} is already finalized.`);
+    setProcessingPayroll(false);
+    return;
+  }
+
+  // ✅ 3️⃣ Create batch only if employees exist
+  if (!existingBatch) {
+    await supabase.from("payroll_batches").insert({
+      company_id: userCompanyId,
+      pay_period: payPeriod,
+      status: "draft"
+    });
+  }
+
+  // ✅ 4️⃣ Now create payroll entries
+  const payrollEntries = activeEmployees.map((emp: any) => ({
+    employee_id: emp.id,
+    payroll_name: payrollName,
+    pay_period: payPeriod,
+    role: emp.role,
+    base_salary: Number(emp.salary.base_salary) || 0,
+    allowances: emp.salary.allowances,
+    deduction: emp.salary.deduction,
+    net_salary: Number(emp.salary.net_salary) || 0,
+    payroll_type: frequency,
+    company_id: emp.company_id,
+    status: "ready"
+  }));
+
+  const { error: insertError } = await supabase
+    .from("payroll")
+    .upsert(payrollEntries, {
+      onConflict: "employee_id,pay_period"
+    });
+
+  if (insertError) throw insertError;
+
+  toast.success(`${frequency} payroll processed successfully.`);
+  fetchAvailablePeriods();
+  fetchPayroll();
 
 
-      const { data: activeEmployees, error } = await supabase
-        .from("employees")
-        .select(`
-        id,
-        role,
-        company_id,
-        employee_info!inner(employee_status),
-        salary!inner(
-          base_salary,
-          allowances,
-          deduction,
-          net_salary,
-          salary_type
-        )
-      `)
-        .eq("company_id", userCompanyId)
-        .eq("employee_info.employee_status", "active")
-        .eq("salary.salary_type", frequency); // 🔥 THIS IS THE MAGIC
-      console.log("Active Employees for Payroll:", activeEmployees);
-      if (error) throw error;
+} catch (err) {
+  console.error(err);
+  toast.error("Payroll failed.");
+}
 
-      if (!activeEmployees || activeEmployees.length === 0) {
-        alert(`No ${frequency} employees found.`);
-        return;
-      }
-
-      const payrollEntries = activeEmployees.map((emp: any) => ({
-        employee_id: emp.id,
-        payroll_name: payrollName,
-        pay_period: payPeriod,
-        role: emp.role,
-        base_salary: Number(emp.salary.base_salary) || 0,
-        allowances: emp.salary.allowances,
-        deduction: emp.salary.deduction,
-        net_salary: Number(emp.salary.net_salary) || 0,
-        payroll_type: frequency,
-        company_id: emp.company_id,
-        status: "ready"
-      }));
-
-      const { error: insertError } = await supabase
-        .from("payroll")
-        .upsert(payrollEntries, {
-          onConflict: "employee_id,pay_period"
-        });
-
-      if (insertError) throw insertError;
-
-      alert(`${frequency} payroll processed successfully.`);
-      fetchPayroll();
-    } catch (err) {
-      console.error(err);
-      alert("Payroll failed.");
-    }
+setProcessingPayroll(false);
   };
   const fetchPayroll = async () => {
     setLoading(true);
@@ -234,44 +250,41 @@ if (!batchStatus) {
 
 
   /* Finalize Payroll */
+  const handleFinalizePayroll = async () => {
+    if (!userCompanyId) return;
+    if (!selectedPeriod) {
+      toast.error("No draft payroll period selected.");
+      return;
+    }
 
+    try {
+      // Finalize batch
+      const { error } = await supabase
+        .from("payroll_batches")
+        .update({ status: "finalized" })
+        .eq("company_id", userCompanyId)
+        .eq("pay_period", selectedPeriod);
 
- const handleFinalizePayroll = async () => {
-  if (!userCompanyId) return;
-  if (!selectedPeriod) {
-    toast.error("No draft payroll period selected.");
-    return;
-  }
+      if (error) throw error;
 
-  try {
-    // Finalize batch
-    const { error } = await supabase
-      .from("payroll_batches")
-      .update({ status: "finalized" })
-      .eq("company_id", userCompanyId)
-      .eq("pay_period", selectedPeriod);
+      // lock payroll rows too
+      await supabase
+        .from("payroll")
+        .update({ status: "approved" })
+        .eq("company_id", userCompanyId)
+        .eq("pay_period", selectedPeriod);
 
-    if (error) throw error;
+      toast.success(`Payroll ${selectedPeriod} finalized successfully.`);
 
-    // Optional: lock payroll rows too
-    await supabase
-      .from("payroll")
-      .update({ status: "approved" })
-      .eq("company_id", userCompanyId)
-      .eq("pay_period", selectedPeriod);
+      fetchAvailablePeriods();
+      fetchPayroll();
 
-    toast.success(`Payroll ${selectedPeriod} finalized successfully.`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Error finalizing payroll.");
+    }
+  };
 
-    fetchAvailablePeriods();
-    fetchPayroll();
-
-  } catch (err) {
-    console.error(err);
-    toast.error("Error finalizing payroll.");
-  }
-};
-
-  
 
 
   function ActionMenu({ payroll }: any) {
@@ -303,7 +316,7 @@ if (!batchStatus) {
     };
 
     const viewPayslip = () => {
-      alert(`Payroll ID: ${payroll.id}`);
+      toast.success(`Payroll ID: ${payroll.id}`);
       setOpen(false);
     };
 
@@ -319,36 +332,42 @@ if (!batchStatus) {
         {open && (
           <div className="absolute right-0 z-20 mt-2 w-44 rounded-lg border bg-white shadow-lg">
             <ul className="py-1 text-sm">
+              {payroll.status !== 'paid' && payroll.status !== "approved" && (
+                <li
+                  onClick={() => {
+                    updatePayrollStatus("paid")
+                    setOpen(false)
+                  }}
+                  className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+                >
+                  Mark as Paid
+                </li>
 
-              <li
-                onClick={() => {
-                  updatePayrollStatus("paid")
-                  setOpen(false)
-                }}
-                className="cursor-pointer px-4 py-2 hover:bg-gray-100"
-              >
-                Mark as Paid
-              </li>
+              )}
+              {payroll.status !== 'onhold' && (payroll.status !== 'paid' && payroll.status !== "approved") && (
 
-              <li
-                onClick={() => {
-                  updatePayrollStatus("onhold")
-                  setOpen(false)
-                }}
-                className="cursor-pointer px-4 py-2 hover:bg-gray-100"
-              >
-                Hold
-              </li>
+                <li
+                  onClick={() => {
+                    updatePayrollStatus("onhold")
+                    setOpen(false)
+                  }}
+                  className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+                >
+                  Hold
+                </li>
+              )}
+              {payroll.status === "approved" || payroll.status === "paid" ? (
+                <li
+                  onClick={() => {
+                    viewPayslip()
+                    setOpen(false)
+                  }}
+                  className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+                >
+                  View Payslip
+                </li>
+              ):""}
 
-              <li
-                onClick={() => {
-                  viewPayslip()
-                  setOpen(false)
-                } }
-                className="cursor-pointer px-4 py-2 hover:bg-gray-100"
-              >
-                View Payslip
-              </li>
 
             </ul>
           </div>
@@ -365,23 +384,29 @@ if (!batchStatus) {
 
 
         <div className="mb-6 flex flex-col gap-10 sm:flex-row sm:items-center">
-          <div className="relative inline-block">
+          <div className="relative">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all"
+              className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm max-sm:w-full font-bold text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all"
             >
-              Run Payroll ▾
+              {processingPayroll ? (
+                <span className="flex items-center">
+                  <span className="animate-spin mr-2">⏳</span>
+                  Processing Payroll...
+                </span>
+              ) : (
+                "Run Payroll ▾"
+              )}
             </button>
 
             {dropdownOpen && (
               <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-white shadow-lg z-50">
                 <ul className="py-2 text-sm">
                   <li
-                    onClick={() => 
-                      
-                      {handleRunPayroll("Weekly")
+                    onClick={() => {
+                      handleRunPayroll("Weekly")
                       setDropdownOpen(false)
-                      }}
+                    }}
                     className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                   >
                     Run Weekly Payroll
@@ -416,37 +441,39 @@ if (!batchStatus) {
             Payroll History
           </button>
         </div>
-        <div className='flex items-center'>
 
 
-         <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center">
 
-  <select
-    value={selectedPeriod}
-    onChange={(e) => setSelectedPeriod(e.target.value)}
-    className="rounded-lg border px-3 py-2 text-sm"
-  >
-    {availablePeriods.length === 0 ? (
-      <option value="">No Draft Payroll</option>
-    ) : (
-      availablePeriods.map(period => (
-        <option key={period} value={period}>
-          {period}
-        </option>
-      ))
-    )}
-  </select>
+            <select
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value)}
+              className="rounded-lg border px-3 py-2 text-sm"
+            >
+              {availablePeriods.length === 0 ? (
+                <option value="">No Draft Payroll</option>
+              ) : (
+                availablePeriods.map(period => (
+                  <option key={period} value={period}>
+                    {period}
+                  </option>
+                ))
+              )}
+            </select>
 
-  <button
-    disabled={!selectedPeriod}
-    onClick={handleFinalizePayroll}
-    className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
-  >
-    Finalize Selected
-  </button>
+            <button
+              disabled={!selectedPeriod}
+              onClick={handleFinalizePayroll}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
+            >
+              {availablePeriods.length === 0 ? (
+                <option value="">No Runned Payroll</option>
+              ) : (
+                `Finalize ${selectedPeriod} Payroll`
+              )}
+            </button>
 
-</div>
-        </div>
+          </div>
       </div>
 
       {/* Summary card */}
@@ -597,7 +624,6 @@ if (!batchStatus) {
         )}
       </div>
 
-
       {/* ----------------  TABLE ---------------- */}
       <div className="hidden md:block rounded-xl bg-white shadow-sm overflow-x-auto">
 
@@ -652,11 +678,31 @@ if (!batchStatus) {
                     </td>
 
                     <td className="px-4 py-3 font-semibold text-green-600">
-                      {Number(pay.net_salary).toLocaleString()}
+                  {Number(pay.net_salary).toLocaleString()}
                     </td>
 
                     <td className="px-4 py-3 capitalize">
-                      {pay.status}
+                      {pay.status === 'paid' ? (
+                <p className="px-2 py-1 text-xs font-medium text-green-800 rounded-full">
+                  Paid
+                </p>
+              ) : pay.status === 'ready' ? (
+                <p className="px-2 py-1 text-xs font-medium text-blue-800 rounded-full">
+                  Ready
+                </p>
+              ) : pay.status === 'onhold' ? (
+                <p className="px-2 py-1 text-xs font-medium text-yellow-800 rounded-full">
+                  On Hold
+                </p>
+              ) : pay.status === 'approved' ? (
+                <p className="px-2 py-1 text-xs font-medium text-purple-800 rounded-full">
+                  Approved
+                </p>
+              ) : (
+                <p className="px-2 py-1 text-xs font-medium text-gray-800 rounded-full">
+                  {pay.status}
+                </p>
+              )}
                     </td>
 
                     <td className="px-4 py-3">
