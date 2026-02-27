@@ -20,6 +20,8 @@ export default function PayrollTrigger() {
   const [lastPayPeriod, setLastPayPeriod] = useState<string | null>(null);
   const [availablePeriods, setAvailablePeriods] = useState<string[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  const [showFinalizeModal, setShowFinalizeModal] = useState(false);
+
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -99,41 +101,48 @@ export default function PayrollTrigger() {
   const handleRunPayroll = async (frequency: string) => {
     const now = new Date();
     const year = now.getFullYear();
-    const month = now.getMonth() + 1;
-    const week = Math.ceil(now.getDate() / 7);
+    const monthIndex = now.getMonth();
+    const month = monthIndex + 1;
+    const day = now.getDate();
+    const week = Math.ceil(day / 7);
 
     let payrollName = "";
     let payPeriod = "";
 
+    // ================= MONTHLY =================
     if (frequency === "Monthly") {
       payrollName = `${year}-${String(month).padStart(2, "0")} Monthly Payroll`;
       payPeriod = `${year}-${String(month).padStart(2, "0")}`;
     }
 
+    // ================= WEEKLY =================
     if (frequency === "Weekly") {
       payrollName = `Week ${week}-${String(month).padStart(2, "0")}-${year} Payroll`;
       payPeriod = `${year}-${String(month).padStart(2, "0")}-W${week}`;
     }
 
+    // ================= BIWEEKLY (1–15 / 16–End) =================
     if (frequency === "Biweekly") {
-      const biWeek = Math.ceil(week / 2);
+      const biWeek = day <= 15 ? 1 : 2;
+
       payrollName = `Bi-Week ${biWeek} ${year} Payroll`;
-      payPeriod = `${year}-BW${biWeek}`;
+      payPeriod = `${year}-${String(month).padStart(2, "0")}-BW${biWeek}`;
     }
+
     setLastPayPeriod(payPeriod);
     setProcessingPayroll(true);
 
-try {
-  if (!userCompanyId) {
-    toast.error("User company not found.");
-    setProcessingPayroll(false);
-    return;
-  }
+    try {
+      if (!userCompanyId) {
+        toast.error("User company not found.");
+        setProcessingPayroll(false);
+        return;
+      }
 
-  // ✅ 1️⃣ FIRST — Fetch employees
-  const { data: activeEmployees, error } = await supabase
-    .from("employees")
-    .select(`
+      // ✅ 1️⃣ FIRST — Fetch employees
+      const { data: activeEmployees, error } = await supabase
+        .from("employees")
+        .select(`
       id,
       role,
       company_id,
@@ -146,76 +155,76 @@ try {
         salary_type
       )
     `)
-    .eq("company_id", userCompanyId)
-    .eq("employee_info.employee_status", "active")
-    .eq("salary.salary_type", frequency);
+        .eq("company_id", userCompanyId)
+        .eq("employee_info.employee_status", "active")
+        .eq("salary.salary_type", frequency);
 
-  if (error) throw error;
+      if (error) throw error;
 
-  // STOP HERE if no employees
-  if (!activeEmployees || activeEmployees.length === 0) {
-    toast.error(`No active ${frequency} employees found.`);
+      // STOP HERE if no employees
+      if (!activeEmployees || activeEmployees.length === 0) {
+        toast.error(`No active ${frequency} employees found.`);
+        setProcessingPayroll(false);
+        return; // THIS PREVENTS EMPTY BATCH
+      }
+
+      // ✅ 2️⃣ NOW check if batch exists
+      const { data: existingBatch } = await supabase
+        .from("payroll_batches")
+        .select("id, status")
+        .eq("company_id", userCompanyId)
+        .eq("pay_period", payPeriod)
+        .maybeSingle();
+
+      if (existingBatch?.status === "finalized") {
+        toast.error(`Payroll for ${payPeriod} is already finalized.`);
+        setProcessingPayroll(false);
+        return;
+      }
+
+      // ✅ 3️⃣ Create batch only if employees exist
+      if (!existingBatch) {
+        await supabase.from("payroll_batches").insert({
+          company_id: userCompanyId,
+          pay_period: payPeriod,
+          status: "draft"
+        });
+      }
+
+      // ✅ 4️⃣ Now create payroll entries
+      const payrollEntries = activeEmployees.map((emp: any) => ({
+        employee_id: emp.id,
+        payroll_name: payrollName,
+        pay_period: payPeriod,
+        role: emp.role,
+        base_salary: Number(emp.salary.base_salary) || 0,
+        allowances: emp.salary.allowances,
+        deduction: emp.salary.deduction,
+        net_salary: Number(emp.salary.net_salary) || 0,
+        payroll_type: frequency,
+        company_id: emp.company_id,
+        status: "ready"
+      }));
+
+      const { error: insertError } = await supabase
+        .from("payroll")
+        .upsert(payrollEntries, {
+          onConflict: "employee_id,pay_period"
+        });
+
+      if (insertError) throw insertError;
+
+      toast.success(`${frequency} payroll processed successfully.`);
+      fetchAvailablePeriods();
+      fetchPayroll();
+
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Payroll failed.");
+    }
+
     setProcessingPayroll(false);
-    return; // THIS PREVENTS EMPTY BATCH
-  }
-
-  // ✅ 2️⃣ NOW check if batch exists
-  const { data: existingBatch } = await supabase
-    .from("payroll_batches")
-    .select("id, status")
-    .eq("company_id", userCompanyId)
-    .eq("pay_period", payPeriod)
-    .maybeSingle();
-
-  if (existingBatch?.status === "finalized") {
-    toast.error(`Payroll for ${payPeriod} is already finalized.`);
-    setProcessingPayroll(false);
-    return;
-  }
-
-  // ✅ 3️⃣ Create batch only if employees exist
-  if (!existingBatch) {
-    await supabase.from("payroll_batches").insert({
-      company_id: userCompanyId,
-      pay_period: payPeriod,
-      status: "draft"
-    });
-  }
-
-  // ✅ 4️⃣ Now create payroll entries
-  const payrollEntries = activeEmployees.map((emp: any) => ({
-    employee_id: emp.id,
-    payroll_name: payrollName,
-    pay_period: payPeriod,
-    role: emp.role,
-    base_salary: Number(emp.salary.base_salary) || 0,
-    allowances: emp.salary.allowances,
-    deduction: emp.salary.deduction,
-    net_salary: Number(emp.salary.net_salary) || 0,
-    payroll_type: frequency,
-    company_id: emp.company_id,
-    status: "ready"
-  }));
-
-  const { error: insertError } = await supabase
-    .from("payroll")
-    .upsert(payrollEntries, {
-      onConflict: "employee_id,pay_period"
-    });
-
-  if (insertError) throw insertError;
-
-  toast.success(`${frequency} payroll processed successfully.`);
-  fetchAvailablePeriods();
-  fetchPayroll();
-
-
-} catch (err) {
-  console.error(err);
-  toast.error("Payroll failed.");
-}
-
-setProcessingPayroll(false);
   };
   const fetchPayroll = async () => {
     setLoading(true);
@@ -224,6 +233,7 @@ setProcessingPayroll(false);
       .from('payroll')
       .select(`
         id,
+        employee_id,
         payroll_name,
         pay_period,
         role,
@@ -249,8 +259,6 @@ setProcessingPayroll(false);
     setLoading(false);
   };
 
-
-  /* Finalize Payroll */
   const handleFinalizePayroll = async () => {
     if (!userCompanyId) return;
     if (!selectedPeriod) {
@@ -259,33 +267,72 @@ setProcessingPayroll(false);
     }
 
     try {
-      // Finalize batch
-      const { error } = await supabase
+      // 1️⃣ Finalize batch
+      const { error: batchError } = await supabase
         .from("payroll_batches")
         .update({ status: "finalized" })
         .eq("company_id", userCompanyId)
         .eq("pay_period", selectedPeriod);
 
-      if (error) throw error;
+      if (batchError) throw batchError;
 
-      // lock payroll rows too
-      await supabase
+      // 2️⃣ Approve ONLY non-onhold payroll rows
+      const { error: payrollError } = await supabase
         .from("payroll")
         .update({ status: "approved" })
         .eq("company_id", userCompanyId)
-        .eq("pay_period", selectedPeriod);
+        .eq("pay_period", selectedPeriod)
+        .neq("status", "onhold"); // 👈 IMPORTANT
+
+      if (payrollError) throw payrollError;
 
       toast.success(`Payroll ${selectedPeriod} finalized successfully.`);
 
       fetchAvailablePeriods();
       fetchPayroll();
-
     } catch (err) {
       console.error(err);
       toast.error("Error finalizing payroll.");
     }
   };
 
+
+
+
+  const handleReleaseOnHoldSalary = async (payrollId: string) => {
+    if (!userCompanyId || !selectedPeriod) return;
+
+    try {
+      const { data: batch } = await supabase
+        .from("payroll_batches")
+        .select("status")
+        .eq("company_id", userCompanyId)
+        .eq("pay_period", selectedPeriod)
+        .single();
+
+      if (batch?.status !== "finalized") {
+        toast.error("Cannot release salary before payroll is finalized.");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("payroll")
+        .update({ status: "approved" })
+        .eq("company_id", userCompanyId)
+        .eq("pay_period", selectedPeriod)
+        .eq("id", payrollId)
+        .eq("status", "onhold"); // safety check
+
+      if (error) throw error;
+
+      toast.success("Employee salary released successfully.");
+
+      fetchPayroll();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to release salary.");
+    }
+  };
 
 
   function ActionMenu({ payroll }: any) {
@@ -357,6 +404,14 @@ setProcessingPayroll(false);
                   Hold
                 </li>
               )}
+              {payroll.status === "onhold" && (
+                <button
+                  onClick={() => handleReleaseOnHoldSalary(payroll.id)}
+                  className="bg-green-600 text-white px-3 py-1 rounded text-xs"
+                >
+                  Release Salary
+                </button>
+              )}
               {payroll.status === "approved" || payroll.status === "paid" ? (
                 <li
                   onClick={() => {
@@ -367,7 +422,7 @@ setProcessingPayroll(false);
                 >
                   View Payslip
                 </li>
-              ):""}
+              ) : ""}
 
 
             </ul>
@@ -415,7 +470,7 @@ setProcessingPayroll(false);
 
                   <li
                     onClick={() => {
-                      handleRunPayroll("biweekly");
+                      handleRunPayroll("Biweekly");
                       setDropdownOpen(false);
                     }}
                     className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
@@ -444,56 +499,59 @@ setProcessingPayroll(false);
         </div>
 
 
-          <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center">
 
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="rounded-lg border px-3 py-2 text-sm"
-            >
-              {availablePeriods.length === 0 ? (
-                <option value="">No Draft Payroll</option>
-              ) : (
-                availablePeriods.map(period => (
-                  <option key={period} value={period}>
-                    {period}
-                  </option>
-                ))
-              )}
-            </select>
+          <select
+            value={selectedPeriod}
+            onChange={(e) => setSelectedPeriod(e.target.value)}
+            className="rounded-lg border px-3 py-2 text-sm"
+          >
+            {availablePeriods.length === 0 ? (
+              <option value="">No Draft Payroll</option>
+            ) : (
+              availablePeriods.map(period => (
+                <option key={period} value={period}>
+                  {period}
+                </option>
+              ))
+            )}
+          </select>
 
-            <button
-              disabled={!selectedPeriod}
-              onClick={handleFinalizePayroll}
-              className="rounded-lg bg-blue-600 max-sm:text-md px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
-            >
-              {availablePeriods.length === 0 ? (
-                <option value="">No Runned Payroll</option>
-              ) : (
-                `Finalize ${selectedPeriod} Payroll`
-              )}
-            </button>
+          <button
+            disabled={!selectedPeriod}
+            onClick={() => setShowFinalizeModal(true)}
+            className="rounded-lg bg-blue-600 max-sm:text-md px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
+          >
+            {availablePeriods.length === 0 ? (
+              <option value="">No Runned Payroll</option>
+            ) : (
+              `Finalize ${selectedPeriod} Payroll`
+            )}
+          </button>
 
-          </div>
+        </div>
       </div>
 
       {/* Summary card */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 lg:grid-cols-4 md:gap-10 mb-6">
         <SummaryCard
           label="Total Payroll this Month"
-          value= {formatNumber(totalPayroll)}
+          // value= {formatNumber(totalPayroll)}
+          value={totalPayroll.toLocaleString()}
         />
         <SummaryCard
           label="Employees Paid"
+          // value={payrolls.length.toString()}
           value={payrolls.length.toString()}
         />
         <SummaryCard
           label="Total Deductions"
+          // value={formatNumber(totalDeductions)}
           value={formatNumber(totalDeductions)}
         />
         <SummaryCard
           label="Net Payroll Amount"
-          value={formatNumber(totalNet)}
+          value={totalNet.toLocaleString()}
         />
 
 
@@ -679,31 +737,31 @@ setProcessingPayroll(false);
                     </td>
 
                     <td className="px-4 py-3 font-semibold text-green-600">
-                  {Number(pay.net_salary).toLocaleString()}
+                      {Number(pay.net_salary).toLocaleString()}
                     </td>
 
                     <td className="px-4 py-3 capitalize">
                       {pay.status === 'paid' ? (
-                <p className="px-2 py-1 text-xs font-medium text-green-800 rounded-full">
-                  Paid
-                </p>
-              ) : pay.status === 'ready' ? (
-                <p className="px-2 py-1 text-xs font-medium text-blue-800 rounded-full">
-                  Ready
-                </p>
-              ) : pay.status === 'onhold' ? (
-                <p className="px-2 py-1 text-xs font-medium text-yellow-800 rounded-full">
-                  On Hold
-                </p>
-              ) : pay.status === 'approved' ? (
-                <p className="px-2 py-1 text-xs font-medium text-purple-800 rounded-full">
-                  Approved
-                </p>
-              ) : (
-                <p className="px-2 py-1 text-xs font-medium text-gray-800 rounded-full">
-                  {pay.status}
-                </p>
-              )}
+                        <p className="px-2 py-1 text-xs font-medium text-green-800 rounded-full">
+                          Paid
+                        </p>
+                      ) : pay.status === 'ready' ? (
+                        <p className="px-2 py-1 text-xs font-medium text-blue-800 rounded-full">
+                          Ready
+                        </p>
+                      ) : pay.status === 'onhold' ? (
+                        <p className="px-2 py-1 text-xs font-medium text-yellow-800 rounded-full">
+                          On Hold
+                        </p>
+                      ) : pay.status === 'approved' ? (
+                        <p className="px-2 py-1 text-xs font-medium text-purple-800 rounded-full">
+                          Approved
+                        </p>
+                      ) : (
+                        <p className="px-2 py-1 text-xs font-medium text-gray-800 rounded-full">
+                          {pay.status}
+                        </p>
+                      )}
                     </td>
 
                     <td className="px-4 py-3">
@@ -719,7 +777,44 @@ setProcessingPayroll(false);
 
 
 
+      {showFinalizeModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white rounded-lg p-6 w-[450px] shadow-lg">
+            <h2 className="text-lg font-semibold mb-4 text-red-600">
+              Finalize {selectedPeriod} Payroll
+            </h2>
 
+            <p className="text-sm text-gray-700 mb-4">
+              You are about to finalize {selectedPeriod} payroll.
+              <br /><br />
+              Once finalized, this action cannot be undone.
+              <br /><br />
+              No further changes will be allowed, and payroll cannot be processed again until the next scheduled pay date.
+              <br /><br />
+              Are you sure you want to continue?
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowFinalizeModal(false)}
+                className="px-4 py-2 border rounded cursor-pointer hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={async () => {
+                  setShowFinalizeModal(false);
+                  await handleFinalizePayroll();
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded cursor-pointer hover:bg-red-400"
+              >
+                Continue & Finalize
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </section>
   )
