@@ -39,14 +39,21 @@ type Employee = {
 export default function EmployeesPage() {
   const supabase = createClient()
 
-  const [range, setRange] = useState<Range>('this_year') // Changed default to this_year for better visibility
+  const [range, setRange] = useState<Range>('this_year') 
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(false)
   const [openModal, setOpenModal] = useState(false)
   const [openAllEmployeesModal, setOpenAllEmployeesModal] = useState(false)
   const [search, setSearch] = useState('')
   const [leaves, setLeaves] = useState<LeaveRequest[]>([])
-
+const[inActiveEmployee, setInActiveEmployee] = useState<Employee[]>([])
+const [activeEmployee, setActiveEmployee] = useState<Employee[]>([])
+const [openActiveEmployees, setOpenActiveEmployees] = useState(false)
+const [openInactiveEmployees, setOpenInactiveEmployees] = useState(false)
+const[recentHires, setRecentHires] = useState<Employee[]>([])
+const [openRecentHires, setOpenRecentHires] = useState(false)
+const [openProbationEmployees, setOpenProbationEmployees] = useState(false)
+const [probationEmployee, setProbationEmployees] = useState<Employee[]>([])
   // Helper to get nested status safely
   const getStatus = (emp: Employee) => {
     if (Array.isArray(emp.employee_info)) {
@@ -101,7 +108,24 @@ export default function EmployeesPage() {
       setLoading(false)
       return
     }
+      const activeEmps = data.filter((e)=>e.employee_info?.employee_status === 'active')
+      const inactiveEmps = data.filter((e)=>e.employee_info?.employee_status === 'inactive')
+      const recentHires = data.filter(e => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      return new Date(e.created_at) > thirtyDaysAgo;
+    })
+    const probationEmployee = data.filter(e => {
+      const info = Array.isArray(e.employee_info) ? e.employee_info[0] : e.employee_info;
+      return info?.probation_end_date && new Date(info.probation_end_date) > today;
+    })
 
+
+      setActiveEmployee(activeEmps)
+      setInActiveEmployee(inactiveEmps)
+      setRecentHires(recentHires)
+      setProbationEmployees(probationEmployee)
+      console.log(activeEmployee, inActiveEmployee, recentHires, probationEmployee)
     setEmployees(data || [])
     setLoading(false)
   }, [range, supabase])
@@ -126,7 +150,7 @@ export default function EmployeesPage() {
   today.setHours(0, 0, 0, 0)
 
   const stats = {
-    active: employees.filter(e => getStatus(e) === 'Active').length,
+    active: employees.filter(e => getStatus(e) === 'active').length,
     inactive: employees.filter(e => ['terminated', 'on_leave', 'inactive', 'Inactive'].includes(getStatus(e))).length,
     recent: employees.filter(e => {
       const thirtyDaysAgo = new Date();
@@ -183,10 +207,10 @@ export default function EmployeesPage() {
       <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <SummaryCard
           title="Employee Overview"
-          label1="Active Employees" value1={stats.active.toString()}
-          label2="Inactive Employees" value2={stats.inactive.toString()}
-          label3="Recent Hires" value3={stats.recent.toString()}
-          label4="Probation Employees" value4={stats.probation.toString()}
+          label1="Active Employees" onclick1={() => setOpenActiveEmployees(true)} value1={stats.active.toString()}
+          label2="Inactive Employees" onclick2={() => setOpenInactiveEmployees(true)} value2={stats.inactive.toString()}
+          label3="Recent Hires" onclick3={() => setOpenRecentHires(true)} value3={stats.recent.toString()}
+          label4="Probation Employees" onclick4={() => setOpenProbationEmployees(true)} value4={stats.probation.toString()}
         />
         <SummaryCard
           title="HR Action - Growth"
@@ -400,7 +424,12 @@ export default function EmployeesPage() {
       </div>
 
       {openModal && <AddEmployModal onClose={handleModalClose} />}
-      {openAllEmployeesModal && <AllEmployeeModal loading={loading} onClose={() => setOpenAllEmployeesModal(false)} employees={employees} />} 
+      {openAllEmployeesModal && <AllEmployeeModal title="All Employees" loading={loading} onClose={() => setOpenAllEmployeesModal(false)} employees={employees} />} 
+        {openActiveEmployees && <AllEmployeeModal title="Active Employees" loading={loading} onClose={() => setOpenActiveEmployees(false)} employees={activeEmployee} />}
+        {openInactiveEmployees && <AllEmployeeModal title="Inactive Employees" loading={loading} onClose={() => setOpenInactiveEmployees(false)} employees={inActiveEmployee} />}
+        {openRecentHires && <AllEmployeeModal title="Recent Hires" loading={loading} onClose={() => setOpenRecentHires(false)} employees={recentHires} />}
+        {openProbationEmployees && <AllEmployeeModal title="Probation Employees" loading={loading} onClose={() => setOpenProbationEmployees(false)} employees={probationEmployee} />}
+
     </section>
   )
 }
@@ -419,18 +448,18 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
-function SummaryCard({ label1, label2, label3, label4, value1, value2, value3, value4, title }: any) {
+function SummaryCard({ label1, label2, label3, label4, value1, value2, value3, value4, title, onclick1,onclick2, onclick3, onclick4 }: any) {
   return (
     <div className="rounded-xl bg-white p-4 shadow-sm border border-gray-100">
       <p className="text-lg font-medium text-gray-900 pb-2 border-b mb-3">{title}</p>
       {[
-        { l: label1, v: value1 },
-        { l: label2, v: value2 },
-        { l: label3, v: value3 },
-        { l: label4, v: value4 }
+        { l: label1, v: value1, onclick: onclick1 },
+        { l: label2, v: value2, onclick: onclick2 },
+        { l: label3, v: value3, onclick: onclick3 },
+        { l: label4, v: value4, onclick: onclick4 } 
       ].map((item, i) => item.l && (
-        <div key={i} className='flex items-center justify-between p-2 shadow-sm'>  
-          <p className="text-sm text-gray-600">{item.l}</p>
+        <div key={i} className='flex items-center justify-between p-2 shadow-sm cursor-pointer rounded-md hover:bg-gray-50'> 
+          <p className="text-sm text-gray-600" onClick={item.onclick}>{item.l}</p>
           <p className="text-sm font-semibold">{item.v}</p>
         </div>
       ))}

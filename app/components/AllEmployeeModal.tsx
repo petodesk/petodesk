@@ -26,10 +26,12 @@ type Employee = {
 export function AllEmployeeModal({
   onClose,
   employees,
+  title,
   loading
 }: {
   onClose: () => void
   loading: boolean
+  title:string
   employees: Employee[]
 }) {
 
@@ -56,7 +58,7 @@ export function AllEmployeeModal({
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold">All Employees</h2>
+          <h2 className="text-lg font-semibold">{title}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -135,9 +137,9 @@ export function AllEmployeeModal({
          
                          </p>
          
-                         <td className="px-4 py-3">
+                         <p className="px-4 py-3">
                              <Link href={`/dashboard/employee/${emp.id}`} className="text-blue-600 hover:underline">View</Link>
-                           </td>
+                           </p>
          
          
                        </div>
