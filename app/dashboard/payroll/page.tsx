@@ -15,6 +15,8 @@ export default function PayrollTrigger() {
   const [processingPayroll, setProcessingPayroll] = useState(false);
   const [payrollData, setPayrollData] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
+  const[payTimeFilter, setPayTimeFilter] = useState('all');
+  const [availablePayTimes, setSelectedPayTimes] = useState<string[]>([]);
   const [currentBatchStatus, setCurrentBatchStatus] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [lastPayPeriod, setLastPayPeriod] = useState<string | null>(null);
@@ -38,14 +40,37 @@ export default function PayrollTrigger() {
 
     getUser()
   }, [])
+    useEffect(() => {
+      if (!selectedPeriod || !userCompanyId) return;
+
+      const fetchBatchStatus = async () => {
+        const { data, error } = await supabase
+          .from("payroll_batches")
+          .select("status")
+          .eq("company_id", userCompanyId)
+          .eq("pay_period", selectedPeriod)
+          .single();
+
+        if (!error) {
+          setCurrentBatchStatus(data?.status ?? null);
+        }
+      };
+
+      fetchBatchStatus();
+    }, [selectedPeriod, userCompanyId]);
 
 
 
   useEffect(() => {
     if (!userCompanyId) return;
-    fetchPayroll();
     fetchAvailablePeriods();
+      availablePayTime();
   }, [userCompanyId]);
+
+  useEffect(() => {
+    if (!selectedPeriod) return;
+    fetchPayroll();
+  }, [selectedPeriod]);
 
   const fetchAvailablePeriods = async () => {
     if (!userCompanyId) return;
@@ -61,6 +86,10 @@ export default function PayrollTrigger() {
       return;
     }
 
+
+
+
+
     const periods = data?.map(p => p.pay_period) || [];
     setAvailablePeriods(periods);
 
@@ -68,6 +97,26 @@ export default function PayrollTrigger() {
       setSelectedPeriod(periods[0]); // auto-select first
     }
   };
+  
+
+  const availablePayTime  = async()=>{
+    if (!userCompanyId) return;
+
+    const { data, error } = await supabase
+      .from("payroll")
+      .select("pay_period")
+      .eq("company_id", userCompanyId)
+       .order('created_at', { ascending: false });
+      if(error){
+        console.error(error);
+        return;
+      }
+      const payTimes = data?.map(p => p.pay_period) || [];
+
+      const uniquePayTimes = Array.from(new Set(payTimes));
+      setSelectedPayTimes(uniquePayTimes);
+  }
+  
   const filteredPayrolls = payrolls.filter((p) => {
     const name =
       `${p.employee.name ?? ''}`.toLowerCase();
@@ -78,8 +127,8 @@ export default function PayrollTrigger() {
 
     const matchesStatus =
       statusFilter === 'all' || p.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
+const matchesPayrollName = payTimeFilter === 'all' || p.pay_period === payTimeFilter;
+    return matchesSearch && matchesStatus && matchesPayrollName;
   });
 
   const totalPayroll = payrolls.reduce(
@@ -226,30 +275,33 @@ export default function PayrollTrigger() {
 
     setProcessingPayroll(false);
   };
+
+
   const fetchPayroll = async () => {
+    if (!userCompanyId) return;
+
     setLoading(true);
 
     const { data, error } = await supabase
       .from('payroll')
       .select(`
+      id,
+      employee_id,
+      payroll_name,
+      pay_period,
+      role,
+      base_salary,
+      deduction,
+      net_salary,
+      status,
+      created_at,
+      employee:employees (
         id,
-        employee_id,
-        payroll_name,
-        pay_period,
-        role,
-        base_salary,
-        deduction,
-        net_salary,
-        status,
-        created_at,
-        employee:employees (
-          id,
-          name
-        )
-      `)
+        name
+      )
+    `)
       .eq('company_id', userCompanyId)
       .order('created_at', { ascending: false });
-
     if (error) {
       console.error(error);
     } else {
@@ -267,6 +319,11 @@ export default function PayrollTrigger() {
     }
 
     try {
+
+      if (currentBatchStatus === "finalized") {
+        toast.error("Payroll already finalized.");
+        return;
+      }
       // 1️⃣ Finalize batch
       const { error: batchError } = await supabase
         .from("payroll_batches")
@@ -282,11 +339,16 @@ export default function PayrollTrigger() {
         .update({ status: "approved" })
         .eq("company_id", userCompanyId)
         .eq("pay_period", selectedPeriod)
-        .neq("status", "onhold"); // 👈 IMPORTANT
+        .neq("status", "onhold"); // only update those NOT on hold
 
       if (payrollError) throw payrollError;
-
-      toast.success(`Payroll ${selectedPeriod} finalized successfully.`);
+      const { count } = await supabase
+        .from("payroll")
+        .select("*", { count: "exact", head: true })
+        .eq("company_id", userCompanyId)
+        .eq("pay_period", selectedPeriod)
+        .eq("status", "onhold");
+      toast.success(`Payroll ${selectedPeriod} finalized successfully. ${count} employee(s) on hold.`);
 
       fetchAvailablePeriods();
       fetchPayroll();
@@ -349,8 +411,9 @@ export default function PayrollTrigger() {
         const { error } = await supabase
           .from('payroll')
           .update({ status: newStatus })
-          .eq('id', payroll.id);
-
+          .eq('id', payroll.id)
+          .eq('company_id', userCompanyId)
+          .eq('pay_period', selectedPeriod);
         if (error) throw error;
 
         toast.success(`Status updated to ${newStatus}`);
@@ -407,7 +470,7 @@ export default function PayrollTrigger() {
               {payroll.status === "onhold" && (
                 <button
                   onClick={() => handleReleaseOnHoldSalary(payroll.id)}
-                  className="bg-green-600 text-white px-3 py-1 rounded text-xs"
+                  className="bg-green-600 text-white px-3 py-1 rounded text-xs cursor-pointer hover:bg-green-700 transition-colors"
                 >
                   Release Salary
                 </button>
@@ -533,32 +596,32 @@ export default function PayrollTrigger() {
       </div>
 
       {/* Summary card */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 lg:grid-cols-4 md:gap-10 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 lg:grid-cols-4 md:gap-5 mb-6">
         <SummaryCard
-          label="Total Payroll this Month"
-          // value= {formatNumber(totalPayroll)}
-          value={totalPayroll.toLocaleString()}
+          label={`Total Payroll This Month `}
+          value= {formatNumber(totalPayroll)}
+          // value={totalPayroll.toLocaleString()}
         />
         <SummaryCard
-          label="Employees Paid"
+          label={`Employees Paid`}
           // value={payrolls.length.toString()}
           value={payrolls.length.toString()}
         />
         <SummaryCard
-          label="Total Deductions"
-          // value={formatNumber(totalDeductions)}
+          label={`Total Deductions`}
           value={formatNumber(totalDeductions)}
+          // value={formatNumber(totalDeductions)}
         />
         <SummaryCard
           label="Net Payroll Amount"
-          value={totalNet.toLocaleString()}
+          value={formatNumber(totalNet)}
         />
 
 
 
       </div>
 
-      <div className="flex flex-col-reverse w-full md:flex-row gap-3 mb-4 items-center justify-between">
+      <div className="flex flex-col w-full gap-3 mb-4 ">
         {/* Search */}
         <div className="flex w-full items-center flex-1 rounded-xl bg-gray-100 px-3 py-2">
           <HiSearch className="text-gray-500" size={32} />
@@ -572,6 +635,9 @@ export default function PayrollTrigger() {
         </div>
 
         {/* Status Filter */}
+        <div className='flex flex-col gap-3 md:flex-row justify-between'>
+
+    
         <div className='flex gap-2 items-center'>
           <h1>Filter by Status</h1>
           <select
@@ -586,7 +652,24 @@ export default function PayrollTrigger() {
             <option value="approved">Approved</option>
           </select>
         </div>
+        {/* filter by payroll name */}
+        <div className='flex items-center gap-2'>
+          <h1>Filter by Pay Time</h1>
+            <select
+              value={payTimeFilter}
+              onChange={(e) => setPayTimeFilter(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm"
+            >
+              <option value="all">All Payrolls</option>
+              {availablePayTimes.map(period => (
+                <option key={period} value={period}>
+                  {period}
+                </option>
+              ))}
+            </select>
+        </div> 
       </div>
+          </div>
 
 
       {/* mobile card */}
