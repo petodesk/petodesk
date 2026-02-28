@@ -458,8 +458,9 @@ function SummaryCard({ label1, label2, label3, label4, value1, value2, value3, v
         { l: label3, v: value3, onclick: onclick3 },
         { l: label4, v: value4, onclick: onclick4 } 
       ].map((item, i) => item.l && (
-        <div key={i} className='flex items-center justify-between p-2 shadow-sm cursor-pointer rounded-md hover:bg-gray-50'> 
-          <p className="text-sm text-gray-600" onClick={item.onclick}>{item.l}</p>
+       
+        <div key={i} className='flex items-center justify-between p-2 shadow-sm cursor-pointer rounded-md hover:bg-gray-50' onClick={item.onclick}> 
+          <p className="text-sm text-gray-600">{item.l}</p>
           <p className="text-sm font-semibold">{item.v}</p>
         </div>
       ))}
