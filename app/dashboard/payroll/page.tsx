@@ -13,7 +13,6 @@ export default function PayrollTrigger() {
   const [payrolls, setPayrolls] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [processingPayroll, setProcessingPayroll] = useState(false);
-  const [payrollData, setPayrollData] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const[payTimeFilter, setPayTimeFilter] = useState('all');
   const [availablePayTimes, setSelectedPayTimes] = useState<string[]>([]);
@@ -65,12 +64,10 @@ export default function PayrollTrigger() {
     if (!userCompanyId) return;
     fetchAvailablePeriods();
       availablePayTime();
+      fetchPayroll();
   }, [userCompanyId]);
 
-  useEffect(() => {
-    if (!selectedPeriod) return;
-    fetchPayroll();
-  }, [selectedPeriod]);
+
 
   const fetchAvailablePeriods = async () => {
     if (!userCompanyId) return;
@@ -116,7 +113,6 @@ export default function PayrollTrigger() {
       const uniquePayTimes = Array.from(new Set(payTimes));
       setSelectedPayTimes(uniquePayTimes);
   }
-  
   const filteredPayrolls = payrolls.filter((p) => {
     const name =
       `${p.employee.name ?? ''}`.toLowerCase();
@@ -130,7 +126,7 @@ export default function PayrollTrigger() {
 const matchesPayrollName = payTimeFilter === 'all' || p.pay_period === payTimeFilter;
     return matchesSearch && matchesStatus && matchesPayrollName;
   });
-
+console.log(filteredPayrolls)
   const totalPayroll = payrolls.reduce(
     (sum, p) => sum + Number(p.base_salary || 0),
     0
@@ -310,6 +306,8 @@ const matchesPayrollName = payTimeFilter === 'all' || p.pay_period === payTimeFi
 
     setLoading(false);
   };
+
+
 
   const handleFinalizePayroll = async () => {
     if (!userCompanyId) return;
