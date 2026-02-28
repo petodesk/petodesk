@@ -106,15 +106,12 @@ export function AddEmployModal({
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             newErrors.email = "Invalid email format";
         }
-        if(!phone?.trim() || !alternativePhone?.trim()) newErrors.phone = "Phone number is required";
+        if(!phone?.trim()) newErrors.phone = "Phone number is required";
         if(phone && !/^\+?[0-9]{7,15}$/.test(phone)) {
             newErrors.phone = "Invalid phone number format";
         }
-        if(alternativePhone && !/^\+?[0-9]{7,15}$/.test(alternativePhone)) {
-            newErrors.alternativePhone = "Invalid alternative phone number format";
-        }
+       
         if(!birthDate) newErrors.birth_date = "Birth date is required";
-        if(!homeAddress1?.trim() || !homeAddress2?.trim()) newErrors.home_address_1 = "Home address is required";
 
 
         if (!employeeStatus?.trim())
@@ -141,22 +138,6 @@ export function AddEmployModal({
         if (pension_rate && Number(pension_rate) < 0)
             newErrors.pension_rate = "Pension cannot be negative";
 
-        if (!bankName?.trim()) newErrors.bankName = "Bank name required";
-        if (!bankAccountNumber?.trim())
-            newErrors.bankAccountNumber = "Account number required";
-        if (!bankAccountName?.trim())
-            newErrors.bankAccountName = "Account name required";
-
-        // Emergency
-        if (!emergencyContactName?.trim())
-            newErrors.emergencyContactName = "Emergency contact name required";
-
-        if (!emergencyContactRelationship?.trim())
-            newErrors.emergencyContactRelationship = "Relationship required";
-
-        if (!emergencyContactPhone?.trim())
-            newErrors.emergencyContactPhone = "Emergency phone required";
-
         // Assessment
         if (!test?.trim()) newErrors.test = "Test required";
         if (!stage?.trim()) newErrors.stage = "Stage required";
@@ -179,11 +160,8 @@ export function AddEmployModal({
     emailRegex.test(email) &&
     phone?.trim() &&
     phoneRegex.test(phone) &&
-    alternativePhone?.trim() &&
-    phoneRegex.test(alternativePhone) &&
     birthDate &&
     homeAddress1?.trim() &&
-    homeAddress2?.trim() &&
     employeeStatus?.trim() &&
     joinedDate &&
     contractType?.trim() &&
@@ -194,12 +172,7 @@ export function AddEmployModal({
     salaryType?.trim() &&
     baseSalary &&
     Number(baseSalary) > 0 &&
-    bankName?.trim() &&
-    bankAccountNumber?.trim() &&
-    bankAccountName?.trim() &&
-    emergencyContactName?.trim() &&
-    emergencyContactRelationship?.trim() &&
-    emergencyContactPhone?.trim() &&
+   
     test?.trim() &&
     stage?.trim()
   );
