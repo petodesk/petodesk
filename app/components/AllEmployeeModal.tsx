@@ -137,7 +137,7 @@ export function AllEmployeeModal({
          
                          </p>
          
-                         <p className="px-4 py-3">
+                         <p className="px-4 py-2 bg-blue-100 text-blue-800 text-xs rounded-full">
                              <Link href={`/dashboard/employee/${emp.id}`} className="text-blue-600 hover:underline">View</Link>
                            </p>
          
