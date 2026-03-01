@@ -431,6 +431,42 @@ export default function PayrollTrigger() {
       setOpen(false);
     };
 
+    
+  const handleReleaseOnHoldSalary = async () => {
+    if (!userCompanyId) return;
+
+    try {
+      const { data: batch } = await supabase
+        .from("payroll_batches")
+        .select("status")
+        .eq("company_id", userCompanyId)
+        .eq("pay_period", payroll.pay_period)
+        .single();
+
+      if (batch?.status !== "finalized") {
+        toast.error("Cannot release salary before payroll is finalized.");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("payroll")
+        .update({ status: "approved" })
+        .eq("company_id", userCompanyId)
+        .eq("pay_period", payroll.pay_period)
+        .eq("id", payroll.id)
+        .eq("status", "onhold"); // safety check
+
+      if (error) throw error;
+
+      toast.success("Employee salary released successfully.");
+
+      fetchPayroll();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to release salary.");
+    }
+  };
+
     return (
       <div className="relative">
         <button
@@ -469,7 +505,7 @@ export default function PayrollTrigger() {
               )}
               {payroll.status === "onhold" && (
                 <button
-                  onClick={() => handleReleaseOnHoldSalary(payroll.id)}
+                  onClick={handleReleaseOnHoldSalary}
                   className="bg-green-600 text-white px-3 py-1 rounded text-xs cursor-pointer hover:bg-green-700 transition-colors"
                 >
                   Release Salary
