@@ -4,6 +4,7 @@ import { formatNumber } from '@/app/utils/numberFormatter';
 import { createClient } from '@/app/utils/supabase/client';
 import { useEffect, useState } from 'react';
 import { HiSearch } from 'react-icons/hi';
+import { HiArrowLeft, HiArrowLongLeft } from 'react-icons/hi2';
 import { toast } from 'react-toastify';
 
 export default function PayrollTrigger() {
@@ -14,7 +15,7 @@ export default function PayrollTrigger() {
   const [loading, setLoading] = useState(false);
   const [processingPayroll, setProcessingPayroll] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
-  const[payTimeFilter, setPayTimeFilter] = useState('all');
+  const [payTimeFilter, setPayTimeFilter] = useState('all');
   const [availablePayTimes, setSelectedPayTimes] = useState<string[]>([]);
   const [currentBatchStatus, setCurrentBatchStatus] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -22,7 +23,8 @@ export default function PayrollTrigger() {
   const [availablePeriods, setAvailablePeriods] = useState<string[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
-
+  const [showHistory, setShowHistory] = useState(false);
+  const [employeeFilter, setEmployeeFilter] = useState('all');
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -39,32 +41,32 @@ export default function PayrollTrigger() {
 
     getUser()
   }, [])
-    useEffect(() => {
-      if (!selectedPeriod || !userCompanyId) return;
+  useEffect(() => {
+    if (!selectedPeriod || !userCompanyId) return;
 
-      const fetchBatchStatus = async () => {
-        const { data, error } = await supabase
-          .from("payroll_batches")
-          .select("status")
-          .eq("company_id", userCompanyId)
-          .eq("pay_period", selectedPeriod)
-          .single();
+    const fetchBatchStatus = async () => {
+      const { data, error } = await supabase
+        .from("payroll_batches")
+        .select("status")
+        .eq("company_id", userCompanyId)
+        .eq("pay_period", selectedPeriod)
+        .single();
 
-        if (!error) {
-          setCurrentBatchStatus(data?.status ?? null);
-        }
-      };
+      if (!error) {
+        setCurrentBatchStatus(data?.status ?? null);
+      }
+    };
 
-      fetchBatchStatus();
-    }, [selectedPeriod, userCompanyId]);
+    fetchBatchStatus();
+  }, [selectedPeriod, userCompanyId]);
 
 
 
   useEffect(() => {
     if (!userCompanyId) return;
     fetchAvailablePeriods();
-      availablePayTime();
-      fetchPayroll();
+    availablePayTime();
+    fetchPayroll();
   }, [userCompanyId]);
 
 
@@ -94,24 +96,24 @@ export default function PayrollTrigger() {
       setSelectedPeriod(periods[0]); // auto-select first
     }
   };
-  
 
-  const availablePayTime  = async()=>{
+
+  const availablePayTime = async () => {
     if (!userCompanyId) return;
 
     const { data, error } = await supabase
       .from("payroll")
       .select("pay_period")
       .eq("company_id", userCompanyId)
-       .order('created_at', { ascending: false });
-      if(error){
-        console.error(error);
-        return;
-      }
-      const payTimes = data?.map(p => p.pay_period) || [];
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error(error);
+      return;
+    }
+    const payTimes = data?.map(p => p.pay_period) || [];
 
-      const uniquePayTimes = Array.from(new Set(payTimes));
-      setSelectedPayTimes(uniquePayTimes);
+    const uniquePayTimes = Array.from(new Set(payTimes));
+    setSelectedPayTimes(uniquePayTimes);
   }
   const filteredPayrolls = payrolls.filter((p) => {
     const name =
@@ -120,13 +122,13 @@ export default function PayrollTrigger() {
     const matchesSearch =
       name.includes(search.toLowerCase()) ||
       p.role?.toLowerCase().includes(search.toLowerCase());
-
+    const matchesEmployee = employeeFilter === 'all' || p.employee.name === employeeFilter;
     const matchesStatus =
       statusFilter === 'all' || p.status === statusFilter;
-const matchesPayrollName = payTimeFilter === 'all' || p.pay_period === payTimeFilter;
-    return matchesSearch && matchesStatus && matchesPayrollName;
+    const matchesPayrollName = payTimeFilter === 'all' || p.pay_period === payTimeFilter;
+    return matchesSearch && matchesStatus && matchesPayrollName && matchesEmployee;
   });
-console.log(filteredPayrolls)
+  console.log(filteredPayrolls)
   const totalPayroll = payrolls.reduce(
     (sum, p) => sum + Number(p.base_salary || 0),
     0
@@ -411,7 +413,7 @@ console.log(filteredPayrolls)
           .update({ status: newStatus })
           .eq('id', payroll.id)
           .eq('company_id', userCompanyId)
-          .eq('pay_period', selectedPeriod);
+          .eq('pay_period', payroll.pay_period);
         if (error) throw error;
 
         toast.success(`Status updated to ${newStatus}`);
@@ -495,409 +497,680 @@ console.log(filteredPayrolls)
 
 
   return (
-    <section className="w-full px-2 md:px-6 py-6 bg-gray-50 min-h-screen">
-      {/* ---------------- TOP ACTION BAR ---------------- */}
-      <div className='flex flex-col md:flex-row justify-between'>
+    <>
+      {!showHistory && (
+        <section className="w-full px-2 md:px-6 py-6 bg-gray-50 min-h-screen">
+          {/* ---------------- TOP ACTION BAR ---------------- */}
+          <div className='flex flex-col md:flex-row justify-between'>
 
 
-        <div className="mb-6 flex flex-col gap-10 sm:flex-row sm:items-center">
-          <div className="relative">
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm max-sm:w-full font-bold text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all"
-            >
-              {processingPayroll ? (
-                <span className="flex items-center">
-                  <span className="animate-spin mr-2">⏳</span>
-                  Processing Payroll...
-                </span>
-              ) : (
-                "Run Payroll ▾"
-              )}
-            </button>
+            <div className="mb-6 flex flex-col gap-10 sm:flex-row sm:items-center">
+              <div className="relative">
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm max-sm:w-full font-bold text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all"
+                >
+                  {processingPayroll ? (
+                    <span className="flex items-center">
+                      <span className="animate-spin mr-2">⏳</span>
+                      Processing Payroll...
+                    </span>
+                  ) : (
+                    "Run Payroll ▾"
+                  )}
+                </button>
 
-            {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-white shadow-lg z-50">
-                <ul className="py-2 text-sm">
-                  <li
-                    onClick={() => {
-                      handleRunPayroll("Weekly")
-                      setDropdownOpen(false)
-                    }}
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  >
-                    Run Weekly Payroll
-                  </li>
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-white shadow-lg z-50">
+                    <ul className="py-2 text-sm">
+                      <li
+                        onClick={() => {
+                          handleRunPayroll("Weekly")
+                          setDropdownOpen(false)
+                        }}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                      >
+                        Run Weekly Payroll
+                      </li>
 
-                  <li
-                    onClick={() => {
-                      handleRunPayroll("Biweekly");
-                      setDropdownOpen(false);
-                    }}
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  >
-                    Run Bi-Weekly Payroll
-                  </li>
+                      <li
+                        onClick={() => {
+                          handleRunPayroll("Biweekly");
+                          setDropdownOpen(false);
+                        }}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                      >
+                        Run Bi-Weekly Payroll
+                      </li>
 
-                  <li
-                    onClick={() => {
-                      handleRunPayroll("Monthly");
-                      setDropdownOpen(false);
-                    }}
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  >
-                    Run Monthly Payroll
-                  </li>
-                </ul>
+                      <li
+                        onClick={() => {
+                          handleRunPayroll("Monthly");
+                          setDropdownOpen(false);
+                        }}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                      >
+                        Run Monthly Payroll
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  setShowHistory(true)
+                  setSearch("")
+                  setStatusFilter("all")
+                  setPayTimeFilter("all")
+                  setEmployeeFilter("all")
+
+                }}
+                className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors sm:w-auto cursor-pointer"
+              >
+                Payroll History
+              </button>
+            </div>
+
+
+            <div className="flex gap-2 items-center">
+
+              <select
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                className="rounded-lg border px-3 py-2 text-sm"
+              >
+                {availablePeriods.length === 0 ? (
+                  <option value="">No Draft Payroll</option>
+                ) : (
+                  <>
+                    <option value="">Select time</option>
+                    {availablePeriods.map((period) => (
+                      <option key={period} value={period}>
+                        {period}
+                      </option>
+                    ))}
+                  </>
+                )}
+              </select>
+
+              <button
+                disabled={!selectedPeriod}
+                onClick={() => setShowFinalizeModal(true)}
+                className="rounded-lg bg-blue-600 max-sm:text-md px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
+              >
+                {availablePeriods.length === 0 ? (
+                  <option value="">No Runned Payroll</option>
+                ) : (
+                  `Finalize ${selectedPeriod} Payroll`
+                )}
+              </button>
+
+            </div>
+          </div>
+
+          {/* Summary card */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 lg:grid-cols-4 md:gap-5 mb-6">
+            <SummaryCard
+              label={`Total Payroll This Month `}
+              value={formatNumber(totalPayroll)}
+            // value={totalPayroll.toLocaleString()}
+            />
+            <SummaryCard
+              label={`Employees Paid`}
+              // value={payrolls.length.toString()}
+              value={payrolls.length.toString()}
+            />
+            <SummaryCard
+              label={`Total Deductions`}
+              value={formatNumber(totalDeductions)}
+            // value={formatNumber(totalDeductions)}
+            />
+            <SummaryCard
+              label="Net Payroll Amount"
+              value={formatNumber(totalNet)}
+            />
+
+
+
+          </div>
+
+          <div className="flex flex-col w-full gap-3 mb-4 ">
+            {/* Search */}
+            <div className="flex w-full items-center flex-1 rounded-xl bg-gray-100 px-3 py-2">
+              <HiSearch className="text-gray-500" size={32} />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search"
+                className="w-full bg-transparent px-2 py-1 outline-none text-sm"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div className='flex flex-col gap-3 md:flex-row justify-between'>
+
+
+              <div className='flex gap-2 items-center'>
+                <h1>Filter by Status</h1>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm"
+                >
+                  <option value="all">All</option>
+                  <option value="paid">Paid</option>
+                  <option value="ready">Ready</option>
+                  <option value="onhold">Onhold</option>
+                  <option value="approved">Approved</option>
+                </select>
+              </div>
+             
+            </div>
+          </div>
+
+
+          {/* mobile card */}
+          <div className="space-y-4 md:hidden">
+            {filteredPayrolls.slice(0, 4).map((p) => (
+              <div
+                key={p.id}
+                className="rounded-xl bg-white p-4 shadow-sm border space-y-3"
+              >
+
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1">
+                    {new Date(p.created_at).toLocaleDateString()}
+                  </p>
+                  <ActionMenu payroll={p} />
+                </div>
+
+                <hr />
+
+                {/* Name */}
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1"> Name</p>
+                  <p className="text-base font-semibold text-gray-900">
+                    {p.employee?.name}
+                  </p>
+                </div>
+
+                {/* Category */}
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1">Role</p>
+                  <p className="font-medium text-gray-800">
+                    {p.role || '—'}
+                  </p>
+                </div>
+
+                {/* Quantity */}
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1">Base Salary</p>
+                  <p className="font-medium text-gray-800">
+                    ₦{Number(p.base_salary).toLocaleString()}
+                  </p>
+                </div>
+
+                {/* Price */}
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1"> Dedution</p>
+                  <p className="font-semibold text-gray-900">
+                    ₦{Number(p.deduction).toLocaleString()}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1"> Net Pay</p>
+                  <p className="font-semibold text-gray-900">
+                    ₦{Number(p.net_salary).toLocaleString()}
+                  </p>
+                </div>
+
+                {/* Status */}
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1">Status</p>
+                  {p.status === 'paid' ? (
+                    <p className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
+                      Paid
+                    </p>
+                  ) : p.status === 'ready' ? (
+                    <p className="px-2 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
+                      Ready
+                    </p>
+                  ) : p.status === 'onhold' ? (
+                    <p className="px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full">
+                      On Hold
+                    </p>
+                  ) : p.status === 'approved' ? (
+                    <p className="px-2 py-1 text-xs font-medium text-purple-800 bg-purple-100 rounded-full">
+                      Approved
+                    </p>
+                  ) : (
+                    <p className="px-2 py-1 text-xs font-medium text-gray-800 bg-gray-100 rounded-full">
+                      {p.status}
+                    </p>
+                  )}
+
+
+                </div>
+              </div>
+            ))}
+            {!loading && filteredPayrolls.length === 0 && (
+              <div className="rounded-xl bg-white p-4 shadow-sm border">
+                <p>
+                  No payroll records found for this period or filter.
+
+                </p>
               </div>
             )}
           </div>
-          <button
-            className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors sm:w-auto cursor-pointer"
-          >
-            Payroll History
-          </button>
-        </div>
 
+          {/* ----------------  TABLE ---------------- */}
+          <div className="hidden md:block rounded-xl bg-white shadow-sm overflow-x-auto">
 
-        <div className="flex gap-2 items-center">
-
-          <select
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="rounded-lg border px-3 py-2 text-sm"
-          >
-            {availablePeriods.length === 0 ? (
-              <option value="">No Draft Payroll</option>
-            ) : (
-              availablePeriods.map(period => (
-                <option key={period} value={period}>
-                  {period}
-                </option>
-              ))
-            )}
-          </select>
-
-          <button
-            disabled={!selectedPeriod}
-            onClick={() => setShowFinalizeModal(true)}
-            className="rounded-lg bg-blue-600 max-sm:text-md px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            {availablePeriods.length === 0 ? (
-              <option value="">No Runned Payroll</option>
-            ) : (
-              `Finalize ${selectedPeriod} Payroll`
-            )}
-          </button>
-
-        </div>
-      </div>
-
-      {/* Summary card */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 lg:grid-cols-4 md:gap-5 mb-6">
-        <SummaryCard
-          label={`Total Payroll This Month `}
-          value= {formatNumber(totalPayroll)}
-          // value={totalPayroll.toLocaleString()}
-        />
-        <SummaryCard
-          label={`Employees Paid`}
-          // value={payrolls.length.toString()}
-          value={payrolls.length.toString()}
-        />
-        <SummaryCard
-          label={`Total Deductions`}
-          value={formatNumber(totalDeductions)}
-          // value={formatNumber(totalDeductions)}
-        />
-        <SummaryCard
-          label="Net Payroll Amount"
-          value={formatNumber(totalNet)}
-        />
-
-
-
-      </div>
-
-      <div className="flex flex-col w-full gap-3 mb-4 ">
-        {/* Search */}
-        <div className="flex w-full items-center flex-1 rounded-xl bg-gray-100 px-3 py-2">
-          <HiSearch className="text-gray-500" size={32} />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search"
-            className="w-full bg-transparent px-2 py-1 outline-none text-sm"
-          />
-        </div>
-
-        {/* Status Filter */}
-        <div className='flex flex-col gap-3 md:flex-row justify-between'>
-
-    
-        <div className='flex gap-2 items-center'>
-          <h1>Filter by Status</h1>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm"
-          >
-            <option value="all">All</option>
-            <option value="paid">Paid</option>
-            <option value="ready">Ready</option>
-            <option value="onhold">Onhold</option>
-            <option value="approved">Approved</option>
-          </select>
-        </div>
-        {/* filter by payroll name */}
-        <div className='flex items-center gap-2'>
-          <h1>Filter by Pay Time</h1>
-            <select
-              value={payTimeFilter}
-              onChange={(e) => setPayTimeFilter(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm"
-            >
-              <option value="all">All Payrolls</option>
-              {availablePayTimes.map(period => (
-                <option key={period} value={period}>
-                  {period}
-                </option>
-              ))}
-            </select>
-        </div> 
-      </div>
-          </div>
-
-
-      {/* mobile card */}
-      <div className="space-y-4 md:hidden">
-        {filteredPayrolls.slice(0, 4).map((p) => (
-          <div
-            key={p.id}
-            className="rounded-xl bg-white p-4 shadow-sm border space-y-3"
-          >
-
-            <div className="flex items-center justify-between">
-              <p className="text-md font-semibold text-gray-700 mb-1">
-                {new Date(p.created_at).toLocaleDateString()}
-              </p>
-              <ActionMenu payroll={p} />
-            </div>
-
-            <hr />
-
-            {/* Name */}
-            <div className="flex items-center justify-between">
-              <p className="text-md font-semibold text-gray-700 mb-1"> Name</p>
-              <p className="text-base font-semibold text-gray-900">
-                {p.employee?.name}
-              </p>
-            </div>
-
-            {/* Category */}
-            <div className="flex items-center justify-between">
-              <p className="text-md font-semibold text-gray-700 mb-1">Role</p>
-              <p className="font-medium text-gray-800">
-                {p.role || '—'}
-              </p>
-            </div>
-
-            {/* Quantity */}
-            <div className="flex items-center justify-between">
-              <p className="text-md font-semibold text-gray-700 mb-1">Base Salary</p>
-              <p className="font-medium text-gray-800">
-                ₦{Number(p.base_salary).toLocaleString()}
-              </p>
-            </div>
-
-            {/* Price */}
-            <div className="flex items-center justify-between">
-              <p className="text-md font-semibold text-gray-700 mb-1"> Dedution</p>
-              <p className="font-semibold text-gray-900">
-                ₦{Number(p.deduction).toLocaleString()}
-              </p>
-            </div>
-            <div className="flex items-center justify-between">
-              <p className="text-md font-semibold text-gray-700 mb-1"> Net Pay</p>
-              <p className="font-semibold text-gray-900">
-                ₦{Number(p.net_salary).toLocaleString()}
-              </p>
-            </div>
-
-            {/* Status */}
-            <div className="flex items-center justify-between">
-              <p className="text-md font-semibold text-gray-700 mb-1">Status</p>
-              {p.status === 'paid' ? (
-                <p className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
-                  Paid
-                </p>
-              ) : p.status === 'ready' ? (
-                <p className="px-2 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
-                  Ready
-                </p>
-              ) : p.status === 'onhold' ? (
-                <p className="px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full">
-                  On Hold
-                </p>
-              ) : p.status === 'approved' ? (
-                <p className="px-2 py-1 text-xs font-medium text-purple-800 bg-purple-100 rounded-full">
-                  Approved
-                </p>
-              ) : (
-                <p className="px-2 py-1 text-xs font-medium text-gray-800 bg-gray-100 rounded-full">
-                  {p.status}
-                </p>
-              )}
-
-
-            </div>
-          </div>
-        ))}
-        {!loading && filteredPayrolls.length === 0 && (
-          <div className="rounded-xl bg-white p-4 shadow-sm border">
-            <p>
-              No payroll records found for this period or filter.
-
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* ----------------  TABLE ---------------- */}
-      <div className="hidden md:block rounded-xl bg-white shadow-sm overflow-x-auto">
-
-        {/* Desktop view */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-500">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium">Date</th>
-                <th className="px-4 py-3 text-left font-medium">Name</th>
-                <th className="px-4 py-3 text-left font-medium">Role</th>
-                <th className="px-4 py-3 text-left font-medium">Base Salary</th>
-                <th className="px-4 py-3 text-left font-medium">Deductions</th>
-                <th className="px-4 py-3 text-left font-medium">Net Pay</th>
-                <th className="px-4 py-3 text-left font-medium">Status</th>
-                <th className="px-4 py-3 text-left font-medium">Actions</th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y">
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center">
-                    Loading...
-                  </td>
-                </tr>
-              ) : filteredPayrolls.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center">
-                    No payroll records found
-                  </td>
-                </tr>
-              ) : (
-                filteredPayrolls.map((pay) => (
-                  <tr key={pay.id}>
-                    <td className="px-4 py-3">
-                      {new Date(pay.created_at).toLocaleDateString()}
-                    </td>
-
-                    <td className="px-4 py-3">
-                      {pay.employee?.name}
-                    </td>
-
-                    <td className="px-4 py-3">{pay.role}</td>
-
-                    <td className="px-4 py-3">
-                      {Number(pay.base_salary).toLocaleString()}
-                    </td>
-
-                    <td className="px-4 py-3">
-                      {Number(pay.deduction).toLocaleString()}
-                    </td>
-
-                    <td className="px-4 py-3 font-semibold text-green-600">
-                      {Number(pay.net_salary).toLocaleString()}
-                    </td>
-
-                    <td className="px-4 py-3 capitalize">
-                      {pay.status === 'paid' ? (
-                        <p className="px-2 py-1 text-xs font-medium text-green-800 rounded-full">
-                          Paid
-                        </p>
-                      ) : pay.status === 'ready' ? (
-                        <p className="px-2 py-1 text-xs font-medium text-blue-800 rounded-full">
-                          Ready
-                        </p>
-                      ) : pay.status === 'onhold' ? (
-                        <p className="px-2 py-1 text-xs font-medium text-yellow-800 rounded-full">
-                          On Hold
-                        </p>
-                      ) : pay.status === 'approved' ? (
-                        <p className="px-2 py-1 text-xs font-medium text-purple-800 rounded-full">
-                          Approved
-                        </p>
-                      ) : (
-                        <p className="px-2 py-1 text-xs font-medium text-gray-800 rounded-full">
-                          {pay.status}
-                        </p>
-                      )}
-                    </td>
-
-                    <td className="px-4 py-3">
-                      <ActionMenu payroll={pay} />
-                    </td>
+            {/* Desktop view */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-gray-500">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium">Date</th>
+                    <th className="px-4 py-3 text-left font-medium">Name</th>
+                    <th className="px-4 py-3 text-left font-medium">Role</th>
+                    <th className="px-4 py-3 text-left font-medium">Base Salary</th>
+                    <th className="px-4 py-3 text-left font-medium">Deductions</th>
+                    <th className="px-4 py-3 text-left font-medium">Net Pay</th>
+                    <th className="px-4 py-3 text-left font-medium">Status</th>
+                    <th className="px-4 py-3 text-left font-medium">Actions</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                </thead>
 
+                <tbody className="divide-y">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-6 text-center">
+                        Loading...
+                      </td>
+                    </tr>
+                  ) : filteredPayrolls.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-6 text-center">
+                        No payroll records found
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredPayrolls.map((pay) => (
+                      <tr key={pay.id}>
+                        <td className="px-4 py-3">
+                          {new Date(pay.created_at).toLocaleDateString()}
+                        </td>
 
+                        <td className="px-4 py-3">
+                          {pay.employee?.name}
+                        </td>
 
-      {showFinalizeModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-white rounded-lg p-6 w-[450px] shadow-lg">
-            <h2 className="text-lg font-semibold mb-4 text-red-600">
-              Finalize {selectedPeriod} Payroll
-            </h2>
+                        <td className="px-4 py-3">{pay.role}</td>
 
-            <p className="text-sm text-gray-700 mb-4">
-              You are about to finalize {selectedPeriod} payroll.
-              <br /><br />
-              Once finalized, this action cannot be undone.
-              <br /><br />
-              No further changes will be allowed, and payroll cannot be processed again until the next scheduled pay date.
-              <br /><br />
-              Are you sure you want to continue?
-            </p>
+                        <td className="px-4 py-3">
+                          {Number(pay.base_salary).toLocaleString()}
+                        </td>
 
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowFinalizeModal(false)}
-                className="px-4 py-2 border rounded cursor-pointer hover:bg-gray-100"
-              >
-                Cancel
-              </button>
+                        <td className="px-4 py-3">
+                          {Number(pay.deduction).toLocaleString()}
+                        </td>
 
-              <button
-                onClick={async () => {
-                  setShowFinalizeModal(false);
-                  await handleFinalizePayroll();
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded cursor-pointer hover:bg-red-400"
-              >
-                Continue & Finalize
-              </button>
+                        <td className="px-4 py-3 font-semibold text-green-600">
+                          {Number(pay.net_salary).toLocaleString()}
+                        </td>
+
+                        <td className="px-4 py-3 capitalize">
+                          {pay.status === 'paid' ? (
+                            <p className="px-2 py-1 text-xs font-medium text-green-800 rounded-full">
+                              Paid
+                            </p>
+                          ) : pay.status === 'ready' ? (
+                            <p className="px-2 py-1 text-xs font-medium text-blue-800 rounded-full">
+                              Ready
+                            </p>
+                          ) : pay.status === 'onhold' ? (
+                            <p className="px-2 py-1 text-xs font-medium text-yellow-800 rounded-full">
+                              On Hold
+                            </p>
+                          ) : pay.status === 'approved' ? (
+                            <p className="px-2 py-1 text-xs font-medium text-purple-800 rounded-full">
+                              Approved
+                            </p>
+                          ) : (
+                            <p className="px-2 py-1 text-xs font-medium text-gray-800 rounded-full">
+                              {pay.status}
+                            </p>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <ActionMenu payroll={pay} />
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>
-      )}
 
-    </section>
+
+
+          {showFinalizeModal && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+              <div className="bg-white rounded-lg p-6 w-[450px] shadow-lg">
+                <h2 className="text-lg font-semibold mb-4 text-red-600">
+                  Finalize {selectedPeriod} Payroll
+                </h2>
+
+                <p className="text-sm text-gray-700 mb-4">
+                  You are about to finalize {selectedPeriod} payroll.
+                  <br /><br />
+                  Once finalized, this action cannot be undone.
+                  <br /><br />
+                  No further changes will be allowed, and payroll cannot be processed again until the next scheduled pay date.
+                  <br /><br />
+                  Are you sure you want to continue?
+                </p>
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowFinalizeModal(false)}
+                    className="px-4 py-2 border rounded cursor-pointer hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      setShowFinalizeModal(false);
+                      await handleFinalizePayroll();
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded cursor-pointer hover:bg-red-400"
+                  >
+                    Continue & Finalize
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </section>)}
+
+
+      {showHistory && (
+        <section className="w-full px-2 md:px-6 py-6 bg-gray-50 max-h-[85vh] overflow-y-auto">
+          {/* ---------------- TOP ACTION BAR ---------------- */}
+          <div className=''>
+            <button onClick={() => {setShowHistory(false)
+              setSearch("")
+              setStatusFilter("all")
+              setPayTimeFilter("all")
+              setEmployeeFilter("all")
+            }} className="text-blue-600 hover:text-blue-800 font-medium mb-4 cursor-pointer">
+              <HiArrowLeft className="inline-block mr-1" size={20} />
+              Back to Payroll</button>
+
+            <div className='flex flex-col gap-2'>
+              <h1 className="text-xl font-bold text-gray-800">Payroll History Filter</h1>
+              <p>Use filters to quickly find payroll records for a specific period, status, or team.</p>
+              <div className='flex flex-col md:flex-row md:items-center gap-5 md:gap-10 my-3'>
+                <div className='flex items-center gap-2'>
+                  <h1 className='text-md font-bold'>Status:</h1>
+                  <select
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className='p-2 rounded-lg bg-white border border-gray-600 w-[60%]'
+                    name="status" id="status-select">
+                    <option value="all">All</option>
+                    <option value="paid">Paid</option>
+                    <option value="ready">Ready</option>
+                    <option value="onhold">On Hold</option>
+                    <option value="approved">Approved</option>
+                  </select>
+                </div>
+                <div className='flex items-center gap-2'>
+                  <h1 className='text-md font-bold'>Pay Period:</h1>
+                  {availablePayTimes.length === 0 ? (
+                    <p>No payroll records found</p>
+                  ) : (
+                    <select
+                       className='p-2 rounded-lg bg-white border border-gray-600 max-sm:w-[60%]'
+
+                      value={payTimeFilter}
+                      onChange={(e) => setPayTimeFilter(e.target.value)}
+                    >
+                      <option value="all">All</option>
+                      {availablePayTimes.map((time) => (
+
+                        <option key={time} value={time}>{time}</option>
+                      ))}
+                    </select>
+                  )}
+
+                </div>
+                <div className='flex items-center gap-2'>
+                  <h1 className='text-md font-bold'>Employees:</h1>
+                  <select
+                    onChange={(e) => setEmployeeFilter(e.target.value)}
+                     className='p-2 rounded-lg bg-white border border-gray-600 w-[60%]'
+
+                     name="employee" id="employee-select">
+                    <option value="">All Employees</option>
+                    {payrolls.map((emp) => (
+                      <option key={emp.id} value={emp.employee?.name}>
+                        {emp.employee?.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button onClick={() => {
+                  setStatusFilter("all")
+                  setPayTimeFilter("all")
+                  setEmployeeFilter("all")
+                
+                }} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                  Clear Filters
+                </button>
+              </div>
+            </div>
+          </div>
+
+
+          {/* mobile card */}
+          <div className="space-y-4 md:hidden">
+            {filteredPayrolls.slice(0, 4).map((p) => (
+              <div
+                key={p.id}
+                className="rounded-xl bg-white p-4 shadow-sm border space-y-3"
+              >
+
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1">
+                    {new Date(p.created_at).toLocaleDateString()}
+                  </p>
+                  <ActionMenu payroll={p} />
+                </div>
+
+                <hr />
+
+                {/* Name */}
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1"> Name</p>
+                  <p className="text-base font-semibold text-gray-900">
+                    {p.employee?.name}
+                  </p>
+                </div>
+
+                {/* Category */}
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1">Role</p>
+                  <p className="font-medium text-gray-800">
+                    {p.role || '—'}
+                  </p>
+                </div>
+
+                {/* Quantity */}
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1">Base Salary</p>
+                  <p className="font-medium text-gray-800">
+                    ₦{Number(p.base_salary).toLocaleString()}
+                  </p>
+                </div>
+
+                {/* Price */}
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1"> Dedution</p>
+                  <p className="font-semibold text-gray-900">
+                    ₦{Number(p.deduction).toLocaleString()}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1"> Net Pay</p>
+                  <p className="font-semibold text-gray-900">
+                    ₦{Number(p.net_salary).toLocaleString()}
+                  </p>
+                </div>
+
+                {/* Status */}
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1">Status</p>
+                  {p.status === 'paid' ? (
+                    <p className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
+                      Paid
+                    </p>
+                  ) : p.status === 'ready' ? (
+                    <p className="px-2 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
+                      Ready
+                    </p>
+                  ) : p.status === 'onhold' ? (
+                    <p className="px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full">
+                      On Hold
+                    </p>
+                  ) : p.status === 'approved' ? (
+                    <p className="px-2 py-1 text-xs font-medium text-purple-800 bg-purple-100 rounded-full">
+                      Approved
+                    </p>
+                  ) : (
+                    <p className="px-2 py-1 text-xs font-medium text-gray-800 bg-gray-100 rounded-full">
+                      {p.status}
+                    </p>
+                  )}
+
+
+                </div>
+              </div>
+            ))}
+            {!loading && filteredPayrolls.length === 0 && (
+              <div className="rounded-xl bg-white p-4 shadow-sm border">
+                <p>
+                  No payroll records found for this period or filter.
+
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* ----------------  TABLE ---------------- */}
+          <div className="hidden md:block rounded-xl bg-white shadow-sm overflow-x-auto">
+
+            {/* Desktop view */}
+            <div className="hidden md:block">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-gray-500">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium">Date</th>
+                    <th className="px-4 py-3 text-left font-medium">Name</th>
+                    <th className="px-4 py-3 text-left font-medium">Role</th>
+                    <th className="px-4 py-3 text-left font-medium">Base Salary</th>
+                    <th className="px-4 py-3 text-left font-medium">Deductions</th>
+                    <th className="px-4 py-3 text-left font-medium">Net Pay</th>
+                    <th className="px-4 py-3 text-left font-medium">Status</th>
+                    <th className="px-4 py-3 text-left font-medium">Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody className="overflow-y-auto">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-6 text-center">
+                        Loading...
+                      </td>
+                    </tr>
+                  ) : filteredPayrolls.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-6 text-center">
+                        No payroll records found
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredPayrolls.map((pay) => (
+                      <tr key={pay.id}>
+                        <td className="px-4 py-3">
+                          {new Date(pay.created_at).toLocaleDateString()}
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {pay.employee?.name}
+                        </td>
+
+                        <td className="px-4 py-3">{pay.role}</td>
+
+                        <td className="px-4 py-3">
+                          {Number(pay.base_salary).toLocaleString()}
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {Number(pay.deduction).toLocaleString()}
+                        </td>
+
+                        <td className="px-4 py-3 font-semibold text-green-600">
+                          {Number(pay.net_salary).toLocaleString()}
+                        </td>
+
+                        <td className="px-4 py-3 capitalize">
+                          {pay.status === 'paid' ? (
+                            <p className="px-2 py-1 text-xs font-medium text-green-800 rounded-full">
+                              Paid
+                            </p>
+                          ) : pay.status === 'ready' ? (
+                            <p className="px-2 py-1 text-xs font-medium text-blue-800 rounded-full">
+                              Ready
+                            </p>
+                          ) : pay.status === 'onhold' ? (
+                            <p className="px-2 py-1 text-xs font-medium text-yellow-800 rounded-full">
+                              On Hold
+                            </p>
+                          ) : pay.status === 'approved' ? (
+                            <p className="px-2 py-1 text-xs font-medium text-purple-800 rounded-full">
+                              Approved
+                            </p>
+                          ) : (
+                            <p className="px-2 py-1 text-xs font-medium text-gray-800 rounded-full">
+                              {pay.status}
+                            </p>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <ActionMenu payroll={pay} />
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+
+
+
+
+        </section>
+      )}
+    </>
   )
 }
 
