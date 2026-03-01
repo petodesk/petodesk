@@ -267,7 +267,7 @@ const [probationEmployee, setProbationEmployees] = useState<Employee[]>([])
               />  
                 
                 </td></tr>
-              ) : filteredEmployees.map((emp) => (
+              ) : filteredEmployees.slice(0,4).map((emp) => (
                 <tr key={emp.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-3">{new Date(emp.created_at).toLocaleDateString()}</td>
                   <td className="px-4 py-3 font-medium">{emp.name}</td>

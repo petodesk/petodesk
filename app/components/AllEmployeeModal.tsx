@@ -54,7 +54,7 @@ export function AllEmployeeModal({
       />
 
       {/* Modal */}
-      <div className="relative z-50 mx-4 my-20 w-full max-w-6xl max-h-[85vh] bg-white rounded-xl shadow-lg flex flex-col">
+      <div className="relative z-50 mx-4 mt-20 mb-10 w-full max-w-6xl max-h-[85vh] bg-white rounded-xl shadow-lg flex flex-col">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
