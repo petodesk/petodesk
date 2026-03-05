@@ -66,20 +66,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     md:translate-x-0
   `}
 >
-  {role === 'owner' &&(
+  
     <OwnerSidebar
-      userName={userProfile?.full_name}
       onClose={() => setIsSidebarOpen(false)}
     />
   
-  )}
-   {role === 'admin' &&(
-    <AdminSidebar
-      userName={userProfile?.full_name}
-      onClose={() => setIsSidebarOpen(false)}
-    />
-  
-  )}
+
 </aside>
 
         {/* MAIN CONTENT */}
