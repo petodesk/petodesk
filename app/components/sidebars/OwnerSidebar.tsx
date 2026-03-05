@@ -1,8 +1,10 @@
 'use client'
+
 import { createClient } from '@/app/utils/supabase/client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { HiOutlineClock } from 'react-icons/hi'
+import { useEffect, useState } from 'react'
+
 import {
   HiSquares2X2,
   HiOutlineShoppingCart,
@@ -18,29 +20,97 @@ import {
   HiOutlineArrowRightOnRectangle,
 } from 'react-icons/hi2'
 
-const ownerLinks = [
-  { label: 'Dashboard', href: '/dashboard', icon: HiSquares2X2 },
-  { label: 'Sell', href: '/dashboard/sell', icon: HiOutlineShoppingCart },
-  { label: 'Expenses', href: '/dashboard/expenses', icon: HiOutlineWallet },
-  { label: 'Inventory', href: '/dashboard/inventory', icon: HiOutlineCube },
-  { label: 'Tasks', href: '/dashboard/tasks', icon: HiOutlineCheckBadge },
-  { label: 'Payroll', href: '/dashboard/payroll', icon: HiOutlineUsers },
-  { label: 'Invoicing', href: '/dashboard/invoicing', icon: HiOutlineDocumentText },
-  { label: 'Reports', href: '/dashboard/reports', icon: HiOutlineChartBar },
-  { label: 'Recruitment', href: '/dashboard/recruitment', icon: HiOutlineUserPlus },
-  { label: 'Employee', href: '/dashboard/employee', icon: HiOutlineUserCircle },
-  { label: 'Company Feed', href: '/dashboard/company-feed', icon: HiOutlineMegaphone },
+
+/* -------------------------------- */
+/* Sidebar Links Configuration      */
+/* -------------------------------- */
+
+const links = [
+  { label: 'Dashboard', href: '/dashboard', icon: HiSquares2X2, roles: ['admin','owner'], plans: ['both','inventory','hr'] },
+
+  { label: 'Sell', href: '/dashboard/sell', icon: HiOutlineShoppingCart, roles: ['admin','owner','employee'], plans: ['both','inventory'] },
+
+  { label: 'Expenses', href: '/dashboard/expenses', icon: HiOutlineWallet, roles: ['admin','owner','employee'], plans: ['both','inventory', 'hr'] },
+
+  { label: 'Inventory', href: '/dashboard/inventory', icon: HiOutlineCube, roles: ['admin','owner','employee'], plans: ['both','inventory'] },
+
+  { label: 'Tasks', href: '/dashboard/tasks', icon: HiOutlineCheckBadge, roles: ['admin','owner','employee'], plans: ['both','hr'] },
+
+  { label: 'Payroll', href: '/dashboard/payroll', icon: HiOutlineUsers, roles: ['admin','owner'], plans: ['both','hr'] },
+
+  { label: 'Invoicing', href: '/dashboard/invoicing', icon: HiOutlineDocumentText, roles: ['admin'], plans: ['both','hr'] },
+
+  { label: 'Reports', href: '/dashboard/reports', icon: HiOutlineChartBar, roles: ['admin','owner'], plans: ['both','inventory','hr'] },
+
+  { label: 'Recruitment', href: '/dashboard/recruitment', icon: HiOutlineUserPlus, roles: ['admin','owner'], plans: ['both','hr'] },
+
+  { label: 'Employee', href: '/dashboard/employee', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr'] },
+  { label: 'Leave Management', href: '/dashboard/leave', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr'] },
+
+  { label: 'Company Feed', href: '/dashboard/company-feed', icon: HiOutlineMegaphone, roles: ['admin','owner'], plans: ['both','hr'] },
 ]
 
-export default function OwnerSidebar({
-  onClose,
-}: {
-  userName?: string
-  onClose?: () => void
-}) {
+
+export default function OwnerSidebar({ onClose }: { onClose?: () => void }) {
+
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+
+  const [role, setRole] = useState<string | null>(null)
+  const [plan, setPlan] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  /* -------------------------------- */
+  /* Fetch Role + Plan                */
+  /* -------------------------------- */
+
+  useEffect(() => {
+
+    const fetchUserData = async () => {
+
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
+      /* get user profile */
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, company_id')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile) {
+        setLoading(false)
+        return
+      }
+
+      setRole(profile.role)
+
+      /* get company plan */
+
+      const { data: company } = await supabase
+        .from('companies')
+        .select('service_type')
+        .eq('id', profile.company_id)
+        .single()
+
+      setPlan(company?.service_type || null)
+
+      setLoading(false)
+    }
+
+    fetchUserData()
+
+  }, [])
+
+
+  /* -------------------------------- */
+  /* Logout                           */
+  /* -------------------------------- */
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -48,17 +118,39 @@ export default function OwnerSidebar({
     router.refresh()
   }
 
+
+  /* -------------------------------- */
+  /* Filter Links                     */
+  /* -------------------------------- */
+
+  const filteredLinks = links.filter(link =>
+    link.roles.includes(role || '') &&
+    link.plans.includes(plan || '')
+  )
+
+
+  /* -------------------------------- */
+  /* Render                           */
+  /* -------------------------------- */
+
   return (
     <aside className="flex flex-col h-screen w-64 bg-white shadow-sm">
-      {/* TOP HEADER (FIXED) */}
+
+      {/* HEADER */}
+
       <div className="bg-blue-600 text-white p-4 font-bold text-center rounded-t-lg my-2">
         My Petodesk Account
       </div>
 
-      {/* NAVIGATION (SCROLLABLE) */}
+
+      {/* NAVIGATION */}
+
       <nav className="flex-1 overflow-y-auto px-3 py-4 no-scrollbar">
+
         <ul className="space-y-1">
-          {ownerLinks.map((link) => {
+
+          {!loading && filteredLinks.map((link) => {
+
             const isActive = pathname === link.href
 
             return (
@@ -66,25 +158,32 @@ export default function OwnerSidebar({
                 <Link
                   href={link.href}
                   onClick={onClose}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition ${isActive
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition ${
+                    isActive
                       ? 'bg-blue-50 text-blue-600'
                       : 'text-gray-500 hover:bg-gray-50 hover:text-blue-600'
-                    }`}
+                  }`}
                 >
                   <link.icon
-                    className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-400'
-                      }`}
+                    className={`w-5 h-5 ${
+                      isActive ? 'text-blue-600' : 'text-gray-400'
+                    }`}
                   />
                   {link.label}
                 </Link>
               </li>
             )
           })}
+
         </ul>
-        {/* BOTTOM ACCOUNT (FIXED) */}
-        <div className="border-t">
+
+
+        {/* ACCOUNT SECTION */}
+
+        <div className="border-t mt-4">
 
           <div className="px-3 py-3 space-y-1">
+
             <Link
               href="/dashboard/profile"
               onClick={onClose}
@@ -101,10 +200,12 @@ export default function OwnerSidebar({
               <HiOutlineArrowRightOnRectangle size={18} />
               Logout
             </button>
-          </div>
-        </div>
-      </nav>
 
+          </div>
+
+        </div>
+
+      </nav>
 
     </aside>
   )
