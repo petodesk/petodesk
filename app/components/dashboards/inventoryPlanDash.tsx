@@ -2,274 +2,470 @@
 
 import { createClient } from "@/app/utils/supabase/client"
 import { useCallback, useEffect, useState } from "react"
+import RevenueSummaryChart from "../RevenueSummary"
+import { ClipLoader } from "react-spinners"
+import { Line, LineChart, ResponsiveContainer } from "recharts"
+
+type Range =
+  | 'today'
+  | 'yesterday'
+  | 'this_week'
+  | 'last_week'
+  | 'this_month'
+  | 'last_month'
+  | 'this_year'
+  | 'last_year'
 
 export default function InventoryPlanDash() {
 
-    const supabase = createClient()
+  const supabase = createClient()
 
-    const [salesTotal, setSalesTotal] = useState(0)
-    const [expenseTotal, setExpenseTotal] = useState(0)
-    const [netProfit, setNetProfit] = useState(0)
+  const [salesTotal, setSalesTotal] = useState(0)
+  const [expenseTotal, setExpenseTotal] = useState(0)
+  const [netProfit, setNetProfit] = useState(0)
+  const [profitTotal, setProfitTotal] = useState(0)
+  const [chartData, setChartData] = useState<any[]>([])
+  const [products, setProducts] = useState<any[]>([])
+  const [categories, setCategories] = useState(0)
+  const [recentlyUpdated, setRecentlyUpdated] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [range, setRange] = useState<Range>('this_month')
 
-    const [totalProducts, setTotalProducts] = useState(0)
-    const [lowStock, setLowStock] = useState(0)
-    const [outOfStock, setOutOfStock] = useState(0)
-    const [stockValue, setStockValue] = useState(0)
-    const [categories, setCategories] = useState(0)
-    const [recentlyUpdated, setRecentlyUpdated] = useState(0)
-const[loading, setLoading] = useState(true)
-    const fetchDashboardData = useCallback(async () => {
+  /* ---------------- DATE RANGE LOGIC ---------------- */
 
-        setLoading(true)
+  const getRangeDates = (range: Range) => {
 
-        /* ---------------- GET USER ---------------- */
+    const now = new Date()
+    let from = new Date()
+    let to = new Date()
 
-        const {
-            data: { user },
-        } = await supabase.auth.getUser()
-
-        if (!user) {
-            setLoading(false)
-            return
-        }
-
-        /* ---------------- GET COMPANY ---------------- */
-
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('company_id')
-            .eq('id', user.id)
-            .single()
-
-        const companyId = profile?.company_id
-
-        if (!companyId) {
-            setLoading(false)
-            return
-        }
-
-        /* ---------------- SALES ---------------- */
-
-        const { data: sales, error: salesError } = await supabase
-            .from('sales')
-            .select('total_amount')
-            .eq('company_id', companyId)
-
-        if (salesError) console.error(salesError)
-
-        const totalSales =
-            sales?.reduce((sum, s) => sum + Number(s.total_amount || 0), 0) || 0
-
-        setSalesTotal(totalSales)
-
-        /* ---------------- EXPENSES ---------------- */
-
-        const { data: expenses, error: expenseError } = await supabase
-            .from('expenses')
-            .select('amount')
-            .eq('company_id', companyId)
-
-        if (expenseError) console.error(expenseError)
-
-        const totalExpenses =
-            expenses?.reduce((sum, e) => sum + Number(e.amount || 0), 0) || 0
-
-        setExpenseTotal(totalExpenses)
-
-        /* ---------------- PROFIT ---------------- */
-
-        setNetProfit(totalSales - totalExpenses)
-
-        /* ---------------- INVENTORY ---------------- */
-
-        const { data: inventory, error: inventoryError } = await supabase
-            .from('products')
-            .select('*, product_stock(*)')
-            .eq('company_id', companyId)
-
-        if (inventoryError) console.error(inventoryError)
-
-        if (inventory) {
-
-            setTotalProducts(inventory.length)
-
-            const lowStockItems = inventory.filter(
-                (i) => i.product_stock.quantity > 0 && i.product_stock.quantity <= 5
-            )
-
-            setLowStock(lowStockItems.length)
-
-            const outStockItems = inventory.filter(
-                (i) => i.product_stock.quantity === 0
-            )
-
-            setOutOfStock(outStockItems.length)
-
-            const value = inventory.reduce(
-                (sum, i) =>
-                    sum + (Number(i.product_stock.quantity || 0) * Number(i.cost_price || 0)),
-                0
-            )
-
-            setStockValue(value)
-
-            const uniqueCategories = new Set(
-                inventory.map((i) => i.category)
-            )
-
-            setCategories(uniqueCategories.size)
-
-            const recent = inventory.filter((i) => {
-                const updated = new Date(i.updated_at)
-                const now = new Date()
-
-                const diff =
-                    (now.getTime() - updated.getTime()) /
-                    (1000 * 3600 * 24)
-
-                return diff <= 7
-            })
-
-            setRecentlyUpdated(recent.length)
-        }
-
-        setLoading(false)
-
-    }, [supabase])
+    switch (range) {
+      case 'today':
+        from = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        to = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        to.setHours(23, 59, 59, 999)
+        break
+      case 'yesterday':
+        from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+        to = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+        to.setHours(23, 59, 59, 999)
+        break
+      case 'this_week':
+        const dayOfWeek = now.getDay() || 7
+        from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 1)
+        to = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (7 - dayOfWeek))
+        to.setHours(23, 59, 59, 999)
+        break
+      case 'last_week':
+        const lastWeekDayOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).getDay() || 7
+        from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7 - lastWeekDayOfWeek + 1)
+        to = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7 + (7 - lastWeekDayOfWeek))
+        to.setHours(23, 59, 59, 999)
+        break
 
 
+      case 'this_month':
+        from = new Date(now.getFullYear(), now.getMonth(), 1)
+        to = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        to.setHours(23, 59, 59, 999)
+        break
 
-    useEffect(() => {
-        fetchDashboardData()
-    }, [fetchDashboardData])
+      case 'last_month':
+        from = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        to = new Date(now.getFullYear(), now.getMonth(), 0)
+        to.setHours(23, 59, 59, 999)
+        break
+
+      case 'this_year':
+        from = new Date(now.getFullYear(), 0, 1)
+        to = new Date(now.getFullYear(), 11, 31)
+        to.setHours(23, 59, 59, 999)
+        break
+
+      case 'last_year':
+        from = new Date(now.getFullYear() - 1, 0, 1)
+        to = new Date(now.getFullYear() - 1, 11, 31)
+        to.setHours(23, 59, 59, 999)
+        break
+    }
+
+    return { from, to }
+  }
+
+  const fetchDashboardData = useCallback(async () => {
+
+    setLoading(true)
+
+    const { from, to } = getRangeDates(range)
+
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.company_id) {
+      setLoading(false)
+      return
+    }
+
+    const companyId = profile.company_id
+
+    /* SALES */
+
+    const { data: sales } = await supabase
+      .from('sales')
+      .select('total_amount, created_at, sale_items (quantity, selling_price, cost_price, discount, subtotal, status)')
+      .eq('company_id', companyId)
+      .gte('created_at', from.toISOString())
+      .lte('created_at', to.toISOString())
+
+     let salesTotal = 0
+    let profitTotal = 0
+
+    sales?.forEach((sale) => {
+      const activeItems = sale.sale_items.filter(
+        item => item.status !== 'Cancelled'
+      )
+
+      activeItems.forEach(item => {
+        salesTotal += item.subtotal
+        profitTotal +=
+          (item.selling_price - item.cost_price) *
+          item.quantity -
+          item.discount
+      })
+    })
+    
 
 
+    setSalesTotal(salesTotal)
+    setProfitTotal(profitTotal)
 
+    /* EXPENSES */
 
+    const { data: expenses } = await supabase
+      .from('expenses')
+      .select('amount, created_at')
+      .eq('company_id', companyId)
+      .gte('created_at', from.toISOString())
+      .lte('created_at', to.toISOString())
 
+    const totalExpenses =
+      expenses?.reduce((sum, e) => sum + Number(e.amount || 0), 0) || 0
 
-    return (
-        <div className="p-6 bg-green-50 rounded-lg border-2 border-green-200">
+    setExpenseTotal(totalExpenses)
 
-            {/* profit and loss card */}
-            <div className="flex flex-col gap-2">
+    /* PROFIT */
 
-                <div className="flex flex-col gap-4 rounded-lg shadow-md w-[100%] md:w-[45%] p-4 bg-white">
+    setNetProfit(profitTotal - totalExpenses)
 
-                    <div className="flex justify-between">
-                        <h1>Profit and Loss</h1>
+    /* INVENTORY */
 
-                        <select>
-                            <option>This Month</option>
-                            <option>Last Month</option>
-                            <option>Custom Range</option>
-                            <option>Last Year</option>
-                        </select>
-                    </div>
+    const { data: productsData } = await supabase
+      .from('products')
+      .select(`
+        id,
+        category,
+        product_stock (
+          quantity,
+          status
+        ),
+        product_prices (
+          selling_price
+        )
+      `)
+      .eq('company_id', companyId)
 
-                    <div className="flex flex-col gap-3">
-                        <p className="text-2xl font-bold text-green-600">
-                            ${netProfit.toLocaleString()}
-                        </p>
-                        <p className="text-sm text-gray-500">Net Profit</p>
-                    </div>
+    if (productsData) {
 
-                    <div className="flex flex-col gap-2">
+      setProducts(productsData)
 
-                        <div className="flex justify-between gap-4 items-center">
-                            <div className="bg-blue-500 h-8 rounded-lg p-1 flex-1"></div>
+      const uniqueCategories = new Set(
+        productsData.map((p) => p.category)
+      )
 
-                            <div className="flex flex-col gap-1 items-center p-1">
-                                <span className="text-md font-semibold">
-                                    ${salesTotal.toLocaleString()}
-                                </span>
-                                <span>Sale</span>
-                            </div>
-                        </div>
+      setCategories(uniqueCategories.size)
+    }
 
-                        <div className="flex justify-between gap-4 items-center">
-                            <div className="bg-gray-500 h-8 rounded-lg p-1 flex-1"></div>
+    /* REVENUE CHART */
 
-                            <div className="flex flex-col gap-1 items-center p-1">
-                                <span className="text-md font-semibold">
-                                    ${expenseTotal.toLocaleString()}
-                                </span>
-                                <span>Expenses</span>
-                            </div>
-                        </div>
+    const months = [
+      'Jan','Feb','Mar','Apr','May','Jun',
+      'Jul','Aug','Sep','Oct','Nov','Dec'
+    ]
 
-                    </div>
+    const monthly = months.map((m) => ({
+      month: m,
+      sales: 0,
+      expenses: 0
+    }))
+
+    sales?.forEach((s) => {
+      const month = new Date(s.created_at).getMonth()
+      monthly[month].sales += Number(s.total_amount || 0)
+    })
+
+    expenses?.forEach((e) => {
+      const month = new Date(e.created_at).getMonth()
+      monthly[month].expenses += Number(e.amount || 0)
+    })
+
+    setChartData(monthly)
+
+    setLoading(false)
+
+  }, [supabase, range])
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [fetchDashboardData])
+
+  /* INVENTORY CALCULATIONS */
+
+  const totalItems = products.length
+
+  const lowStockCount = products.filter(p =>
+    p.product_stock?.[0]?.status === 'low_stock'
+  ).length
+
+  const outOfStockCount = products.filter(p =>
+    p.product_stock?.[0]?.status === 'out_of_stock'
+  ).length
+
+  const stockValue = products.reduce((sum, p) => {
+
+    const quantity = p.product_stock?.[0]?.quantity || 0
+    const price = p.product_prices?.[0]?.selling_price || 0
+
+    return sum + quantity * price
+
+  }, 0)
+
+  const total = salesTotal + expenseTotal || 1
+
+  const salesPercent = (salesTotal / total) * 100
+  const expensePercent = (expenseTotal / total) * 100
+
+  const isUp = netProfit >= 0
+
+ const currentMonth = new Date().getMonth()
+
+const previousMonthIndex =
+  currentMonth === 0 ? 11 : currentMonth - 1
+
+const previousMonthProfit =
+  (chartData[previousMonthIndex]?.sales || 0) -
+  (chartData[previousMonthIndex]?.expenses || 0)
+
+const profitTrend = netProfit - previousMonthProfit
+
+  return (
+
+    <div className="p-6 rounded-lg font-poppins bg-gray-50">
+
+      <div className="flex flex-col gap-6">
+
+        {/* FILTER */}
+
+        <div className="flex items-center gap-2 justify-end">
+          <h1 className="text-md font-semibold">Filter By Time</h1>
+
+          <select
+            className="p-2 rounded-md border"
+            value={range}
+            onChange={(e) => setRange(e.target.value as Range)}
+          >
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="this_week">This Week</option>
+            <option value="last_week">Last Week</option>
+            <option value="this_month">This Month</option>
+            <option value="last_month">Last Month</option>
+            <option value="this_year">This Year</option>
+            <option value="last_year">Last Year</option>
+          </select>
+        </div>
+
+        {/* TOP CARDS */}
+
+        <div className="flex flex-col md:flex-row gap-5 w-full">
+
+          {/* PROFIT CARD */}
+
+          <div className="flex flex-col gap-5 rounded-xl border border-gray-100 shadow-sm md:w-[45%] p-5 bg-white">
+
+            <h1 className="text-md font-semibold">Profit & Loss</h1>
+
+            <div>
+              <p className={`text-4xl font-bold tracking-tight ${isUp ? "text-green-600" : "text-red-600"}`}>
+                N{netProfit.toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500">
+                Net Profit for {range.replace('_', ' ')}
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-4">
+
+              {/* SALES */}
+
+              <div className="flex justify-between items-center gap-3">
+
+                <div className="w-full h-[15px] bg-gray-100 rounded-full overflow-hidden">
+
+                  <div
+                    className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                    style={{ width: `${salesPercent}%` }}
+                  />
+
                 </div>
 
-
-                {/* Inventory Overview */}
-
-                <div className="flex flex-col gap-4 rounded-lg shadow-md p-4 bg-white">
-
-                    <div className="flex gap-10">
-                        <h1>Inventory Overview</h1>
-
-                        <select>
-                            <option>This Month</option>
-                            <option>Last Month</option>
-                            <option>Custom Range</option>
-                            <option>Last Year</option>
-                        </select>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3">
-
-                        <div className="flex gap-2">
-                            <p className="text-md font-semibold">Total Products:</p>
-                            <p className="text-sm text-gray-500">{totalProducts} Items</p>
-                        </div>
-
-                        <div className="flex gap-2">
-                            <p className="text-md font-semibold">Low Stock</p>
-                            <p className="text-sm text-gray-500">{lowStock} Items</p>
-                        </div>
-
-                        <div className="flex gap-2">
-                            <p className="text-md font-semibold">Out of Stock</p>
-                            <p className="text-sm text-gray-500">{outOfStock} Items</p>
-                        </div>
-
-                        <div className="flex gap-2">
-                            <p className="text-md font-semibold">Stock Value</p>
-                            <p className="text-sm text-gray-500">${stockValue.toLocaleString()}</p>
-                        </div>
-
-                        <div className="flex gap-2">
-                            <p className="text-md font-semibold">Categories</p>
-                            <p className="text-sm text-gray-500">{categories}</p>
-                        </div>
-
-                        <div className="flex gap-2">
-                            <p className="text-md font-semibold">Recently Updated</p>
-                            <p className="text-sm text-gray-500">{recentlyUpdated}</p>
-                        </div>
-
-                    </div>
+                <div className="flex flex-col text-right min-w-[90px]">
+                  <span className="text-sm text-gray-500">Sales</span>
+                  <span className="text-sm font-semibold">
+                    N{salesTotal.toLocaleString()}
+                  </span>
                 </div>
 
+              </div>
 
-                {/* revenue card */}
+              {/* EXPENSES */}
 
-                <div>
-                    <div className="flex justify-between">
-                        <h1>Revenue Summary</h1>
+              <div className="flex justify-between items-center gap-3">
 
-                        <select>
-                            <option>This Month</option>
-                            <option>Last Month</option>
-                            <option>This Year</option>
-                            <option>Last Year</option>
-                        </select>
-                    </div>
+                <div className="w-full h-[15px] bg-gray-100 rounded-full overflow-hidden">
+
+                  <div
+                    className="h-full bg-red-500 rounded-full transition-all duration-500"
+                    style={{ width: `${expensePercent}%` }}
+                  />
+
                 </div>
+
+                <div className="flex flex-col text-right min-w-[90px]">
+                  <span className="text-sm text-gray-500">Expenses</span>
+                  <span className="text-sm font-semibold">
+                    N{expenseTotal.toLocaleString()}
+                  </span>
+                </div>
+
+              </div>
+
+              {/* TREND */}
+
+              <div className="pt-3 border-t border-gray-100">
+
+                <div className="flex items-center gap-1 text-sm">
+
+                  <span className={`font-semibold ${profitTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {profitTrend >= 0 ? "▲" : "▼"} {Math.abs(profitTrend).toLocaleString()}
+                  </span>
+
+                  <span className="text-gray-500">
+                    from Prev {range.includes('month') ? 'Month' : 'Year'}
+                  </span>
+
+                </div>
+
+                <div className="h-[40px] w-full">
+
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={[
+                        { name: 'Last Month', profit: previousMonthProfit },
+                        { name: 'This Month', profit: netProfit }
+                      ]}
+                    >
+                      <Line
+                        type="monotone"
+                        dataKey="profit"
+                        stroke={profitTrend >= 0 ? '#16a34a' : '#dc2626'}
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+
+                </div>
+
+              </div>
 
             </div>
 
+          </div>
+
+          {/* INVENTORY CARD */}
+
+          <div className="flex flex-1 flex-col gap-4 rounded-lg shadow-md p-4 bg-white">
+
+            <h1 className="text-md font-bold text-gray-900 ">Inventory Overview</h1>
+
+            <div className="grid gap-3">
+
+              <div className="flex gap-2">
+                <p className="font-semibold">Total Products:</p>
+                <span>{totalItems}</span>
+              </div>
+
+              <div className="flex gap-2">
+                <p className="font-semibold">Low Stock:</p>
+                <span>{lowStockCount}</span>
+              </div>
+
+              <div className="flex gap-2">
+                <p className="font-semibold">Out of Stock:</p>
+                <span>{outOfStockCount}</span>
+              </div>
+
+              <div className="flex gap-2">
+                <p className="font-semibold">Stock Value:</p>
+                <span>N{stockValue.toLocaleString()}</span>
+              </div>
+
+              <div className="flex gap-2">
+                <p className="font-semibold">Categories:</p>
+                <span>{categories}</span>
+              </div>
+
+              <div className="flex gap-2">
+                <p className="font-semibold">Recently Updated:</p>
+                <span>{recentlyUpdated}</span>
+              </div>
+
+            </div>
+
+          </div>
+
         </div>
-    )
+
+        {/* REVENUE SUMMARY */}
+
+        <div className="flex flex-col gap-4 rounded-lg shadow-md p-4 bg-white">
+
+          <h1 className="text-lg font-semibold">Revenue Summary</h1>
+
+          {loading ? (
+            <div className="flex justify-center p-10">
+              <ClipLoader size={30} />
+            </div>
+          ) : (
+            <RevenueSummaryChart data={chartData} />
+          )}
+
+        </div>
+
+      </div>
+
+    </div>
+  )
 }
