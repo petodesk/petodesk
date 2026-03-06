@@ -3,13 +3,11 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
 import OwnerSidebar from '../components/sidebars/OwnerSidebar'
 import DashHeader from '../components/DashHeader'
-import { AdminSidebar } from '../components/sidebars/AdminSidebar'
 import { Loading } from '../components/Loading'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
 
-  const [role, setRole] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<{ full_name: string } | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -26,7 +24,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           .eq('id', user.id)
           .single()
 
-        setRole(profile?.role || 'employee')
         setUserProfile(profile)
       }
       setLoading(false)
