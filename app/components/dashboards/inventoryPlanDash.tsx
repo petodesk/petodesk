@@ -414,17 +414,17 @@ const profitTrend = netProfit - previousMonthProfit
 
               <div className="flex gap-2">
                 <p className="font-semibold">Total Products:</p>
-                <span>{totalItems}</span>
+                <span>{totalItems} {' '} Items</span>
               </div>
 
               <div className="flex gap-2">
                 <p className="font-semibold">Low Stock:</p>
-                <span>{lowStockCount}</span>
+                <span>{lowStockCount} {' '} Items</span>
               </div>
 
               <div className="flex gap-2">
                 <p className="font-semibold">Out of Stock:</p>
-                <span>{outOfStockCount}</span>
+                <span>{outOfStockCount} {' '} Items</span>
               </div>
 
               <div className="flex gap-2">
@@ -434,12 +434,12 @@ const profitTrend = netProfit - previousMonthProfit
 
               <div className="flex gap-2">
                 <p className="font-semibold">Categories:</p>
-                <span>{categories}</span>
+                <span>{categories} {' '} Categories</span>
               </div>
 
               <div className="flex gap-2">
                 <p className="font-semibold">Recently Updated:</p>
-                <span>{recentlyUpdated}</span>
+                <span>{recentlyUpdated} {' '} Items</span>
               </div>
 
             </div>
