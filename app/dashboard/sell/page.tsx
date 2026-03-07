@@ -75,8 +75,9 @@ export default function SellPage() {
   const [edit, setEdit] = useState(false)
   const [scannerOpen, setScannerOpen] = useState(false);
   const [cart, setCart] = useState<any[]>([]);
-const [isCartOpen, setIsCartOpen] = useState(false);
-const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+  const [sellerCompanyId, setSellerCompanyId] = useState<string | null>(null)
   /* ---------------- DATE RANGE LOGIC ---------------- */
   const getRangeDates = (range: Range) => {
     const now = new Date()
@@ -214,6 +215,7 @@ const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
         .select('company_id')
         .eq('id', userData.user.id)
         .single()
+      setSellerCompanyId(profile?.company_id || null)
 
       if (!profile?.company_id) return
 
@@ -260,146 +262,148 @@ const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [editQty, setEditQty] = useState(1)
 
   const updateCartQty = (productId: string, newQty: number) => {
-  if (newQty < 1) return; // Prevent 0 or negative
-  setCart(prev => prev.map(item => 
-    item.id === productId ? { ...item, quantity: newQty } : item
-  ));
-};
+    if (newQty < 1) return; // Prevent 0 or negative
+    setCart(prev => prev.map(item =>
+      item.id === productId ? { ...item, quantity: newQty } : item
+    ));
+  };
 
-const removeFromCart = (productId: string) => {
-  setCart(prev => prev.filter(item => item.id !== productId));
-};
+  const removeFromCart = (productId: string) => {
+    setCart(prev => prev.filter(item => item.id !== productId));
+  };
 
-// Calculate Totals for the Cart UI
-const cartSubtotal = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0);
-const cartTax = cart.reduce((acc, item) => {
+  // Calculate Totals for the Cart UI
+  const cartSubtotal = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0);
+  const cartTax = cart.reduce((acc, item) => {
     const itemTotal = item.selling_price * item.quantity;
     return acc + (itemTotal * (item.tax_percent / 100));
-}, 0);
+  }, 0);
 
-const cartTotal = cartSubtotal + cartTax;
+  const cartTotal = cartSubtotal + cartTax;
 
-   const handleBarcodeScan = async (code: string) => {
+  const handleBarcodeScan = async (code: string) => {
+    if (!code) return;
 
-      if (!code) return
-
-      const { data: product, error } = await supabase
-        .from('products')
-        .select(`
+    const { data: product, error } = await supabase
+      .from('products')
+      .select(`
       id,
       name,
       barcode,
       product_prices (selling_price, cost_price),
       product_stock (quantity)
     `)
-        .eq('barcode', code)
-        .single()
+      .eq('barcode', code)
+      .single();
 
-      if (error || !product) {
-        alert('Product not found')
-        return
-      }
-      alert(`Scanned: ${product.name}`)
-
-      if (product.product_stock?.[0]?.quantity <= 0) {
-        alert('Product out of stock')
-        return
-      }
-
-      setCart((prev) => {
-    const existing = prev.find((item) => item.id === product.id);
-    if (existing) {
-      return prev.map((item) =>
-        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-      );
+    if (error || !product) {
+      alert('Product not found: ' + code);
+      return;
     }
-    return [...prev, { 
-        id: product.id, 
-        name: product.name, 
+
+    const stockAvailable = product.product_stock?.[0]?.quantity || 0;
+
+    setCart((prev) => {
+      const existing = prev.find((item) => item.id === product.id);
+
+      // Check if we are trying to add more than available stock
+      const currentQtyInCart = existing ? existing.quantity : 0;
+      if (currentQtyInCart + 1 > stockAvailable) {
+        alert(`Insufficient stock for ${product.name}. Only ${stockAvailable} left.`);
+        return prev;
+      }
+
+      if (existing) {
+        return prev.map((item) =>
+          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+
+      return [...prev, {
+        id: product.id,
+        name: product.name,
         selling_price: product.product_prices?.[0]?.selling_price || 0,
-        tax_percent: 7.5, // Default or from DB
-        quantity: 1 
-    }];
-  });
+        cost_price: product.product_prices?.[0]?.cost_price || 0,
+        tax_percent: 0,
+        quantity: 1,
+        discount_percent: 0,
+      }];
+    });
 
-  setIsCartOpen(true); // Auto-open cart to show user the item was added
-      console.log('Scanned product :', product)
-
-      // open sale modal
-      setOpenModal(true)
-
-    }
+    // Optional: Add a brief "Beep" sound or haptic feedback here
+    setIsCartOpen(true);
+  };
 
 
 
-    const handleCheckout = async (paymentMethod: string) => {
+ const handleCheckout = async (paymentMethod: string) => {
   if (cart.length === 0) return;
+  if (!confirm(`Complete sale of ₦${cartTotal.toLocaleString()}?`)) return;
+
   setIsCheckoutLoading(true);
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
     
-    // 1. Calculate Total Sale Amount
-    const totalAmount = cart.reduce((sum, item) => {
-      const gross = item.selling_price * item.quantity;
-      const discount = (gross * item.discount_percent) / 100;
-      const tax = ((gross - discount) * item.tax_percent) / 100;
-      return sum + (gross - discount + tax);
-    }, 0);
-
-    // 2. Insert into 'sales' table
+    // 1. Create the Main Sale Record
     const { data: sale, error: saleError } = await supabase
       .from('sales')
       .insert([{
-        total_amount: totalAmount,
+        total_amount: cartTotal,
         payment_method: paymentMethod,
-        seller_id: user?.id, // Ensure your schema has this
+        sold_by: user?.id,
+        company_id: sellerCompanyId
       }])
-      .select()
-      .single();
+      .select().single();
 
     if (saleError) throw saleError;
 
-    // 3. Prepare 'sale_items' data
+    // 2. Prepare Items for Bulk Insert
     const saleItems = cart.map((item) => {
-      const gross = item.selling_price * item.quantity;
-      const discountAmount = (gross * item.discount_percent) / 100;
-      const net = gross - discountAmount;
-      const taxAmount = (net * item.tax_percent) / 100;
-
+      const subtotal = (item.selling_price * item.quantity);
+      const taxAmount = subtotal * (item.tax_percent / 100);
+      const discountAmount = subtotal * (item.discount_percent / 100);
+      
       return {
         sale_id: sale.id,
         product_id: item.id,
+        item_name: item.name,
         quantity: item.quantity,
         selling_price: item.selling_price,
         cost_price: item.cost_price,
-        discount: discountAmount,
         discount_percent: item.discount_percent,
+        discount:discountAmount,
         tax_percent: item.tax_percent,
         tax_amount: taxAmount,
-        subtotal: net + taxAmount,
+        subtotal: subtotal + taxAmount,
         status: 'Sold'
       };
     });
 
-    // 4. Insert sale items
     const { error: itemsError } = await supabase.from('sale_items').insert(saleItems);
     if (itemsError) throw itemsError;
 
-    // 5. Update Stock (Simple loop or RPC)
+    // 3. Update Stock (Better to do this via a single RPC call if possible, 
+    // but for now, we'll loop)
     for (const item of cart) {
-        await supabase.rpc('decrement_stock', { 
-            p_id: item.id, 
-            qty: item.quantity 
-        });
+        const { data: currentStock } = await supabase
+            .from('product_stock')
+            .select('quantity')
+            .eq('product_id', item.id)
+            .single();
+
+        await supabase
+            .from('product_stock')
+            .update({ quantity: (currentStock?.quantity || 0) - item.quantity })
+            .eq('product_id', item.id);
     }
 
-    alert('Sale successful!');
-    setCart([]); // Clear cart
-    fetchSales(); // Refresh list
+    alert('Sale Completed Successfully!');
+    setCart([]);
+    setIsCartOpen(false);
+    fetchSales();
   } catch (err: any) {
-    console.error(err);
-    alert('Checkout failed: ' + err.message);
+    alert('Error: ' + err.message);
   } finally {
     setIsCheckoutLoading(false);
   }
@@ -554,7 +558,7 @@ const cartTotal = cartSubtotal + cartTax;
       setOpen(false)
     }
 
- 
+
 
 
 
@@ -609,7 +613,7 @@ const cartTotal = cartSubtotal + cartTax;
   /* ---------------- UI ---------------- */
   return (
     <section className="w-full px-6 py-6 bg-gray-50">
-    
+
       {/* ---------------- TOP ACTION BAR ---------------- */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
@@ -621,23 +625,42 @@ const cartTotal = cartSubtotal + cartTax;
           + Add New Sell
         </button>
 
-       <button
-  onClick={() => setScannerOpen(true)}
-  className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white sm:w-auto"
->
-  Scan Barcode
-</button>
+        <button
+          onClick={() => setScannerOpen(true)}
+          className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white sm:w-auto"
+        >
+          Scan Barcode
+        </button>
 
-{scannerOpen && (
-  <CameraScanner
-    onScan={(code) => {
-      handleBarcodeScan(code);
-      setScannerOpen(false);
-    }}
-    onClose={() => setScannerOpen(false)}
-  />
-)}
+        {scannerOpen && (
+          <div className="fixed inset-0 z-[70] bg-black flex flex-col">
+            {/* Header for Scanner */}
+            <div className="p-4 flex justify-between items-center text-white bg-blue-600">
+              <h2 className="font-bold">Scanning Items... ({cart.length} in cart)</h2>
+              <button
+                onClick={() => setScannerOpen(false)}
+                className="px-4 py-2 bg-red-500 rounded-lg"
+              >
+                Done Scanning
+              </button>
+            </div>
 
+            <CameraScanner
+              onScan={(code) => {
+                handleBarcodeScan(code);
+                // Notice we DON'T close the scanner here anymore
+              }}
+              onClose={() => setScannerOpen(false)}
+            />
+
+            {/* Mini Cart Preview inside Scanner (Optional but helpful) */}
+            <div className="absolute bottom-10 left-0 right-0 px-4">
+              <div className="bg-white/90 p-3 rounded-t-xl text-center font-bold text-blue-800">
+                Last Scanned: {cart[cart.length - 1]?.name || 'None'}
+              </div>
+            </div>
+          </div>
+        )}
         {/* Right: Range Selector */}
         <div className='flex gap-2 items-center'>
           <h1>Filter by Time:</h1>
@@ -978,80 +1001,80 @@ const cartTotal = cartSubtotal + cartTax;
       </div>
 
       {/* --- CART SIDEBAR --- */}
-{isCartOpen && (
-  <div className="fixed inset-0 z-[60] flex justify-end bg-black/50">
-    <div className="w-full max-w-md bg-white h-full shadow-xl flex flex-col">
-      <div className="p-4 border-b flex justify-between items-center bg-blue-600 text-white">
-        <h2 className="text-lg font-bold">Current Sale ({cart.length})</h2>
-        <button onClick={() => setIsCartOpen(false)} className="text-2xl">&times;</button>
-      </div>
+      {isCartOpen && (
+        <div className="fixed inset-0 z-[60] flex justify-end bg-black/50">
+          <div className="w-full max-w-md bg-white h-full shadow-xl flex flex-col">
+            <div className="p-4 border-b flex justify-between items-center bg-blue-600 text-white">
+              <h2 className="text-lg font-bold">Current Sale ({cart.length})</h2>
+              <button onClick={() => setIsCartOpen(false)} className="text-2xl">&times;</button>
+            </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {cart.length === 0 ? (
-          <p className="text-center text-gray-500 mt-10">Cart is empty. Scan something!</p>
-        ) : (
-          cart.map((item) => (
-            <div key={item.id} className="flex items-center justify-between border-b pb-4">
-              <div className="flex-1">
-                <p className="font-semibold text-gray-800">{item.name}</p>
-                <p className="text-sm text-gray-500">₦{item.selling_price.toLocaleString()}</p>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {cart.length === 0 ? (
+                <p className="text-center text-gray-500 mt-10">Cart is empty. Scan something!</p>
+              ) : (
+                cart.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between border-b pb-4">
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-800">{item.name}</p>
+                      <p className="text-sm text-gray-500">₦{item.selling_price.toLocaleString()}</p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {/* Quantity Controls */}
+                      <div className="flex items-center border rounded-lg">
+                        <button
+                          onClick={() => updateCartQty(item.id, item.quantity - 1)}
+                          className="px-3 py-1 bg-gray-100 hover:bg-gray-200">-</button>
+                        <span className="px-3 font-medium">{item.quantity}</span>
+                        <button
+                          onClick={() => updateCartQty(item.id, item.quantity + 1)}
+                          className="px-3 py-1 bg-gray-100 hover:bg-gray-200">+</button>
+                      </div>
+                      <button
+                        onClick={() => removeFromCart(item.id)}
+                        className="text-red-500 hover:text-red-700">🗑️</button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer / Summary */}
+            <div className="p-4 bg-gray-50 border-t space-y-3">
+              <div className="flex justify-between text-sm">
+                <span>Subtotal:</span>
+                <span>₦{cartSubtotal.toLocaleString()}</span>
               </div>
-              
-              <div className="flex items-center gap-3">
-                {/* Quantity Controls */}
-                <div className="flex items-center border rounded-lg">
-                  <button 
-                    onClick={() => updateCartQty(item.id, item.quantity - 1)}
-                    className="px-3 py-1 bg-gray-100 hover:bg-gray-200">-</button>
-                  <span className="px-3 font-medium">{item.quantity}</span>
-                  <button 
-                    onClick={() => updateCartQty(item.id, item.quantity + 1)}
-                    className="px-3 py-1 bg-gray-100 hover:bg-gray-200">+</button>
-                </div>
-                <button 
-                  onClick={() => removeFromCart(item.id)}
-                  className="text-red-500 hover:text-red-700">🗑️</button>
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Tax (0%):</span>
+                <span>₦{cartTax.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-xl font-bold border-t pt-2">
+                <span>Total:</span>
+                <span className="text-blue-600">₦{cartTotal.toLocaleString()}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <button
+                  disabled={cart.length === 0}
+                  onClick={() => handleCheckout('Cash')}
+                  className="bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 disabled:bg-gray-300"
+                >
+                  Cash Sale
+                </button>
+                <button
+                  disabled={cart.length === 0}
+                  onClick={() => handleCheckout('Transfer')}
+                  className="bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 disabled:bg-gray-300"
+                >
+                  Transfer
+                </button>
               </div>
             </div>
-          ))
-        )}
-      </div>
-
-      {/* Footer / Summary */}
-      <div className="p-4 bg-gray-50 border-t space-y-3">
-        <div className="flex justify-between text-sm">
-          <span>Subtotal:</span>
-          <span>₦{cartSubtotal.toLocaleString()}</span>
+          </div>
         </div>
-        <div className="flex justify-between text-sm text-gray-600">
-          <span>Tax (7.5%):</span>
-          <span>₦{cartTax.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between text-xl font-bold border-t pt-2">
-          <span>Total:</span>
-          <span className="text-blue-600">₦{cartTotal.toLocaleString()}</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 mt-4">
-          <button 
-            disabled={cart.length === 0}
-            onClick={() => handleCheckout('Cash')}
-            className="bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 disabled:bg-gray-300"
-          >
-            Cash Sale
-          </button>
-          <button 
-            disabled={cart.length === 0}
-            onClick={() => handleCheckout('Transfer')}
-            className="bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 disabled:bg-gray-300"
-          >
-            Transfer
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
     </section>
   )
