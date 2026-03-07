@@ -54,7 +54,7 @@ type Invoices = {
 export default function ExpensesPage() {
   const supabase = createClient()
 
-  const [range, setRange] = useState<Range>('today')
+  const [range, setRange] = useState<Range>('this_month')
   const [invoices, setInvoices] = useState<Invoices[]>([])
   const [loading, setLoading] = useState(true)
   const [openModal, setOpenModal] = useState(false)

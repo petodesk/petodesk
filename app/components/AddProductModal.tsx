@@ -86,22 +86,7 @@ export function AddProductModal({ open, onClose, product }: Props) {
         setErrors(prev => ({ ...prev, [key]: '' }))
     }
 
-    const uploadProductImage = async (file: File, productId: string) => {
-        const fileExt = file.name.split('.').pop()
-        const filePath = `products/${productId}.${fileExt}`
 
-        const { error } = await supabase.storage
-            .from('product-images')
-            .upload(filePath, file, { upsert: true })
-
-        if (error) throw error
-
-        const { data } = supabase.storage
-            .from('product-images')
-            .getPublicUrl(filePath)
-
-        return data.publicUrl
-    }
 
     // 🔐 validation
     const validate = () => {
@@ -166,14 +151,22 @@ export function AddProductModal({ open, onClose, product }: Props) {
     useEffect(() => {
         const fetchSuppliers = async () => {
             if (!userCompanyId) return
+
             const { data, error } = await supabase
                 .from('suppliers_list')
-                .select('*')
+                .select('id,name,location,phone')
                 .eq('company_id', userCompanyId)
                 .order('name', { ascending: true })
 
-            if (!error) setExistingSuppliers(data)
+            if (!error && data) {
+                const uniqueSuppliers = Array.from(
+                    new Map(data.map(s => [s.name, s])).values()
+                )
+
+                setExistingSuppliers(uniqueSuppliers)
+            }
         }
+
         fetchSuppliers()
     }, [userCompanyId])
 
@@ -402,7 +395,10 @@ export function AddProductModal({ open, onClose, product }: Props) {
                                             if (e.target.value === "new") {
                                                 setIsNewSupplier(true)
                                             } else {
+
                                                 const s = existingSuppliers.find(x => x.id === e.target.value)
+                                                if (!s) return
+
                                                 update('supplier_name', s.name)
                                                 update('supplier_location', s.location)
                                                 update('supplier_phone', s.phone)

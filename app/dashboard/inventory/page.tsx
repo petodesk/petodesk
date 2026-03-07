@@ -5,6 +5,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import { AddProductModal } from '@/app/components/AddProductModal'
 import { HiDownload, HiSearch } from 'react-icons/hi'
 import Products from '@/app/types/products'
+import BarcodeLabel from '@/app/components/BarcodeLabel'
 
 type DateFilter =
   | 'today'
@@ -32,10 +33,9 @@ export default function inventoryPage() {
   const [loading, setLoading] = useState(true)
   const [openAllProducts, setOpenAllProducts] = useState(false)
 
-  const [dateFilter, setDateFilter] = useState<DateFilter>('today')
+  const [dateFilter, setDateFilter] = useState<DateFilter>('thisMonth')
   const [search, setSearch] = useState('')
   const [stockFilter, setStockFilter] = useState<StockFilter>('all')
-
 
   // 🔹 Fetch today's sales
   const fetchAllProduct = useCallback(async () => {
@@ -60,6 +60,7 @@ export default function inventoryPage() {
       name,
       category,
       brand,
+      barcode,
       deleted,
       created_at,
       product_prices(selling_price, cost_price),
@@ -187,6 +188,8 @@ export default function inventoryPage() {
   function ActionMenu({ product }: { product: any }) {
     const [open, setOpen] = useState(false)
     const [editOpen, setEditOpen] = useState(false)
+    const [viewBarcode, setViewBarcode] = useState(false)
+
 
     const handleEdit = () => {
       setEditOpen(true)
@@ -210,13 +213,17 @@ export default function inventoryPage() {
       fetchAllProduct()
     }
 
+    const handleViewBarcode = async () => {
+      setViewBarcode(true)
+    }
+
 
 
     return (
       <div className="relative">
         <button
           onClick={() => setOpen(!open)}
-          className="text-lg font-bold text-gray-600"
+          className="text-lg font-bold text-gray-600 cursor-pointer"
         >
           ⋮
         </button>
@@ -247,6 +254,12 @@ export default function inventoryPage() {
                   delete
                 </li>
               }
+              <li
+                  className="cursor-pointer px-4 py-2 text-blue-600 hover:bg-gray-100"
+
+                onClick={handleViewBarcode}>
+                View Barcode
+              </li>
 
 
             </ul>
@@ -263,6 +276,7 @@ export default function inventoryPage() {
           }}
           product={product}
         />
+        {viewBarcode && <BarcodeLabel product={product} onclose={() => setViewBarcode(false)} open={viewBarcode} />}
 
       </div>
     )
