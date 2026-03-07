@@ -1002,7 +1002,7 @@ export default function SellPage() {
 
       {/* --- CART SIDEBAR --- */}
       {isCartOpen && (
-        <div className="fixed inset-0 z-[60] flex justify-end bg-black/50">
+        <div className="fixed inset-0 z-[60] flex justify-end bg-black/50 mt-30">
           <div className="w-full max-w-md bg-white h-full shadow-xl flex flex-col">
             <div className="p-4 border-b flex justify-between items-center bg-blue-600 text-white">
               <h2 className="text-lg font-bold">Current Sale ({cart.length})</h2>
