@@ -72,10 +72,7 @@ export default function SellPage() {
   const [totalProfit, setTotalProfit] = useState(0)
   const [totalTransactions, setTotalTransactions] = useState(0)
   const [edit, setEdit] = useState(false)
-<<<<<<< Updated upstream
-=======
   const [scannerOpen, setScannerOpen] = useState(false);
->>>>>>> Stashed changes
   /* ---------------- DATE RANGE LOGIC ---------------- */
   const getRangeDates = (range: Range) => {
     const now = new Date()
@@ -460,11 +457,7 @@ const filteredSales = sales.filter((sale) => {
   /* ---------------- UI ---------------- */
   return (
     <section className="w-full px-6 py-6 bg-gray-50">
-<<<<<<< Updated upstream
-
-=======
     
->>>>>>> Stashed changes
       {/* ---------------- TOP ACTION BAR ---------------- */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
