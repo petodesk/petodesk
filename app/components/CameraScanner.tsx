@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 
 type CameraScannerProps = {
     onScan: (code: string) => void;
@@ -9,65 +9,90 @@ type CameraScannerProps = {
 };
 
 export default function CameraScanner({ onScan, onClose }: CameraScannerProps) {
-    const scannerRef = useRef<HTMLDivElement>(null);
     const html5QrcodeRef = useRef<Html5Qrcode | null>(null);
+    // Track if we are already in the middle of a "start" request
+    const isStarting = useRef(false);
 
     useEffect(() => {
-        if (!scannerRef.current) return;
-
         const scannerId = "qr-reader";
-        html5QrcodeRef.current = new Html5Qrcode(scannerId);
+        const scanner = new Html5Qrcode(scannerId);
+        html5QrcodeRef.current = scanner;
 
-        // Start scanning with facingMode configuration
-        html5QrcodeRef.current.start(
-            // Use facingMode instead of a specific device ID
-            { facingMode: "environment" }, 
-            {
-                fps: 10,
-                qrbox: { width: 250, height: 250 } // Better responsive handling
-            },
-            (decodedText) => {
-                onScan(decodedText);
-                stopScanner();
-            },
-            (error) => {
-                // Keep this quiet to avoid console spamming during focus hunting
+        const startCamera = async () => {
+            // Prevent double-start if React runs this twice
+            if (isStarting.current || scanner.isScanning) return;
+            
+            isStarting.current = true;
+
+            try {
+                // Small delay to ensure DOM is ready
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                };
+
+                // Try back camera first
+                await scanner.start(
+                    { facingMode: "environment" },
+                    config,
+                    (text) => {
+                        onScan(text);
+                        handleClose();
+                    },
+                    () => {} // ignore frame errors
+                );
+            } catch (err) {
+                console.warn("Back camera failed, trying fallback...", err);
+                try {
+                    // Fallback to any camera (laptop webcam)
+                    await scanner.start(
+                        { facingMode: "user" },
+                        { fps: 10, qrbox: { width: 250, height: 250 } },
+                        (text) => { onScan(text); handleClose(); },
+                        () => {}
+                    );
+                } catch (fallbackErr) {
+                    console.error("No camera found", fallbackErr);
+                }
+            } finally {
+                isStarting.current = false;
             }
-        ).catch((err) => {
-            console.error("Unable to start scanning", err);
-        });
+        };
+
+        startCamera();
 
         return () => {
-            stopScanner();
+            // Cleanup: stop the scanner if it's running
+            if (scanner.isScanning) {
+                scanner.stop().then(() => scanner.clear()).catch(() => {});
+            }
         };
     }, []);
 
-    const stopScanner = async () => {
+    const handleClose = async () => {
         if (html5QrcodeRef.current) {
-            try {
-                if (html5QrcodeRef.current.isScanning) {
-                    await html5QrcodeRef.current.stop();
-                }
-                html5QrcodeRef.current.clear();
-            } catch (err) {
-                console.warn('Failed to stop scanner:', err);
+            if (html5QrcodeRef.current.isScanning) {
+                await html5QrcodeRef.current.stop();
             }
+            html5QrcodeRef.current.clear();
         }
+        onClose();
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/50 p-4">
-            <div className="relative w-full max-w-md overflow-hidden rounded-lg bg-white">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 p-4">
+            <div className="relative w-full max-w-md overflow-hidden rounded-xl bg-black shadow-2xl">
+                {/* Center the video within the box */}
                 <div id="qr-reader" className="w-full" />
             </div>
+            
             <button
-                onClick={() => {
-                    stopScanner();
-                    onClose();
-                }}
-                className="mt-4 rounded bg-red-600 px-6 py-2 font-medium text-white transition-colors hover:bg-red-700"
+                onClick={handleClose}
+                className="mt-8 rounded-lg bg-red-600 px-10 py-3 font-bold text-white hover:bg-red-700 active:scale-95"
             >
-                Close Scanner
+                Close
             </button>
         </div>
     );
