@@ -15,56 +15,59 @@ export default function CameraScanner({ onScan, onClose }: CameraScannerProps) {
     useEffect(() => {
         if (!scannerRef.current) return;
 
-        html5QrcodeRef.current = new Html5Qrcode('qr-reader');
+        const scannerId = "qr-reader";
+        html5QrcodeRef.current = new Html5Qrcode(scannerId);
 
-        Html5Qrcode.getCameras()
-            .then((devices) => {
-                if (devices && devices.length) {
-                    const cameraId = devices[0].id; // default to first camera
-                    html5QrcodeRef.current?.start(
-                        cameraId,
-                        {
-                            fps: 10,
-                            qrbox: 250
-                        },
-                        (decodedText) => {
-                            onScan(decodedText);
-                            stopScanner();
-                        },
-                        (error) => {
-                            console.warn('QR scan error:', error);
-                        }
-                    );
-                }
-            })
-            .catch((err) => console.error(err));
+        // Start scanning with facingMode configuration
+        html5QrcodeRef.current.start(
+            // Use facingMode instead of a specific device ID
+            { facingMode: "environment" }, 
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 } // Better responsive handling
+            },
+            (decodedText) => {
+                onScan(decodedText);
+                stopScanner();
+            },
+            (error) => {
+                // Keep this quiet to avoid console spamming during focus hunting
+            }
+        ).catch((err) => {
+            console.error("Unable to start scanning", err);
+        });
 
-        return () => stopScanner();
+        return () => {
+            stopScanner();
+        };
     }, []);
 
-    const stopScanner = () => {
-        if (html5QrcodeRef.current && html5QrcodeRef.current.getState() === 2) {
-            // 2 = SCANNER_RUNNING
-            html5QrcodeRef.current.stop()
-                .then(() => html5QrcodeRef.current?.clear())
-                .catch(err => console.warn('Failed to stop scanner:', err));
-        } else {
-            // Already stopped or not started yet
-            html5QrcodeRef.current?.clear();
+    const stopScanner = async () => {
+        if (html5QrcodeRef.current) {
+            try {
+                if (html5QrcodeRef.current.isScanning) {
+                    await html5QrcodeRef.current.stop();
+                }
+                html5QrcodeRef.current.clear();
+            } catch (err) {
+                console.warn('Failed to stop scanner:', err);
+            }
         }
     };
 
     return (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/50 p-4">
-            <div ref={scannerRef} id="qr-reader" className="w-full max-w-md bg-white" />
+            <div className="relative w-full max-w-md overflow-hidden rounded-lg bg-white">
+                <div id="qr-reader" className="w-full" />
+            </div>
             <button
                 onClick={() => {
                     stopScanner();
                     onClose();
                 }}
-                className="mt-4 rounded bg-red-600 px-4 py-2 text-white"
+                className="mt-4 rounded bg-red-600 px-6 py-2 font-medium text-white transition-colors hover:bg-red-700"
             >
-                Close
+                Close Scanner
             </button>
         </div>
     );

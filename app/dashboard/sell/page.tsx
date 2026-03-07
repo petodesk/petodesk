@@ -476,13 +476,14 @@ export default function SellPage() {
         alert('Product not found')
         return
       }
+      alert(`Scanned: ${product.name}`)
 
       if (product.product_stock?.[0]?.quantity <= 0) {
         alert('Product out of stock')
         return
       }
 
-      console.log('Scanned product:', product)
+      console.log('Scanned product :', product)
 
       // open sale modal
       setOpenModal(true)
