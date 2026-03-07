@@ -74,6 +74,9 @@ export default function SellPage() {
   const [totalTransactions, setTotalTransactions] = useState(0)
   const [edit, setEdit] = useState(false)
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [cart, setCart] = useState<any[]>([]);
+const [isCartOpen, setIsCartOpen] = useState(false);
+const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   /* ---------------- DATE RANGE LOGIC ---------------- */
   const getRangeDates = (range: Range) => {
     const now = new Date()
@@ -255,6 +258,153 @@ export default function SellPage() {
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [editQty, setEditQty] = useState(1)
+
+  const updateCartQty = (productId: string, newQty: number) => {
+  if (newQty < 1) return; // Prevent 0 or negative
+  setCart(prev => prev.map(item => 
+    item.id === productId ? { ...item, quantity: newQty } : item
+  ));
+};
+
+const removeFromCart = (productId: string) => {
+  setCart(prev => prev.filter(item => item.id !== productId));
+};
+
+// Calculate Totals for the Cart UI
+const cartSubtotal = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0);
+const cartTax = cart.reduce((acc, item) => {
+    const itemTotal = item.selling_price * item.quantity;
+    return acc + (itemTotal * (item.tax_percent / 100));
+}, 0);
+
+const cartTotal = cartSubtotal + cartTax;
+
+   const handleBarcodeScan = async (code: string) => {
+
+      if (!code) return
+
+      const { data: product, error } = await supabase
+        .from('products')
+        .select(`
+      id,
+      name,
+      barcode,
+      product_prices (selling_price, cost_price),
+      product_stock (quantity)
+    `)
+        .eq('barcode', code)
+        .single()
+
+      if (error || !product) {
+        alert('Product not found')
+        return
+      }
+      alert(`Scanned: ${product.name}`)
+
+      if (product.product_stock?.[0]?.quantity <= 0) {
+        alert('Product out of stock')
+        return
+      }
+
+      setCart((prev) => {
+    const existing = prev.find((item) => item.id === product.id);
+    if (existing) {
+      return prev.map((item) =>
+        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+      );
+    }
+    return [...prev, { 
+        id: product.id, 
+        name: product.name, 
+        selling_price: product.product_prices?.[0]?.selling_price || 0,
+        tax_percent: 7.5, // Default or from DB
+        quantity: 1 
+    }];
+  });
+
+  setIsCartOpen(true); // Auto-open cart to show user the item was added
+      console.log('Scanned product :', product)
+
+      // open sale modal
+      setOpenModal(true)
+
+    }
+
+
+
+    const handleCheckout = async (paymentMethod: string) => {
+  if (cart.length === 0) return;
+  setIsCheckoutLoading(true);
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // 1. Calculate Total Sale Amount
+    const totalAmount = cart.reduce((sum, item) => {
+      const gross = item.selling_price * item.quantity;
+      const discount = (gross * item.discount_percent) / 100;
+      const tax = ((gross - discount) * item.tax_percent) / 100;
+      return sum + (gross - discount + tax);
+    }, 0);
+
+    // 2. Insert into 'sales' table
+    const { data: sale, error: saleError } = await supabase
+      .from('sales')
+      .insert([{
+        total_amount: totalAmount,
+        payment_method: paymentMethod,
+        seller_id: user?.id, // Ensure your schema has this
+      }])
+      .select()
+      .single();
+
+    if (saleError) throw saleError;
+
+    // 3. Prepare 'sale_items' data
+    const saleItems = cart.map((item) => {
+      const gross = item.selling_price * item.quantity;
+      const discountAmount = (gross * item.discount_percent) / 100;
+      const net = gross - discountAmount;
+      const taxAmount = (net * item.tax_percent) / 100;
+
+      return {
+        sale_id: sale.id,
+        product_id: item.id,
+        quantity: item.quantity,
+        selling_price: item.selling_price,
+        cost_price: item.cost_price,
+        discount: discountAmount,
+        discount_percent: item.discount_percent,
+        tax_percent: item.tax_percent,
+        tax_amount: taxAmount,
+        subtotal: net + taxAmount,
+        status: 'Sold'
+      };
+    });
+
+    // 4. Insert sale items
+    const { error: itemsError } = await supabase.from('sale_items').insert(saleItems);
+    if (itemsError) throw itemsError;
+
+    // 5. Update Stock (Simple loop or RPC)
+    for (const item of cart) {
+        await supabase.rpc('decrement_stock', { 
+            p_id: item.id, 
+            qty: item.quantity 
+        });
+    }
+
+    alert('Sale successful!');
+    setCart([]); // Clear cart
+    fetchSales(); // Refresh list
+  } catch (err: any) {
+    console.error(err);
+    alert('Checkout failed: ' + err.message);
+  } finally {
+    setIsCheckoutLoading(false);
+  }
+};
+
 
 
   function ActionMenu({ sale, item, rowId }: any) {
@@ -455,39 +605,6 @@ export default function SellPage() {
   }
 
 
-   const handleBarcodeScan = async (code: string) => {
-
-      if (!code) return
-
-      const { data: product, error } = await supabase
-        .from('products')
-        .select(`
-      id,
-      name,
-      barcode,
-      product_prices (selling_price, cost_price),
-      product_stock (quantity)
-    `)
-        .eq('barcode', code)
-        .single()
-
-      if (error || !product) {
-        alert('Product not found')
-        return
-      }
-      alert(`Scanned: ${product.name}`)
-
-      if (product.product_stock?.[0]?.quantity <= 0) {
-        alert('Product out of stock')
-        return
-      }
-
-      console.log('Scanned product :', product)
-
-      // open sale modal
-      setOpenModal(true)
-
-    }
 
   /* ---------------- UI ---------------- */
   return (
@@ -859,6 +976,82 @@ export default function SellPage() {
           See all sales
         </button>
       </div>
+
+      {/* --- CART SIDEBAR --- */}
+{isCartOpen && (
+  <div className="fixed inset-0 z-[60] flex justify-end bg-black/50">
+    <div className="w-full max-w-md bg-white h-full shadow-xl flex flex-col">
+      <div className="p-4 border-b flex justify-between items-center bg-blue-600 text-white">
+        <h2 className="text-lg font-bold">Current Sale ({cart.length})</h2>
+        <button onClick={() => setIsCartOpen(false)} className="text-2xl">&times;</button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {cart.length === 0 ? (
+          <p className="text-center text-gray-500 mt-10">Cart is empty. Scan something!</p>
+        ) : (
+          cart.map((item) => (
+            <div key={item.id} className="flex items-center justify-between border-b pb-4">
+              <div className="flex-1">
+                <p className="font-semibold text-gray-800">{item.name}</p>
+                <p className="text-sm text-gray-500">₦{item.selling_price.toLocaleString()}</p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                {/* Quantity Controls */}
+                <div className="flex items-center border rounded-lg">
+                  <button 
+                    onClick={() => updateCartQty(item.id, item.quantity - 1)}
+                    className="px-3 py-1 bg-gray-100 hover:bg-gray-200">-</button>
+                  <span className="px-3 font-medium">{item.quantity}</span>
+                  <button 
+                    onClick={() => updateCartQty(item.id, item.quantity + 1)}
+                    className="px-3 py-1 bg-gray-100 hover:bg-gray-200">+</button>
+                </div>
+                <button 
+                  onClick={() => removeFromCart(item.id)}
+                  className="text-red-500 hover:text-red-700">🗑️</button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Footer / Summary */}
+      <div className="p-4 bg-gray-50 border-t space-y-3">
+        <div className="flex justify-between text-sm">
+          <span>Subtotal:</span>
+          <span>₦{cartSubtotal.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between text-sm text-gray-600">
+          <span>Tax (7.5%):</span>
+          <span>₦{cartTax.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between text-xl font-bold border-t pt-2">
+          <span>Total:</span>
+          <span className="text-blue-600">₦{cartTotal.toLocaleString()}</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 mt-4">
+          <button 
+            disabled={cart.length === 0}
+            onClick={() => handleCheckout('Cash')}
+            className="bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 disabled:bg-gray-300"
+          >
+            Cash Sale
+          </button>
+          <button 
+            disabled={cart.length === 0}
+            onClick={() => handleCheckout('Transfer')}
+            className="bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 disabled:bg-gray-300"
+          >
+            Transfer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
     </section>
   )
