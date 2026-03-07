@@ -73,8 +73,6 @@ export default function SellPage() {
   const [totalProfit, setTotalProfit] = useState(0)
   const [totalTransactions, setTotalTransactions] = useState(0)
   const [edit, setEdit] = useState(false)
-  const [barcodeInput, setBarcodeInput] = useState('')
-  const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   /* ---------------- DATE RANGE LOGIC ---------------- */
   const getRangeDates = (range: Range) => {
