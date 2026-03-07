@@ -8,6 +8,7 @@ import { AddSaleModal } from '@/app/components/SellerForm'
 import ReceiptModal from '@/app/components/ReceiptModal'
 import AllSalesModal from '@/app/components/AllSalesModal'
 import { HiSearch } from 'react-icons/hi'
+import CameraScanner from '@/app/components/CameraScanner'
 
 type Range =
   | 'today'
@@ -73,6 +74,7 @@ export default function SellPage() {
   const [totalTransactions, setTotalTransactions] = useState(0)
   const [edit, setEdit] = useState(false)
   const [barcodeInput, setBarcodeInput] = useState('')
+  const [scannerOpen, setScannerOpen] = useState(false);
   /* ---------------- DATE RANGE LOGIC ---------------- */
   const getRangeDates = (range: Range) => {
     const now = new Date()
@@ -514,15 +516,22 @@ export default function SellPage() {
           + Add New Sell
         </button>
 
-        <button
-          onClick={() => {
-            const input = document.querySelector<HTMLInputElement>('input')
-            input?.focus()
-          }}
-          className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white sm:w-auto"
-        >
-          Scan Barcode
-        </button>
+       <button
+  onClick={() => setScannerOpen(true)}
+  className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white sm:w-auto"
+>
+  Scan Barcode
+</button>
+
+{scannerOpen && (
+  <CameraScanner
+    onScan={(code) => {
+      handleBarcodeScan(code);
+      setScannerOpen(false);
+    }}
+    onClose={() => setScannerOpen(false)}
+  />
+)}
 
         {/* Right: Range Selector */}
         <div className='flex gap-2 items-center'>
