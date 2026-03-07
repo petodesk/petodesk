@@ -8,6 +8,7 @@ import { AddSaleModal } from '@/app/components/SellerForm'
 import ReceiptModal from '@/app/components/ReceiptModal'
 import AllSalesModal from '@/app/components/AllSalesModal'
 import { HiSearch } from 'react-icons/hi'
+import CameraScanner from '@/app/components/CameraScanner'
 
 type Range =
   | 'today'
@@ -26,8 +27,8 @@ type Sale = {
   created_at: string
 
   profiles: {
-  full_name: string
-} | null
+    full_name: string
+  } | null
 
   sale_items: {
     id: string
@@ -42,19 +43,19 @@ type Sale = {
     tax_amount: number
     product_id: string
     products: {
-  name: string
-} | null
+      name: string
+    } | null
 
   }[]
 
 }
-type Status = 'all' | 'Sold'| 'Cancelled'
+type Status = 'all' | 'Sold' | 'Cancelled'
 
 
 export default function SellPage() {
   const supabase = createClient()
 
-  const [range, setRange] = useState<Range>('today')
+  const [range, setRange] = useState<Range>('this_month')
   const [sales, setSales] = useState<Sale[]>([])
   const [loading, setLoading] = useState(true)
   const [openModal, setOpenModal] = useState(false)
@@ -72,6 +73,8 @@ export default function SellPage() {
   const [totalProfit, setTotalProfit] = useState(0)
   const [totalTransactions, setTotalTransactions] = useState(0)
   const [edit, setEdit] = useState(false)
+  const [barcodeInput, setBarcodeInput] = useState('')
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   /* ---------------- DATE RANGE LOGIC ---------------- */
   const getRangeDates = (range: Range) => {
@@ -185,7 +188,7 @@ export default function SellPage() {
           item.discount
       })
     })
-    
+
 
 
     setSales(data as [])
@@ -230,27 +233,27 @@ export default function SellPage() {
     fetchSales()
   }
 
-const filteredSales = sales.filter((sale) => {
-  const query = search.trim().toLowerCase()
+  const filteredSales = sales.filter((sale) => {
+    const query = search.trim().toLowerCase()
 
-  /* ---------- SEARCH FILTER ---------- */
-  const searchMatch =
-    query === '' ||
-    sale.sale_items.some(
-      (item) =>
-        item.products?.name?.toLowerCase().includes(query)
-    ) ||
-    sale.profiles?.full_name?.toLowerCase().includes(query)
+    /* ---------- SEARCH FILTER ---------- */
+    const searchMatch =
+      query === '' ||
+      sale.sale_items.some(
+        (item) =>
+          item.products?.name?.toLowerCase().includes(query)
+      ) ||
+      sale.profiles?.full_name?.toLowerCase().includes(query)
 
-  /* ---------- STATUS FILTER ---------- */
-  const statusMatch =
-    filterStatus === 'all' ||
-    sale.sale_items.some(
-      (item) => item.status === filterStatus
-    )
+    /* ---------- STATUS FILTER ---------- */
+    const statusMatch =
+      filterStatus === 'all' ||
+      sale.sale_items.some(
+        (item) => item.status === filterStatus
+      )
 
-  return searchMatch && statusMatch
-})
+    return searchMatch && statusMatch
+  })
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [editQty, setEditQty] = useState(1)
@@ -261,11 +264,11 @@ const filteredSales = sales.filter((sale) => {
     const supabase = createClient()
     const [open, setOpen] = useState(false)
 
-   const startEdit = () => {
-  setEditingItemId(rowId)
-  setEditQty(item.quantity)
-  setOpen(false)
-}
+    const startEdit = () => {
+      setEditingItemId(rowId)
+      setEditQty(item.quantity)
+      setOpen(false)
+    }
 
 
 
@@ -402,9 +405,11 @@ const filteredSales = sales.filter((sale) => {
       setReceiptOpen(true)
       setOpen(false)
     }
-  
 
-     
+ 
+
+
+
     return (
       <div className="relative">
         <button
@@ -452,7 +457,39 @@ const filteredSales = sales.filter((sale) => {
   }
 
 
+   const handleBarcodeScan = async (code: string) => {
 
+      if (!code) return
+
+      const { data: product, error } = await supabase
+        .from('products')
+        .select(`
+      id,
+      name,
+      barcode,
+      product_prices (selling_price, cost_price),
+      product_stock (quantity)
+    `)
+        .eq('barcode', code)
+        .single()
+
+      if (error || !product) {
+        alert('Product not found')
+        return
+      }
+      alert(`Scanned: ${product.name}`)
+
+      if (product.product_stock?.[0]?.quantity <= 0) {
+        alert('Product out of stock')
+        return
+      }
+
+      console.log('Scanned product :', product)
+
+      // open sale modal
+      setOpenModal(true)
+
+    }
 
   /* ---------------- UI ---------------- */
   return (
@@ -468,6 +505,23 @@ const filteredSales = sales.filter((sale) => {
         >
           + Add New Sell
         </button>
+
+       <button
+  onClick={() => setScannerOpen(true)}
+  className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white sm:w-auto"
+>
+  Scan Barcode
+</button>
+
+{scannerOpen && (
+  <CameraScanner
+    onScan={(code) => {
+      handleBarcodeScan(code);
+      setScannerOpen(false);
+    }}
+    onClose={() => setScannerOpen(false)}
+  />
+)}
 
         {/* Right: Range Selector */}
         <div className='flex gap-2 items-center'>
@@ -518,33 +572,33 @@ const filteredSales = sales.filter((sale) => {
       </div>
 
 
-       <div className="flex flex-col-reverse w-full md:flex-row gap-3 mb-4 items-center justify-between">
-              {/* Search */}
-              <div className="flex w-full items-center flex-1 rounded-xl bg-gray-100 px-3 py-2">
-                <HiSearch className="text-gray-500" size={22} />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by tilte or category"
-                  className="w-full bg-transparent px-2  outline-none text-sm"
-                />
-              </div>
-      
-              {/* status Filter */}
-              <div className='flex gap-2 items-center'>
-                <h1>Filter by Status</h1>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as Status)}
-                className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm"
-              >
-                <option value="all">All</option>
-                <option value="Sold">Sold</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-              </div>
-            </div>
+      <div className="flex flex-col-reverse w-full md:flex-row gap-3 mb-4 items-center justify-between">
+        {/* Search */}
+        <div className="flex w-full items-center flex-1 rounded-xl bg-gray-100 px-3 py-2">
+          <HiSearch className="text-gray-500" size={22} />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by tilte or category"
+            className="w-full bg-transparent px-2  outline-none text-sm"
+          />
+        </div>
+
+        {/* status Filter */}
+        <div className='flex gap-2 items-center'>
+          <h1>Filter by Status</h1>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as Status)}
+            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm"
+          >
+            <option value="all">All</option>
+            <option value="Sold">Sold</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
       {/* ---------------- TRANSACTION TABLE ---------------- */}
       <div className="rounded-xl bg-white shadow-sm">
         <div className="border-b px-4 py-3 text-sm font-medium flex justify-between">
@@ -640,7 +694,7 @@ const filteredSales = sales.filter((sale) => {
                       </span>
                       <span className="text-gray-800">
                         {sale.profiles?.full_name ?? 'Unknown'}
-                        
+
                       </span>
                     </div>
 
@@ -706,7 +760,7 @@ const filteredSales = sales.filter((sale) => {
 
                         <td className="px-4 py-3">
                           {item.products?.name
-}
+                          }
                         </td>
 
                         <td className="px-4 py-3">
@@ -735,7 +789,7 @@ const filteredSales = sales.filter((sale) => {
                         </td>
 
                         <td className="px-4 py-3">
-                          {sale.profiles?.full_name 
+                          {sale.profiles?.full_name
                           }
                         </td>
 
@@ -812,30 +866,30 @@ const filteredSales = sales.filter((sale) => {
   )
 
 
-/* ---------------- SUMMARY CARD ---------------- */
-function SummaryCard({
-  label,
-  value,
-  show,
-  onToggle,
-}: {
-  label: string
-  value: string
-  show: boolean
-  onToggle: () => void
-}) {
-  return (
-    <div className="rounded-xl bg-white p-4 shadow-sm">
-      <p className="text-sm text-gray-500">{label}</p>
-      <div className="flex items-center justify-between">
-        <p className="mt-2 text-xl font-semibold">
-          {show ? value : '••••'}
-        </p>
-        <button onClick={onToggle}>
-          {show ? <FaEye /> : <FaEyeSlash />}
-        </button>
+  /* ---------------- SUMMARY CARD ---------------- */
+  function SummaryCard({
+    label,
+    value,
+    show,
+    onToggle,
+  }: {
+    label: string
+    value: string
+    show: boolean
+    onToggle: () => void
+  }) {
+    return (
+      <div className="rounded-xl bg-white p-4 shadow-sm">
+        <p className="text-sm text-gray-500">{label}</p>
+        <div className="flex items-center justify-between">
+          <p className="mt-2 text-xl font-semibold">
+            {show ? value : '••••'}
+          </p>
+          <button onClick={onToggle}>
+            {show ? <FaEye /> : <FaEyeSlash />}
+          </button>
+        </div>
       </div>
-    </div>
-  )
-}
+    )
+  }
 }
