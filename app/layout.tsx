@@ -17,6 +17,9 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "Petodesk",
   description: " Business management software for any business.",
+  icons: {
+    icon: "/logo.svg",
+  },
 };
 
 export default function RootLayout({

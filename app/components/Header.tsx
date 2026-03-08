@@ -75,7 +75,7 @@ function Header() {
           </li>
 
           <li className="list-none cursor-pointer text-primary">
-            <Link href='/signup'>
+            <Link href='/login'>
              Sign In
             </Link>
            </li>

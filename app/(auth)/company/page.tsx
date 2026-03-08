@@ -65,7 +65,7 @@ export default function CompanySetup() {
         {
           p_company_name: companyName,
           p_industry: industry,
-          p_service_type: feature,
+          p_service_type: 'inventory',
           p_size: size,
           p_location: location,
           p_full_name: fullName,
@@ -129,20 +129,21 @@ export default function CompanySetup() {
           </div>
 
           {/* Dropdowns */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <div className="flex flex-col gap-2">
+          {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-10"> */}
+            {/* <div className="flex flex-col gap-2">
               <label>Choose Your Features *</label>
               <FeatureDropdown value={feature} onChange={setFeature} />
-            </div>
+            </div> */}
 
-            <div className="flex flex-col gap-2">
-              <label>Business Type / Industry *</label>
-              <IndustryDropdown value={industry} onChange={setIndustry} />
-            </div>
-          </div>
+           
+          {/* </div> */}
 
           {/* Phone & Size */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+             <div className="flex flex-col gap-2">
+              <label>Business Type / Industry *</label>
+              <IndustryDropdown value={industry} onChange={setIndustry} />
+            </div>
             <div className="flex flex-col gap-2">
               <label>Phone Number *</label>
               <CustomPhoneInput
@@ -175,10 +176,7 @@ export default function CompanySetup() {
                 <option value="Large">Large</option>
               </select>
             </div>
-          </div>
-
-          {/* Location */}
-          <div className="flex flex-col gap-2 md:w-1/2">
+            <div className="flex flex-col gap-2">
             <label>Company Location</label>
             <input
               value={location}
@@ -186,6 +184,9 @@ export default function CompanySetup() {
               className="p-2 rounded-lg border border-gray-300 bg-gray-100"
             />
           </div>
+          </div>
+
+          
 
           {/* Submit */}
           <button
