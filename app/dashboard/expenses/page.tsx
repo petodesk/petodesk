@@ -28,7 +28,7 @@ type Expense = {
   created_at: string
   title: string
   paid_to: string
-  image:string
+  image: string
   note: string
   receipt_number: string
   profiles?: {
@@ -40,7 +40,7 @@ type Expense = {
 export default function ExpensesPage() {
   const supabase = createClient()
 
-  const [range, setRange] = useState<Range>('today')
+  const [range, setRange] = useState<Range>('this_month')
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
   const [openModal, setOpenModal] = useState(false)
@@ -51,7 +51,6 @@ export default function ExpensesPage() {
   const [openAllExpenses, setOpenAllExpenses] = useState(false)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<Status>('all')
-  const [openMore, setOpenMore] = useState(false)
   const [ViewMore, setViewMore] = useState<Expense | null>(null)
 
 
@@ -251,17 +250,17 @@ export default function ExpensesPage() {
                   Cancel
                 </li>
               )}
-            
-                <li
-                  onClick={() => {
-                    handleViewMore()
-                    setOpen(false)
-                  }}
-                  className="px-4 py-2 cursor-pointer hover:bg-gray-100 text-blue-600"
-                >
-                  View More
-                </li>
-             
+
+              <li
+                onClick={() => {
+                  handleViewMore()
+                  setOpen(false)
+                }}
+                className="px-4 py-2 cursor-pointer hover:bg-gray-100 text-blue-600"
+              >
+                View More
+              </li>
+
 
             </ul>
           </div>
@@ -280,7 +279,8 @@ export default function ExpensesPage() {
 
           <ViewExpensesModal
             open={true}
-            onClose={() =>{setViewMore(null)
+            onClose={() => {
+              setViewMore(null)
               fetchExpenses()
 
             }}

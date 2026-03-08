@@ -2,6 +2,7 @@ import Image from 'next/image'
 import React from 'react'
 import { FaCheckCircle } from 'react-icons/fa'
 import planimg from '../assets/plan.png'
+import Link from 'next/dist/client/link'
 
 function PlanDetails() {
   return (
@@ -16,78 +17,80 @@ function PlanDetails() {
         <h1 className='text-xl md:2xl font-semibold text-white py-6'>What’s included</h1>
         <div className='grid gap-8 sm:grid-cols-2 lg:grid-cols-3 '>
 
-        <div className='flex flex-col gap-5'>
+          <div className='flex flex-col gap-5'>
             <li className='flex gap-2 font-semibold text-white'>
-           <FaCheckCircle className="text-white text-xl" />
-                
-                Per-employee pricing
+              <FaCheckCircle className="text-white text-xl" />
+
+              Per-employee pricing
             </li>
-              <li className='flex gap-2 font-semibold text-white'>
-         <FaCheckCircle className="text-white text-xl" />
-                
-                Secure data backup & export
+            <li className='flex gap-2 font-semibold text-white'>
+              <FaCheckCircle className="text-white text-xl" />
+
+              Secure data backup & export
             </li>
 
-              <li className='flex gap-2 font-semibold text-white'>
-          <FaCheckCircle className="text-white text-xl" />
+            <li className='flex gap-2 font-semibold text-white'>
+              <FaCheckCircle className="text-white text-xl" />
               Sales, expenses & inventory tracking
             </li>
 
-              <li className='flex gap-2 font-semibold text-white'>
-                
-          <FaCheckCircle className="text-white text-xl" />
-               Task, payroll & leave management
-            </li>
-
-             <li className='flex gap-2 font-semibold text-white'>
-                
-          <FaCheckCircle className="text-white text-xl" />
-           Admin & role-based access
-            </li>
-            
-        </div>
-        <div className='flex flex-col gap-5'>
             <li className='flex gap-2 font-semibold text-white'>
-          <FaCheckCircle className="text-white text-xl" />
-                
-                Per-employee pricing
-            </li>
-              <li className='flex gap-2 font-semibold text-white'>
-           <FaCheckCircle className="text-white text-xl" />
-                
-                Secure data backup & export
+
+              <FaCheckCircle className="text-white text-xl" />
+              Task, payroll & leave management
             </li>
 
-              <li className='flex gap-2 font-semibold text-white'>
-         <FaCheckCircle className="text-white text-xl" />
+            <li className='flex gap-2 font-semibold text-white'>
+
+              <FaCheckCircle className="text-white text-xl" />
+              Admin & role-based access
+            </li>
+
+          </div>
+          <div className='flex flex-col gap-5'>
+            <li className='flex gap-2 font-semibold text-white'>
+              <FaCheckCircle className="text-white text-xl" />
+
+              Per-employee pricing
+            </li>
+            <li className='flex gap-2 font-semibold text-white'>
+              <FaCheckCircle className="text-white text-xl" />
+
+              Secure data backup & export
+            </li>
+
+            <li className='flex gap-2 font-semibold text-white'>
+              <FaCheckCircle className="text-white text-xl" />
               Sales, expenses & inventory tracking
             </li>
 
-              <li className='flex gap-2 font-semibold text-white'>
-                
-           <FaCheckCircle className="text-white text-xl" />
-               Task, payroll & leave management
+            <li className='flex gap-2 font-semibold text-white'>
+
+              <FaCheckCircle className="text-white text-xl" />
+              Task, payroll & leave management
             </li>
 
-             <li className='flex gap-2 font-semibold text-white'>
-                
-           <FaCheckCircle className="text-white text-xl" />
-           Admin & role-based access
+            <li className='flex gap-2 font-semibold text-white'>
+
+              <FaCheckCircle className="text-white text-xl" />
+              Admin & role-based access
             </li>
-            
-        </div>
-        <div>
+
+          </div>
+          <div>
             <Image
-            src={planimg}
-            alt='plan image'
-            className='w-[400px] hover:translate-y-2 duration-300'
+              src={planimg}
+              alt='plan image'
+              className='w-[400px] hover:translate-y-2 duration-300'
             />
+          </div>
+        </div>
+        <div className='flex bg-white py-3 px-6 w-50 rounded-lg items-center mx-auto mt-10 cursor-pointer hover:bg-blue-400 duration-300'>
+          <Link href="/pricing" className='text-gray-900'>
+            View plan details
+          </Link>
         </div>
       </div>
-      <div className='flex bg-white py-3 px-6 w-50 rounded-lg items-center mx-auto mt-10 cursor-pointer hover:bg-blue-400 duration-300'>
-        <p className='text-gray-900'>View plan details</p>
-      </div>
-        </div>
 
     </div>
   )

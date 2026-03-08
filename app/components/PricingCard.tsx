@@ -14,6 +14,10 @@ export default function PricingCard({
   features,
   bestFor,
 }: PricingCardProps) {
+      const whatsappMessage = encodeURIComponent(
+        `Hello I am interested in your Inventory and HR management app. Please share more details. I am interested in the ${title} plan.`
+      )
+
   return (
     <div
       className={`rounded-xl  p-6 flex flex-col shadow-lg justify-between hover:-translate-y-2 duration-400
@@ -24,14 +28,20 @@ export default function PricingCard({
         <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
         <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
 
-      
-        <button
-          className={`w-full mt-6 py-2 rounded-md text-sm font-medium transition
+        <a
+          href={`https://wa.me/2349158553169?text=${whatsappMessage}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <button
+            className={`w-full mt-6 py-2 rounded-md text-sm font-medium transition
             btn-primary text-white
              `}
-        >
-          Contact Sales
-        </button>
+          >
+            Contact Sales
+          </button>
+        </a>
+
 
         <p className="text-sm text-gray-600 text-center mt-3">
           Start a free 30-days trial

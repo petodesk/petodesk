@@ -1,4 +1,5 @@
 import Image, { StaticImageData } from "next/image";
+import Link from "next/link";
 
 type HeroProps = {
   title: string;
@@ -15,6 +16,10 @@ export default function Hero({
   primaryButtonText,
   secondaryButtonText,
 }: HeroProps) {
+
+  const whatsappMessage = encodeURIComponent(
+    "Hello I am interested in your Inventory and HR management app. Please share more details."
+  )
   return (
     <section className="flex flex-col-reverse md:flex-row items-center justify-between gap-10 px-6 pt-2 font-poppins">
 
@@ -29,14 +34,28 @@ export default function Hero({
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-          <button className="btn-primary px-6 py-2 rounded-md text-white">
+
+          <Link href="/signup"
+            className="btn-primary px-6 py-2 rounded-md text-white">
+
             {primaryButtonText}
-          </button>
+          </Link>
 
           {secondaryButtonText && (
-            <button className="btn-secondary px-6 py-2 rounded-md text-white">
+            <a
+
+              href={`https://wa.me/2349158553169?text=${whatsappMessage}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary px-6 py-2 rounded-md text-white">
+
+
+
               {secondaryButtonText}
-            </button>
+
+
+            </a>
+
           )}
         </div>
       </div>
