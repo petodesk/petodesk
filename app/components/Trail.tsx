@@ -3,7 +3,8 @@ import React from 'react'
 
 import petotrail from '../assets/petodesk.png'
 import { FaCheckCircle } from 'react-icons/fa'
-import Link from 'next/dist/client/link'
+import Link from 'next/link'
+
 
 function Trail() {
   return (

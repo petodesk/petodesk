@@ -2,7 +2,7 @@ import Image from 'next/image'
 import React from 'react'
 import { FaCheckCircle } from 'react-icons/fa'
 import planimg from '../assets/plan.png'
-import Link from 'next/dist/client/link'
+import Link from 'next/link'
 
 function PlanDetails() {
   return (
