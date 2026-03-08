@@ -18,11 +18,7 @@ function PlanDetails() {
         <div className='grid gap-8 sm:grid-cols-2 lg:grid-cols-3 '>
 
           <div className='flex flex-col gap-5'>
-            <li className='flex gap-2 font-semibold text-white'>
-              <FaCheckCircle className="text-white text-xl" />
-
-              Per-employee pricing
-            </li>
+            
             <li className='flex gap-2 font-semibold text-white'>
               <FaCheckCircle className="text-white text-xl" />
 

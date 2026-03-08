@@ -69,7 +69,7 @@ function Footer() {
             >Contact Us</a> </li>
             <li><a href=""
             className="inline-block border-b-2 border-transparent hover:border-orange-300 transition duration-300"
-            >Partrner</a> </li>
+            >Partner</a> </li>
             <li><a href=""
             className="inline-block border-b-2 border-transparent hover:border-orange-300 transition duration-300"
             
