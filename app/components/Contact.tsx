@@ -3,6 +3,9 @@
 import { FaWhatsapp, FaPhoneAlt, FaClock } from 'react-icons/fa'
 
 export default function Contact() {
+    const whatsappMessage = encodeURIComponent(
+        "Hello I am interested in your Inventory and HR management app. Please share more details."
+    )
     return (
         <section className="w-full bg-[#FAFAFA] py-26 px-4 font-poppins">
             <div className="max-w-6xl mx-auto">
@@ -36,7 +39,7 @@ export default function Contact() {
                                 {/* WhatsApp */}
                                 <li>
                                     <a
-                                        href="https://wa.me/2349158553169"
+                                        href={`https://wa.me/2349158553169?text=${whatsappMessage}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition"
