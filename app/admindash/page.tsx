@@ -3,7 +3,22 @@
 import { useEffect, useState } from "react"
 import { HiSearch } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
+interface CompanyData {
+    id: string,
+    created_at: string,
+    name: string,
+    service_type: string,
+    industry: string,
+    profiles: {
+        email: string,
 
+    },
+    status: string,
+    employee_count: number
+
+
+
+}
 export default function AdminDash() {
 
     const supabase = createClient()
@@ -45,7 +60,17 @@ export default function AdminDash() {
         /* -------- BUSINESSES -------- */
         const { data: companiesData, count: businesses } = await supabase
             .from("companies")
-            .select("*", { count: "exact" })
+            .select(`
+                id,
+    created_at,
+    name,
+    service_type,
+    industry,
+    profiles(email),
+    status
+                ` ,
+                { count: "exact" })
+
 
         /* -------- EMPLOYEE COUNTS -------- */
         const { data: employeeData } = await supabase
@@ -101,7 +126,7 @@ export default function AdminDash() {
     }
 
     return (
-        <div className="p-6 rounded-lg border-2 border-green-200">
+        <div className="p-2 md:p-6 rounded-lg border-2 border-green-200">
 
             {/* -------- SUMMARY CARDS -------- */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
@@ -143,14 +168,20 @@ export default function AdminDash() {
                         <hr />
 
                         <div className="flex items-center justify-between">
-                            <p className="text-md font-semibold text-gray-700 mb-1">Business/User</p>
+                            <p className="text-md font-semibold text-gray-700 mb-1">Business</p>
                             <p className="text-base font-semibold text-gray-900">
                                 {ex.name}
                             </p>
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <p className="text-md font-semibold text-gray-700 mb-1">No. of Employee</p>
+                            <p className="text-md font-semibold text-gray-700 mb-1">Email</p>
+                            <p className="font-medium text-gray-800">
+                                {ex.profiles[0]?.email}
+                            </p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <p className="text-md font-semibold text-gray-700 mb-1">No.of Employee</p>
                             <p className="font-medium text-gray-800">
                                 {ex.employee_count}
                             </p>
@@ -166,10 +197,10 @@ export default function AdminDash() {
                         <div className="flex items-center justify-between">
                             <p className="text-md font-semibold text-gray-700 mb-1">Status</p>
                             <span
-                                className={`inline-block rounded-full px-3 py-1 text-xs font-semibold
+                                className={`inline-block rounded-full px-3 py-1 text-xs font-semibold capitalize
                                 ${ex.status === 'Cancelled'
                                         ? 'bg-red-100 text-red-700'
-                                        : ex.status === 'paid'
+                                        : ex.status === 'registered'
                                             ? 'bg-green-100 text-green-700'
                                             : ex.status === 'pending'
                                                 ? 'bg-yellow-100 text-yellow-700'
@@ -195,6 +226,7 @@ export default function AdminDash() {
                     <tr>
                         <th className="px-4 py-3 text-left font-medium">Date Joined</th>
                         <th className="px-4 py-3 text-left font-medium">Business</th>
+                        <th className="px-4 py-3 text-left font-medium">Email</th>
                         <th className="px-4 py-3 text-left font-medium">No.of employee</th>
                         <th className="px-4 py-3 text-left font-medium">Plan</th>
                         <th className="px-4 py-3 text-left font-medium">Status</th>
@@ -213,10 +245,13 @@ export default function AdminDash() {
                             <td className="px-4 py-3">
                                 {company.name}
                             </td>
-
+                            <td className="px-4 py-3">
+                                {company.profiles[0]?.email}
+                            </td>
                             <td className="px-4 py-3">
                                 {company.employee_count}
                             </td>
+
 
                             <td className="px-4 py-3">
                                 {company.service_type}
