@@ -45,7 +45,8 @@ const links = [
   { label: 'Recruitment', href: '/dashboard/recruitment', icon: HiOutlineUserPlus, roles: ['admin','owner'], plans: ['both','hr'] },
 
   { label: 'Employee', href: '/dashboard/employee', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr'] },
-  { label: 'Leave Management', href: '/dashboard/leave', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr'] },
+  { label: 'Leave Management', href: '/dashboard/leave-management', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr'] },
+  { label: 'Leave', href: '/dashboard/leave', icon: HiOutlineUserCircle, roles: ['employee'], plans: ['both','hr'] },
 
   { label: 'Company Feed', href: '/dashboard/company-feed', icon: HiOutlineMegaphone, roles: ['admin','owner'], plans: ['both','hr'] },
 ]
@@ -99,7 +100,8 @@ export default function OwnerSidebar({ onClose }: { onClose?: () => void }) {
         .single()
 
       setPlan(company?.service_type || null)
-
+console.log('Fetched Role:', profile.role)
+console.log('Fetched Plan:', company?.service_type)
       setLoading(false)
     }
 
