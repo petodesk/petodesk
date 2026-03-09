@@ -289,48 +289,20 @@ export default function AdminDash() {
 
                                     <hr />
 
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-md font-semibold text-gray-700 mb-1">Business</p>
-                                        <p className="text-base font-semibold text-gray-900">
-                                            {ex.name}
-                                        </p>
-                                    </div>
+                                    <InfoRow label="Business" value={ex.name} />
+                                    <InfoRow label="Email" value={ex.profiles[0]?.email} />
+                                    <InfoRow label="No.of Employee" value={ex.employee_count} />
+                                    <InfoRow label="Plan" value={ex.service_type} />
+                                    <InfoRow label="Status" value={
 
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-md font-semibold text-gray-700 mb-1">Email</p>
-                                        <p className="font-medium text-gray-800">
-                                            {ex.profiles[0]?.email}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-md font-semibold text-gray-700 mb-1">No.of Employee</p>
-                                        <p className="font-medium text-gray-800">
-                                            {ex.employee_count}
-                                        </p>
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-md font-semibold text-gray-700 mb-1">Plan</p>
-                                        <p className="font-medium text-gray-800">
-                                            {ex.service_type}
-                                        </p>
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-md font-semibold text-gray-700 mb-1">Status</p>
-                                        <span
-                                            className={`inline-block rounded-full px-3 py-1 text-xs font-semibold capitalize
-                                ${ex.status === 'Cancelled'
-                                                    ? 'bg-red-100 text-red-700'
-                                                    : ex.status === 'registered'
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : ex.status === 'pending'
-                                                            ? 'bg-yellow-100 text-yellow-700'
-                                                            : ''}`}
-                                        >
+                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize
+                                             ${ex.status === "suspended"
+                                                ? "bg-red-100 text-red-700"
+                                                : "bg-green-100 text-green-700"}`}>
                                             {ex.status}
-                                        </span>
-                                    </div>
+                                        </span>} />
+
+
 
                                 </div>
                             ))}
