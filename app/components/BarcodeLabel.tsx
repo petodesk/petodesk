@@ -21,6 +21,25 @@ export default function BarcodeLabel({ product, onclose, open }: { product: any,
         }
     }, [product])
 
+    const handlePrint = () => {
+  if (!barcodeRef.current) return;
+
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
+
+  printWindow.document.write('<html><head><title>Print Barcode</title></head><body>');
+  printWindow.document.write('<div style="text-align:center">');
+  printWindow.document.write(`<p>${product.name}</p>`);
+  printWindow.document.write(barcodeRef.current.outerHTML); // embed SVG
+  printWindow.document.write(`<p>₦${product.product_prices[0]?.selling_price}</p>`);
+  printWindow.document.write('</div></body></html>');
+
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+  printWindow.close();
+};
+
     return (
         <div className='fixed inset-0 z-50 items-center justify-center'>
 
@@ -37,7 +56,7 @@ export default function BarcodeLabel({ product, onclose, open }: { product: any,
                         
                     </div>
                 <button
-                    onClick={() => window.print()}
+                    onClick={handlePrint}
                     className="mt-3 rounded bg-blue-600 px-4 py-2 text-white"
                 >
                     Print Label

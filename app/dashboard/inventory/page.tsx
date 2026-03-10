@@ -6,6 +6,7 @@ import { AddProductModal } from '@/app/components/AddProductModal'
 import { HiDownload, HiSearch } from 'react-icons/hi'
 import Products from '@/app/types/products'
 import BarcodeLabel from '@/app/components/BarcodeLabel'
+import BarcodeBatchPrint from '@/app/components/barcodeBatch'
 
 type DateFilter =
   | 'today'
@@ -36,7 +37,7 @@ export default function inventoryPage() {
   const [dateFilter, setDateFilter] = useState<DateFilter>('thisMonth')
   const [search, setSearch] = useState('')
   const [stockFilter, setStockFilter] = useState<StockFilter>('all')
-
+const[viewaAllBarcode, setViewAllBArcode] = useState(false)
   // 🔹 Fetch today's sales
   const fetchAllProduct = useCallback(async () => {
     setLoading(true)
@@ -179,6 +180,10 @@ export default function inventoryPage() {
     fetchAllProduct()
   }
 
+  const handleOpenAllBarcode  = ()=>{
+    setViewAllBArcode(true)
+  }
+
   const totalItems = products.length;
   const totalStock = products.reduce((sum, p) => sum + (p.product_stock[0]?.quantity || 0), 0);
   const inStockCount = products.filter(p => p.product_stock[0]?.status === 'in_stock').length;
@@ -285,19 +290,23 @@ export default function inventoryPage() {
   return (
     <section className="w-full px-6 py-6 bg-gray-50">
       {/* Top action */}
-      <div className=" flex flex-col gap-6 md:flex-row md:gap-20  mb-6">
+      <div className="flex flex-col gap-6 md:flex-row md:justify-between  mb-6">
         <button
           onClick={() => setOpenModal(true)}
           className="flex flex-col md:flex-row items-center gap-2 rounded-lg bg-blue-600 w-full md:h-10 md:w-60  justify-center cursor-pointer px-4 py-2 text-sm font-medium text-white"
         >
           + Add Product
         </button>
+         <button
+          onClick={handleOpenAllBarcode}
+          className="flex flex-col md:flex-row items-center gap-2 rounded-lg bg-blue-600 w-full md:h-10 md:w-60  justify-center cursor-pointer px-4 py-2 text-sm font-medium text-white"
+        >
+          View Products Barcode
+        </button>
         <button className='flex gap-2 items-center justify-center md:h-10 rounded-md bg-white px-4 py-4 max-sm:w-full '>
           <HiDownload className='cursor-pointer' /> uplaod from CSV
         </button>
-        <div className='h-0 md:h-auto w-[30%]'>
-
-        </div>
+        
       </div>
 
       {/* Summary cards */}
@@ -726,6 +735,9 @@ export default function inventoryPage() {
             </div>
           </div>
         </div>
+      )}
+      {viewaAllBarcode &&(
+        <BarcodeBatchPrint products={products} open={viewaAllBarcode} onClose={()=>(setViewAllBArcode(false))}/>
       )}
 
     </section>
