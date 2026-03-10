@@ -1,5 +1,6 @@
 'use client';
 
+import { PaySlipModal } from '@/app/components/PaySlipModal';
 import { formatNumber } from '@/app/utils/numberFormatter';
 import { createClient } from '@/app/utils/supabase/client';
 import { useEffect, useState } from 'react';
@@ -25,6 +26,12 @@ export default function PayrollTrigger() {
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [employeeFilter, setEmployeeFilter] = useState('all');
+  const[openSlip, setOpenSlip] = useState(false)
+  const[company, setCompany] = useState<any>(null)
+  const[selectedEmployee, setSelectedEmployee] = useState<any[]>([])
+
+
+
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -40,6 +47,24 @@ export default function PayrollTrigger() {
     }
 
     getUser()
+  }, [])
+
+   useEffect(() => {
+    const fetchCompanyProfile = async () => {
+      const { data: userData } = await supabase.auth.getUser()
+      if (!userData?.user) return
+
+      
+      const { data: company } = await supabase
+        .from('companies')
+        .select('name, location')
+        .eq('id', userCompanyId)
+        .single()
+
+      setCompany(company)
+    }
+
+    fetchCompanyProfile()
   }, [])
   useEffect(() => {
     if (!selectedPeriod || !userCompanyId) return;
@@ -280,26 +305,33 @@ export default function PayrollTrigger() {
 
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from('payroll')
-      .select(`
+ const { data, error } = await supabase
+  .from('payroll')
+  .select(`
+    id,
+    employee_id,
+    payroll_name,
+    pay_period,
+    role,
+    base_salary,
+    deduction,
+    net_salary,
+    status,
+    created_at,
+    employee:employees (
       id,
-      employee_id,
-      payroll_name,
-      pay_period,
-      role,
-      base_salary,
-      deduction,
-      net_salary,
-      status,
-      created_at,
-      employee:employees (
-        id,
-        name
+      employee_id_slug,
+      name,
+      department,
+      salary (
+        bank_name,
+        account_name,
+        account_number
       )
-    `)
-      .eq('company_id', userCompanyId)
-      .order('created_at', { ascending: false });
+    )
+  `)
+  .eq('company_id', userCompanyId)
+  .order('created_at', { ascending: false });
     if (error) {
       console.error(error);
     } else {
@@ -309,7 +341,7 @@ export default function PayrollTrigger() {
     setLoading(false);
   };
 
-
+console.log(payrolls)
 
   const handleFinalizePayroll = async () => {
     if (!userCompanyId) return;
@@ -360,43 +392,6 @@ export default function PayrollTrigger() {
 
 
 
-
-  const handleReleaseOnHoldSalary = async (payrollId: string) => {
-    if (!userCompanyId || !selectedPeriod) return;
-
-    try {
-      const { data: batch } = await supabase
-        .from("payroll_batches")
-        .select("status")
-        .eq("company_id", userCompanyId)
-        .eq("pay_period", selectedPeriod)
-        .single();
-
-      if (batch?.status !== "finalized") {
-        toast.error("Cannot release salary before payroll is finalized.");
-        return;
-      }
-
-      const { error } = await supabase
-        .from("payroll")
-        .update({ status: "approved" })
-        .eq("company_id", userCompanyId)
-        .eq("pay_period", selectedPeriod)
-        .eq("id", payrollId)
-        .eq("status", "onhold"); // safety check
-
-      if (error) throw error;
-
-      toast.success("Employee salary released successfully.");
-
-      fetchPayroll();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to release salary.");
-    }
-  };
-
-
   function ActionMenu({ payroll }: any) {
     const [open, setOpen] = useState(false);
 
@@ -427,7 +422,7 @@ export default function PayrollTrigger() {
     };
 
     const viewPayslip = () => {
-      toast.success(`Payroll ID: ${payroll.id}`);
+    setOpenSlip(true)
       setOpen(false);
     };
 
@@ -515,7 +510,6 @@ export default function PayrollTrigger() {
                 <li
                   onClick={() => {
                     viewPayslip()
-                    setOpen(false)
                   }}
                   className="cursor-pointer px-4 py-2 hover:bg-gray-100"
                 >
@@ -527,6 +521,10 @@ export default function PayrollTrigger() {
             </ul>
           </div>
         )}
+{
+  openSlip &&<PaySlipModal open= {open} payroll={payroll} company={company} onClose={()=>setOpenSlip(false)}/>
+}
+
       </div>
     );
   }
