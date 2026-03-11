@@ -38,7 +38,7 @@ const links = [
 
   { label: 'Payroll', href: '/dashboard/payroll', icon: HiOutlineUsers, roles: ['admin','owner'], plans: ['both','hr'] },
 
-  { label: 'Invoicing', href: '/dashboard/invoicing', icon: HiOutlineDocumentText, roles: ['admin','owner'], plans: ['both','hr', 'inventory'] },
+  { label: 'Invoicing', href: '/dashboard/invoicing', icon: HiOutlineDocumentText, roles: ['admin','owner','employee'], plans: ['both','hr', 'inventory'] },
 
   { label: 'Reports', href: '/dashboard/reports', icon: HiOutlineChartBar, roles: ['admin','owner'], plans: ['both','hr'] },
 
