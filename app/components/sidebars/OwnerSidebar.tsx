@@ -26,7 +26,7 @@ import {
 /* -------------------------------- */
 
 const links = [
-  { label: 'Dashboard', href: '/dashboard', icon: HiSquares2X2, roles: ['admin','owner'], plans: ['both','inventory','hr'] },
+  { label: 'Dashboard', href: '/dashboard', icon: HiSquares2X2, roles: ['admin','owner','employee'], plans: ['both','inventory','hr'] },
 
   { label: 'Sell', href: '/dashboard/sell', icon: HiOutlineShoppingCart, roles: ['admin','owner','employee'], plans: ['both','inventory'] },
 
@@ -44,7 +44,7 @@ const links = [
 
   { label: 'Recruitment', href: '/dashboard/recruitment', icon: HiOutlineUserPlus, roles: ['admin','owner'], plans: ['both','hr'] },
 
-  { label: 'Employee', href: '/dashboard/employee', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr'] },
+  { label: 'Employee', href: '/dashboard/employee', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr', 'inventory'] },
   { label: 'Leave Management', href: '/dashboard/leave-management', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr'] },
   { label: 'Leave', href: '/dashboard/leave', icon: HiOutlineUserCircle, roles: ['employee'], plans: ['both','hr'] },
 

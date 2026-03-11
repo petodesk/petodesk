@@ -22,6 +22,7 @@ type Range =
 
 type Sale = {
   id: string
+  sold_by:string
   total_amount: number
   payment_method: string
   created_at: string
@@ -78,6 +79,7 @@ export default function SellPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [sellerCompanyId, setSellerCompanyId] = useState<string | null>(null)
+  const[role,setRole] = useState()
   /* ---------------- DATE RANGE LOGIC ---------------- */
   const getRangeDates = (range: Range) => {
     const now = new Date()
@@ -143,6 +145,7 @@ export default function SellPage() {
       .from('sales')
       .select(`
     id,
+    sold_by,
     total_amount,
     payment_method,
     created_at,
@@ -163,6 +166,7 @@ export default function SellPage() {
 )
 
   `)
+      .eq('company_id', sellerCompanyId)
       .gte('created_at', from.toISOString())
       .lte('created_at', to.toISOString())
       .order('created_at', { ascending: false })
@@ -203,7 +207,7 @@ export default function SellPage() {
   useEffect(() => {
     fetchSales()
   }, [fetchSales])
-
+console.log(sales)
 
   useEffect(() => {
     const fetchCompany = async () => {
@@ -212,11 +216,13 @@ export default function SellPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('company_id')
+        .select('company_id, role')
         .eq('id', userData.user.id)
         .single()
-      setSellerCompanyId(profile?.company_id || null)
+  
 
+      setSellerCompanyId(profile?.company_id || null)
+      setRole(profile?.role)
       if (!profile?.company_id) return
 
       const { data: company } = await supabase
@@ -653,7 +659,7 @@ export default function SellPage() {
               onClose={() => setScannerOpen(false)}
             />
 
-            {/* Mini Cart Preview inside Scanner (Optional but helpful) */}
+            {/* Mini Cart Preview inside Scanner */}
             <div className="absolute bottom-10 left-0 right-0 px-4">
               <div className="bg-white/90 p-3 rounded-t-xl text-center font-bold text-blue-800">
                 Last Scanned: {cart[cart.length - 1]?.name || 'None'}
@@ -690,13 +696,17 @@ export default function SellPage() {
           show={show}
           onToggle={() => setShow(!show)}
         />
-
-        <SummaryCard
+{
+  role === 'owner' && (
+ <SummaryCard
           label="Total Profit"
           value={`₦${totalProfit.toLocaleString()}`}
           show={show}
           onToggle={() => setShow(!show)}
         />
+  )
+}
+       
 
         <div className="flex flex-row md:flex-col justify-between items-center rounded-xl bg-white p-4 shadow-sm">
           <p className="text-sm text-gray-500">Transactions</p>
