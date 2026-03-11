@@ -22,16 +22,17 @@ export const metadata: Metadata = {
     icon: "/logo.svg",
   },
 
-  openGraph: {
+ openGraph: {
   title: "Petodesk",
-  description: "Business Management Software for Inventory, Invoice, Payroll, Sales & HR",
+  description: "Business Management Software for Inventory, Invoice, Payroll, Sales & HR.",
   url: "https://www.petodesk.com",
   siteName: "Petodesk",
   images: [
     {
-      url: "https://www.petodesk.com/opengraph-image",
+      url: "https://www.petodesk.com/preview.png",
       width: 1200,
       height: 630,
+      alt: "Petodesk",
     },
   ],
 },
