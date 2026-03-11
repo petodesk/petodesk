@@ -26,9 +26,9 @@ export default function PayrollTrigger() {
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [employeeFilter, setEmployeeFilter] = useState('all');
-  const[openSlip, setOpenSlip] = useState(false)
-  const[company, setCompany] = useState<any>(null)
-  const[selectedEmployee, setSelectedEmployee] = useState<any[]>([])
+  const [company, setCompany] = useState<any>(null)
+  const [openSlip, setOpenSlip] = useState(false)
+  const [selectedPayroll, setSelectedPayroll] = useState<any>(null)
 
 
 
@@ -49,12 +49,12 @@ export default function PayrollTrigger() {
     getUser()
   }, [])
 
-   useEffect(() => {
+  useEffect(() => {
     const fetchCompanyProfile = async () => {
       const { data: userData } = await supabase.auth.getUser()
       if (!userData?.user) return
 
-      
+
       const { data: company } = await supabase
         .from('companies')
         .select('name, location')
@@ -305,9 +305,9 @@ export default function PayrollTrigger() {
 
     setLoading(true);
 
- const { data, error } = await supabase
-  .from('payroll')
-  .select(`
+    const { data, error } = await supabase
+      .from('payroll')
+      .select(`
     id,
     employee_id,
     payroll_name,
@@ -316,6 +316,7 @@ export default function PayrollTrigger() {
     base_salary,
     deduction,
     net_salary,
+    allowances,
     status,
     created_at,
     employee:employees (
@@ -330,8 +331,8 @@ export default function PayrollTrigger() {
       )
     )
   `)
-  .eq('company_id', userCompanyId)
-  .order('created_at', { ascending: false });
+      .eq('company_id', userCompanyId)
+      .order('created_at', { ascending: false });
     if (error) {
       console.error(error);
     } else {
@@ -341,7 +342,7 @@ export default function PayrollTrigger() {
     setLoading(false);
   };
 
-console.log(payrolls)
+  console.log(payrolls)
 
   const handleFinalizePayroll = async () => {
     if (!userCompanyId) return;
@@ -422,45 +423,45 @@ console.log(payrolls)
     };
 
     const viewPayslip = () => {
-    setOpenSlip(true)
-      setOpen(false);
-    };
-
-    
-  const handleReleaseOnHoldSalary = async () => {
-    if (!userCompanyId) return;
-
-    try {
-      const { data: batch } = await supabase
-        .from("payroll_batches")
-        .select("status")
-        .eq("company_id", userCompanyId)
-        .eq("pay_period", payroll.pay_period)
-        .single();
-
-      if (batch?.status !== "finalized") {
-        toast.error("Cannot release salary before payroll is finalized.");
-        return;
-      }
-
-      const { error } = await supabase
-        .from("payroll")
-        .update({ status: "approved" })
-        .eq("company_id", userCompanyId)
-        .eq("pay_period", payroll.pay_period)
-        .eq("id", payroll.id)
-        .eq("status", "onhold"); // safety check
-
-      if (error) throw error;
-
-      toast.success("Employee salary released successfully.");
-
-      fetchPayroll();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to release salary.");
+      setSelectedPayroll(payroll)
+      setOpenSlip(true)
+      setOpen(false)
     }
-  };
+
+    const handleReleaseOnHoldSalary = async () => {
+      if (!userCompanyId) return;
+
+      try {
+        const { data: batch } = await supabase
+          .from("payroll_batches")
+          .select("status")
+          .eq("company_id", userCompanyId)
+          .eq("pay_period", payroll.pay_period)
+          .single();
+
+        if (batch?.status !== "finalized") {
+          toast.error("Cannot release salary before payroll is finalized.");
+          return;
+        }
+
+        const { error } = await supabase
+          .from("payroll")
+          .update({ status: "approved" })
+          .eq("company_id", userCompanyId)
+          .eq("pay_period", payroll.pay_period)
+          .eq("id", payroll.id)
+          .eq("status", "onhold"); // safety check
+
+        if (error) throw error;
+
+        toast.success("Employee salary released successfully.");
+
+        fetchPayroll();
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to release salary.");
+      }
+    };
 
     return (
       <div className="relative">
@@ -507,10 +508,9 @@ console.log(payrolls)
                 </button>
               )}
               {payroll.status === "approved" || payroll.status === "paid" ? (
+
                 <li
-                  onClick={() => {
-                    viewPayslip()
-                  }}
+                  onClick={viewPayslip}
                   className="cursor-pointer px-4 py-2 hover:bg-gray-100"
                 >
                   View Payslip
@@ -521,9 +521,7 @@ console.log(payrolls)
             </ul>
           </div>
         )}
-{
-  openSlip &&<PaySlipModal open= {open} payroll={payroll} company={company} onClose={()=>setOpenSlip(false)}/>
-}
+       
 
       </div>
     );
@@ -699,7 +697,7 @@ console.log(payrolls)
                   <option value="approved">Approved</option>
                 </select>
               </div>
-             
+
             </div>
           </div>
 
@@ -716,7 +714,10 @@ console.log(payrolls)
                   <p className="text-md font-semibold text-gray-700 mb-1">
                     {new Date(p.created_at).toLocaleDateString()}
                   </p>
-                  <ActionMenu payroll={p} />
+                  <ActionMenu
+                    payroll={p}
+                    
+                  />
                 </div>
 
                 <hr />
@@ -938,7 +939,8 @@ console.log(payrolls)
         <section className="w-full px-2 md:px-6 py-6 bg-gray-50 max-h-[85vh] overflow-y-auto">
           {/* ---------------- TOP ACTION BAR ---------------- */}
           <div className=''>
-            <button onClick={() => {setShowHistory(false)
+            <button onClick={() => {
+              setShowHistory(false)
               setSearch("")
               setStatusFilter("all")
               setPayTimeFilter("all")
@@ -970,7 +972,7 @@ console.log(payrolls)
                     <p>No payroll records found</p>
                   ) : (
                     <select
-                       className='p-2 rounded-lg bg-white border border-gray-600 max-sm:w-[60%]'
+                      className='p-2 rounded-lg bg-white border border-gray-600 max-sm:w-[60%]'
 
                       value={payTimeFilter}
                       onChange={(e) => setPayTimeFilter(e.target.value)}
@@ -988,9 +990,9 @@ console.log(payrolls)
                   <h1 className='text-md font-bold'>Employees:</h1>
                   <select
                     onChange={(e) => setEmployeeFilter(e.target.value)}
-                     className='p-2 rounded-lg bg-white border border-gray-600 w-[60%]'
+                    className='p-2 rounded-lg bg-white border border-gray-600 w-[60%]'
 
-                     name="employee" id="employee-select">
+                    name="employee" id="employee-select">
                     <option value="">All Employees</option>
                     {payrolls.map((emp) => (
                       <option key={emp.id} value={emp.employee?.name}>
@@ -1003,7 +1005,7 @@ console.log(payrolls)
                   setStatusFilter("all")
                   setPayTimeFilter("all")
                   setEmployeeFilter("all")
-                
+
                 }} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                   Clear Filters
                 </button>
@@ -1187,8 +1189,11 @@ console.log(payrolls)
                           )}
                         </td>
 
-                        <td className="px-4 py-3">
-                          <ActionMenu payroll={pay} />
+                        <td className="px-4 py-3"><ActionMenu
+                          payroll={pay}
+                      
+                        />
+
                         </td>
                       </tr>
                     ))
@@ -1201,9 +1206,17 @@ console.log(payrolls)
 
 
 
-
         </section>
       )}
+      
+          {openSlip && selectedPayroll && (
+            <PaySlipModal
+              open={openSlip}
+              payroll={selectedPayroll}
+              company={company}
+              onClose={() => setOpenSlip(false)}
+            />
+          )}
     </>
   )
 }
