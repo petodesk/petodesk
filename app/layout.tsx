@@ -16,9 +16,31 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: "Petodesk",
-  description: " Business management software for any business.",
+  description: "Business Management Software for Inventory, Invoice, Payroll, Sales & HR.",
+
   icons: {
     icon: "/logo.svg",
+  },
+
+  openGraph: {
+  title: "Petodesk",
+  description: "Business Management Software for Inventory, Invoice, Payroll, Sales & HR",
+  url: "https://www.petodesk.com",
+  siteName: "Petodesk",
+  images: [
+    {
+      url: "https://www.petodesk.com/opengraph-image",
+      width: 1200,
+      height: 630,
+    },
+  ],
+},
+
+  twitter: {
+    card: "summary_large_image",
+    title: "Petodesk",
+    description: "Business Management Software for Inventory, Invoice, Payroll, Sales & HR.",
+    images: ["https://www.petodesk.com/preview.png"],
   },
 };
 
@@ -33,8 +55,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${poppins.variable} antialiased`}
       >
         {children}
-         <ToastProvider />
-
+        <ToastProvider />
       </body>
     </html>
   );
