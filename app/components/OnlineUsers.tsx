@@ -12,7 +12,7 @@ export default function OnlineUsers() {
       </h2>
 
       {users.length === 0 && (
-        <p className="text-sm text-gray-500">No users online</p>
+        <p className="text-sm text-gray-600">No users online</p>
       )}
 
       {users.map((u: any) => (
@@ -21,7 +21,7 @@ export default function OnlineUsers() {
           className="flex justify-between border-b py-2 text-sm"
         >
           <span>{u.email}</span>
-          <span className="text-green-500">Online</span>
+          <span className="text-green-600">Online</span>
         </div>
       ))}
     </div>
