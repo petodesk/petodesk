@@ -22,7 +22,7 @@ export default function CompanySetup() {
   const [phoneError, setPhoneError] = useState('')
   const [countryCode, setCountryCode] = useState('US')
 
-  const [feature, setFeature] = useState<string | null>(null)
+  // const [feature, setFeature] = useState<string | null>(null)
   const [industry, setIndustry] = useState<string | null>(null)
   const [location, setLocation] = useState('')
   const [size, setSize] = useState('Small')
@@ -46,7 +46,7 @@ export default function CompanySetup() {
       return
     }
 
-    if (!feature || !industry) {
+    if (!industry) {
       alert('Please select feature and industry!')
       setLoading(false)
       return
