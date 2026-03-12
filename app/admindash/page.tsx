@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { HiSearch } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
+import OnlineUsers from "../components/OnlineUsers"
 interface CompanyData {
     id: string,
     created_at: string,
@@ -250,6 +251,7 @@ export default function AdminDash() {
                         <div className=" flex text-center max-sm:justify-center my-3">
                             <button className="btn-primary rounded-lg py-3 px-6 text-white">Export Data (CSV)</button>
                         </div>
+
                         {/* -------- SUMMARY CARDS -------- */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
 
@@ -262,6 +264,9 @@ export default function AdminDash() {
                             <SummaryCard label="Business Plus Users" value={stats.both.toString()} />
                             <SummaryCard label="Premium Users" value={stats.premium.toString()} />
 
+                        </div>
+                        <div className="p-6">
+                            <OnlineUsers />
                         </div>
 
                         {/* -------- SEARCH -------- */}
