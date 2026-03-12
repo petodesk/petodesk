@@ -6,43 +6,52 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
+import { Loading } from "@/app/components/Loading";
+
 export default function Home() {
     const router = useRouter()
-
     const supabase = createClient()
+
     const [showPassword, setShowPassword] = useState(false)
+
+    const [checkingSession, setCheckingSession] = useState(true)
     const [loading, setLoading] = useState(false)
 
     const [password, setPassword] = useState('')
     const [email, setEmail] = useState('')
-    
+
     useEffect(() => {
         const checkUser = async () => {
             const { data } = await supabase.auth.getSession()
 
-            if (!data.session) return
+            if (!data.session) {
+                setCheckingSession(false)
+                return
+            }
 
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('id')
                 .eq('id', data.session.user.id)
-                .single()
+                .maybeSingle()
 
             if (!profile) {
-                router.push('/company')
+                router.replace('/company')
             } else {
-                router.push('/dashboard')
+                router.replace('/dashboard')
             }
+
+            setCheckingSession(false)
         }
 
         checkUser()
-    }, [])
+    }, [router])
 
     const handleSignIn = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
 
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
             email,
             password,
         })
@@ -54,8 +63,7 @@ export default function Home() {
             return
         }
 
-        // Successful login
-        router.push('/dashboard')
+        router.replace('/dashboard')
     }
 
     const handleForgotPassword = async (e: React.MouseEvent) => {
@@ -67,9 +75,11 @@ export default function Home() {
         }
 
         setLoading(true);
+
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: `${window.location.origin}/reset-password`,
         });
+
         setLoading(false);
 
         if (error) {
@@ -79,8 +89,7 @@ export default function Home() {
         }
     };
 
-
-
+    if (checkingSession) return <Loading />
 
     return (
         <div className="flex items-center justify-center bg-gray-60 p-4 ">
@@ -121,9 +130,8 @@ export default function Home() {
                                     toggle={() => setShowPassword(!showPassword)}
                                     onChange={(e: any) => setPassword(e.target.value)}
                                 />
-
                             </div>
-                            {/* Change the href="#" to onClick */}
+
                             <button
                                 type="button"
                                 onClick={handleForgotPassword}
@@ -139,13 +147,16 @@ export default function Home() {
                             disabled={loading}
                             className="w-full bg-blue-600 text-white font-medium py-2.5 px-4 rounded-md btn-primary flex items-center justify-center gap-2 disabled:opacity-70"
                         >
-
-                            {loading ? <ClipLoader
-                                color="white"
-                                size={20}
-                                aria-label="Loading Spinner"
-                                data-testid="loader"
-                            /> : 'Continue'}
+                            {loading ? (
+                                <ClipLoader
+                                    color="white"
+                                    size={20}
+                                    aria-label="Loading Spinner"
+                                    data-testid="loader"
+                                />
+                            ) : (
+                                'Continue'
+                            )}
                         </button>
 
                     </form>
@@ -173,7 +184,7 @@ export default function Home() {
                     {/* Google */}
                     <button
                         type="button"
-                        className="w-full border py-3 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition  cursor-pointer"
+                        className="w-full border py-3 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition cursor-pointer"
                     >
                         <img
                             src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"

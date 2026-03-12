@@ -10,12 +10,13 @@ import { createClient } from '@/app/utils/supabase/client'
 import { validatePhone } from '@/app/utils/validatePhone'
 import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
+import { Loading } from '@/app/components/Loading'
 
 export default function CompanySetup() {
   const supabase = createClient()
   const router = useRouter()
 
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   const [fullName, setFullName] = useState('')
   const [companyName, setCompanyName] = useState('')
@@ -27,13 +28,15 @@ export default function CompanySetup() {
   const [industry, setIndustry] = useState<string | null>(null)
   const [location, setLocation] = useState('')
   const [size, setSize] = useState('Small')
-
+const[sessionCheck, setSessionCeck] = useState(false)
   /* ---------------- Auth Guard ---------------- */
  useEffect(() => {
+        setSessionCeck(true)
         const checkUser = async () => {
             const { data } = await supabase.auth.getSession()
 
             if (!data.session) {
+              setSessionCeck(false)
               router.push('/login')
             }
 
@@ -44,6 +47,7 @@ export default function CompanySetup() {
                 .single()
 
             if (!profile) {
+              setSessionCeck(false)
                 return;
             } else {
                 router.push('/dashboard')
@@ -101,6 +105,9 @@ export default function CompanySetup() {
     } finally {
       setLoading(false)
     }
+  }
+  if(sessionCheck){
+    return <Loading/>
   }
 
   return (
