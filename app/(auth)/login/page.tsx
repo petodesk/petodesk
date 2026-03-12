@@ -3,7 +3,7 @@ import PasswordInput from "@/app/components/PasswordInpup";
 import { createClient } from "@/app/utils/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 export default function Home() {
@@ -15,12 +15,34 @@ export default function Home() {
 
     const [password, setPassword] = useState('')
     const [email, setEmail] = useState('')
+    
+    useEffect(() => {
+        const checkUser = async () => {
+            const { data } = await supabase.auth.getSession()
+
+            if (!data.session) return
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', data.session.user.id)
+                .single()
+
+            if (!profile) {
+                router.push('/company')
+            } else {
+                router.push('/dashboard')
+            }
+        }
+
+        checkUser()
+    }, [])
 
     const handleSignIn = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
 
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
         })
@@ -119,7 +141,7 @@ export default function Home() {
                         >
 
                             {loading ? <ClipLoader
-                            color="white"
+                                color="white"
                                 size={20}
                                 aria-label="Loading Spinner"
                                 data-testid="loader"

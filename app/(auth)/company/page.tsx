@@ -9,6 +9,7 @@ import CustomPhoneInput from '@/app/components/PhoneInput'
 import { createClient } from '@/app/utils/supabase/client'
 import { validatePhone } from '@/app/utils/validatePhone'
 import { ClipLoader } from 'react-spinners'
+import { toast } from 'react-toastify'
 
 export default function CompanySetup() {
   const supabase = createClient()
@@ -28,11 +29,29 @@ export default function CompanySetup() {
   const [size, setSize] = useState('Small')
 
   /* ---------------- Auth Guard ---------------- */
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) router.push('/login')
-    })
-  }, [router, supabase])
+ useEffect(() => {
+        const checkUser = async () => {
+            const { data } = await supabase.auth.getSession()
+
+            if (!data.session) {
+              router.push('/login')
+            }
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', data.session?.user.id)
+                .single()
+
+            if (!profile) {
+                return;
+            } else {
+                router.push('/dashboard')
+            }
+        }
+
+        checkUser()
+    }, [])
 
   /* ---------------- Submit ---------------- */
   const handleCreateCompany = async (e: React.FormEvent) => {
@@ -47,7 +66,7 @@ export default function CompanySetup() {
     }
 
     if (!industry) {
-      alert('Please select feature and industry!')
+      toast.error('Please select  and industry!')
       setLoading(false)
       return
     }
@@ -88,13 +107,6 @@ export default function CompanySetup() {
     <section className="min-h-screen bg-gray-50 flex items-center justify-center px-4 font-poppins">
       <div className="w-full max-w-2xl bg-white rounded-xl shadow-sm px-10 py-6 my-10">
 
-        {/* Header */}
-        <div className="text-right text-sm mb-6">
-          <span className="text-gray-500">Have a PetoDesk? </span>
-          <Link href="/login" className="text-blue-600 font-medium hover:underline">
-            SIGN IN
-          </Link>
-        </div>
 
         <div className="text-center mb-8">
           <h1 className="text-2xl font-semibold text-gray-900">
