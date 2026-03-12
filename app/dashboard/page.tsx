@@ -5,6 +5,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import BothDashPlanDash from '../components/dashboards/bothDashPlanDash'
 import InventoryPlanDash from '../components/dashboards/inventoryPlanDash'
 import HrPlanDash from '../components/dashboards/HrPlanDash'
+import { Loading } from '../components/Loading'
 
 // 2. This MUST be 'export default function'
 export default function DashboardPage() {
@@ -57,7 +58,7 @@ const[plan, setPlan] = useState<string | null>(null)
 
 
   if (loading) {
-    return <div className="p-10 text-center text-gray-500">Loading Dashboard...</div>
+    return <Loading/>
   }
 
   // 3. Ensure we return a valid piece of JSX
