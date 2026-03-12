@@ -16,7 +16,7 @@ export default function CompanySetup() {
   const supabase = createClient()
   const router = useRouter()
 
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   const [fullName, setFullName] = useState('')
   const [companyName, setCompanyName] = useState('')
