@@ -18,7 +18,6 @@ export default function Signup() {
   const [passwordError, setPasswordError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-
   // 1. Password Strength Logic
   const getStrength = (pass: string) => {
     if (pass.length === 0) return { label: '', color: 'bg-gray-200', width: '0%' }
@@ -126,6 +125,7 @@ const handleSignup = async (e: React.FormEvent) => {
                 onChange={(e: any) => setConfirmPassword(e.target.value)}
               />
             </div>
+            
             <div className="mt-2 w-[50%] flex flex-col gap-3">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-xs text-gray-500 italic">Security Level: {strength.label}</span>
@@ -140,6 +140,7 @@ const handleSignup = async (e: React.FormEvent) => {
                 <p className="text-red-500 text-md">{passwordError}</p>
               )}
             </div>
+           
           </div>
 
           <div className="flex items-start gap-2 text-sm text-gray-600">
