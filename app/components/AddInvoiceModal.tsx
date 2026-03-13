@@ -314,7 +314,7 @@ export function AddInvoiceModal({
 
             onClose()
         } catch (err: any) {
-            alert(err.message)
+            console.log(err.message)
         } finally {
             setLoading(false)
         }
