@@ -28,34 +28,36 @@ export default function CompanySetup() {
   const [industry, setIndustry] = useState<string | null>(null)
   const [location, setLocation] = useState('')
   const [size, setSize] = useState('Small')
-const[sessionCheck, setSessionCeck] = useState(false)
+  const [sessionCheck, setSessionCeck] = useState(false)
+  const [acquisition, setAcquisition] = useState('')
   /* ---------------- Auth Guard ---------------- */
- useEffect(() => {
-        setSessionCeck(true)
-        const checkUser = async () => {
-            const { data } = await supabase.auth.getSession()
+  useEffect(() => {
+    setSessionCeck(true)
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getSession()
 
-            if (!data.session) {
-              setSessionCeck(false)
-              router.push('/login')
-            }
+      if (!data.session) {
+        setSessionCeck(false)
+        router.push('/login')
+      }
 
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('id', data.session?.user.id)
-                .single()
 
-            if (!profile) {
-              setSessionCeck(false)
-                return;
-            } else {
-                router.push('/dashboard')
-            }
-        }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', data.session?.user.id)
+        .single()
 
-        checkUser()
-    }, [])
+      if (!profile) {
+        setSessionCeck(false)
+        return;
+      } else {
+        router.push('/dashboard')
+      }
+    }
+
+    checkUser()
+  }, [])
 
   /* ---------------- Submit ---------------- */
   const handleCreateCompany = async (e: React.FormEvent) => {
@@ -70,7 +72,7 @@ const[sessionCheck, setSessionCeck] = useState(false)
     }
 
     if (!industry) {
-      toast.error('Please select  and industry!')
+      toast.error('Please select industry!')
       setLoading(false)
       return
     }
@@ -80,6 +82,7 @@ const[sessionCheck, setSessionCeck] = useState(false)
     try {
       const { data: sessionData } = await supabase.auth.getSession()
       const user = sessionData.session?.user
+
       if (!user) throw new Error('Not authenticated')
 
       /* ---- SINGLE RPC CALL ---- */
@@ -89,11 +92,13 @@ const[sessionCheck, setSessionCeck] = useState(false)
           p_company_name: companyName,
           p_industry: industry,
           p_service_type: 'inventory',
+          p_owner_id: user.id,
           p_size: size,
           p_location: location,
           p_full_name: fullName,
           p_phone: phone,
           p_email: user.email,
+          p_acquisition: acquisition,
         }
       )
 
@@ -106,8 +111,8 @@ const[sessionCheck, setSessionCeck] = useState(false)
       setLoading(false)
     }
   }
-  if(sessionCheck){
-    return <Loading/>
+  if (sessionCheck) {
+    return <Loading />
   }
 
   return (
@@ -149,17 +154,17 @@ const[sessionCheck, setSessionCeck] = useState(false)
 
           {/* Dropdowns */}
           {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-10"> */}
-            {/* <div className="flex flex-col gap-2">
+          {/* <div className="flex flex-col gap-2">
               <label>Choose Your Features *</label>
               <FeatureDropdown value={feature} onChange={setFeature} />
             </div> */}
 
-           
+
           {/* </div> */}
 
           {/* Phone & Size */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-             <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2">
               <label>Business Type / Industry *</label>
               <IndustryDropdown value={industry} onChange={setIndustry} />
             </div>
@@ -196,28 +201,50 @@ const[sessionCheck, setSessionCeck] = useState(false)
               </select>
             </div>
             <div className="flex flex-col gap-2">
-            <label>Company Location</label>
-            <input
-              value={location}
-              readOnly
-              className="p-2 rounded-lg border border-gray-300 bg-gray-100"
-            />
-          </div>
+              <label>Company Location</label>
+              <input
+                value={location}
+                readOnly
+                className="p-2 rounded-lg border border-gray-300 bg-gray-100"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label>Where did you hear about us? *</label>
+
+              <select
+                required
+                value={acquisition}
+                onChange={(e) => setAcquisition(e.target.value)}
+                className="p-2 rounded-lg border border-gray-500"
+              >
+                <option value="">Select</option>
+                <option value="tiktok">TikTok</option>
+                <option value="telegram">Telegram</option>
+                <option value="instagram">Instagram</option>
+                <option value="facebook">Facebook</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="twitter">Twitter (X)</option>
+                <option value="google">Google Search</option>
+                <option value="referral">Friend / Referral</option>
+                <option value="youtube">YouTube</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
           </div>
 
-          
+
 
           {/* Submit */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg disabled:bg-blue-300"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg disabled:bg-blue-300 cursor-pointer"
           >
-            {loading ? 
-            <div className="flex items-center justify-center gap-2">
-              <ClipLoader size={20} color="#ffffff" />
-              <span>Creating Company...</span>
-            </div> : 'Create Company Account'}
+            {loading ?
+              <div className="flex items-center justify-center gap-2">
+                <ClipLoader size={20} color="#ffffff" />
+                <span>Creating Company...</span>
+              </div> : 'Create Company Account'}
           </button>
 
         </form>
