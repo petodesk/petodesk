@@ -129,7 +129,7 @@ export default function AdminDash() {
                   service_type,
                   industry,
                   location,
-                  profiles(email, full_name, phone, status),
+                  profiles(email, full_name, phone, status, acquisition),
                   status
                 `)
                 .eq('id', companyId)
@@ -236,6 +236,7 @@ export default function AdminDash() {
                                         <InfoRow label="Full Name" value={SelectedCompany[0].profiles?.[0]?.full_name} />
                                         <InfoRow label="Phone" value={SelectedCompany[0].profiles?.[0]?.phone} />
                                         <InfoRow label="Account Status" value={SelectedCompany[0].profiles?.[0]?.status} />
+                                        <InfoRow label="Where did they hear about us " value={SelectedCompany[0].profiles?.[0]?.acquisition} />
                                     </div>
 
                                 </div>
