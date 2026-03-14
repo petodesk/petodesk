@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/app/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import PasswordInput from "@/app/components/PasswordInpup";
+import { toast } from "react-toastify";
 
 export default function ResetPassword() {
     const [showPassword, setShowPassword] = useState(false)
@@ -24,7 +25,7 @@ export default function ResetPassword() {
       alert(error.message);
       setLoading(false);
     } else {
-      alert("Password updated successfully!");
+      toast.success("Password updated successfully!");
       // Sign them out after reset to force a clean login
       await supabase.auth.signOut();
       router.push("/login");
