@@ -16,7 +16,7 @@ export default function Home() {
 
     const [checkingSession, setCheckingSession] = useState(true)
     const [loading, setLoading] = useState(false)
-
+    const [googleLoading, setGoogleLoading] = useState(false)
     const [password, setPassword] = useState('')
     const [email, setEmail] = useState('')
 
@@ -85,10 +85,21 @@ export default function Home() {
         if (error) {
             toast.error(error.message);
         } else {
-            alert("Password reset link sent! Check your email.");
+            toast.success("Password reset link sent! Check your email.");
         }
     };
 
+    const handleGoogleLogin = async () => {
+        setGoogleLoading(true)
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: `${window.location.origin}/auth/callback`,
+            },
+        })
+        setGoogleLoading(false)
+        if (error) toast.error(error.message)
+    }
     if (checkingSession) return <Loading />
 
     return (
@@ -184,6 +195,8 @@ export default function Home() {
                     {/* Google */}
                     <button
                         type="button"
+                        disabled={googleLoading || loading}
+                        onClick={handleGoogleLogin}
                         className="w-full border py-3 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition cursor-pointer"
                     >
                         <img
