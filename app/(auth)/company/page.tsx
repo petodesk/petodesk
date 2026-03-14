@@ -35,8 +35,8 @@ export default function CompanySetup() {
     setSessionCeck(true)
     const checkUser = async () => {
       const { data } = await supabase.auth.getSession()
-
-      if (!data.session) {
+      const user = data.session?.user
+      if (!user) {
         setSessionCeck(false)
         router.push('/login')
       }
