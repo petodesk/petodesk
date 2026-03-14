@@ -34,8 +34,8 @@ export default function CompanySetup() {
   useEffect(() => {
     setSessionCeck(true)
     const checkUser = async () => {
-      const { data } = await supabase.auth.getSession()
-      const user = data.session?.user
+      const { data:sessionData } = await supabase.auth.getSession()
+      const user = sessionData.session?.user
       if (!user) {
         setSessionCeck(false)
         router.push('/login')
@@ -45,7 +45,7 @@ export default function CompanySetup() {
       const { data: profile } = await supabase
         .from('profiles')
         .select('id')
-        .eq('id', data.session?.user.id)
+        .eq('id', user?.id)
         .single()
 
       if (!profile) {

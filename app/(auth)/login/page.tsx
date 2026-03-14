@@ -23,8 +23,8 @@ export default function Home() {
     useEffect(() => {
         const checkUser = async () => {
             const { data } = await supabase.auth.getSession()
-
-            if (!data.session) {
+                const user = data.session?.user
+            if (!user) {
                 setCheckingSession(false)
                 return
             }
@@ -32,7 +32,7 @@ export default function Home() {
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('id')
-                .eq('id', data.session.user.id)
+                .eq('id', data.session?.user.id)
                 .maybeSingle()
 
             if (!profile) {
