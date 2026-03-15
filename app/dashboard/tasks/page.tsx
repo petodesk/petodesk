@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { HiSearch } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
 import AddTaskModal from "@/app/components/AddTaskModal"
+import AddCommentModal from "@/app/components/AddCommentModal"
+import AddReportModal from "@/app/components/AddReportModal"
 
 export default function Tasks() {
     const supabase = createClient()
@@ -11,8 +13,11 @@ export default function Tasks() {
     const [viewMore, setViewMore] = useState(false)
     const [selectedTask, setSelectedTask] = useState<any>(null)
     const [addTaskOpen, setAddTaskOpen] = useState<boolean>(false)
-    const[editTask, setEditTask] = useState(false)
-    const[task, setTask] = useState()
+    const [editTask, setEditTask] = useState(false)
+    const [task, setTask] = useState()
+    const [openComment, setOpenComment] = useState(false)
+    const [role, setRole] = useState()
+    const [openReport, setOpenReport] = useState(false)
     // Updated stats for Tasks
     const [stats, setStats] = useState({
         in_progress: 0,
@@ -25,6 +30,7 @@ export default function Tasks() {
 
     useEffect(() => {
         fetchTasks()
+        fetchUser()
     }, [])
 
     async function fetchTasks() {
@@ -63,6 +69,19 @@ export default function Tasks() {
         return user?.id
     }
 
+    const fetchUser = async () => {
+        const userId = await getProfileId()
+        try {
+            const { data: profiles } = await supabase.from('profiles')
+                .select('role')
+                .eq('id', userId)
+                .single()
+            setRole(profiles?.role)
+        } catch (error) {
+
+        }
+    }
+
     function ActionMenu({ task }: { task: any }) {
         const [open, setOpen] = useState(false)
 
@@ -72,7 +91,8 @@ export default function Tasks() {
                 .from("tasks")
                 .update({
                     status: newStatus,
-                    updated_at: new Date()
+                    updated_at: new Date(),
+                    updated_by: profileId
                 })
                 .eq("id", task.id)
 
@@ -84,24 +104,11 @@ export default function Tasks() {
             setSelectedTask(task)
             setViewMore(true)
         }
-        const addComment = async (taksId: string) => {
-            const profileId = getProfileId()
-            const comment = prompt('Enter Comment')
 
-            const { error } = await supabase
-                .from("tasks")
-                .insert({
-                    comment,
-                    commented_by: profileId,
-                    commented_at: new Date()
-                })
-                .eq("id", taksId)
-                setOpen(false)
-        }
-        const editTaskHandler = ()=>{
+        const editTaskHandler = () => {
             setEditTask(true)
             setTask(task)
-            
+
         }
         return (
             <div className="relative">
@@ -124,19 +131,55 @@ export default function Tasks() {
                             <li onClick={() => updateStatus("in_progress")} className="px-3 py-2 hover:bg-blue-50 text-blue-700 cursor-pointer">
                                 Set In Progress
                             </li>
-                            <li onClick={editTaskHandler}
-                            className="px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-800">
-                                Edit Task
-                            </li>
+                            {
+                                role === 'owner' ? (
+                                    <li onClick={editTaskHandler}
+                                        className="px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-800">
+                                        Edit Task
+                                    </li>
+                                ) : (
+                                    <li
+                                        onClick={() => {
+                                            setSelectedTask(task.id)
+                                            setOpenReport(true)
+                                        }}
+                                        className="px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-800">
+
+                                        Report this Task
+
+                                    </li>
+                                )
+                            }
+
                             <li
-                                onClick={() => addComment(task.id)}
+                                onClick={() => {
+                                    setSelectedTask(task)
+                                    setOpenComment(true)
+                                }}
                                 className="px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-800">
                                 Add Comment
                             </li>
                         </ul>
                     </div>
                 )}
-                {editTask && <AddTaskModal task={task} open={editTask} onClose={()=>setEditTask(false)}/>}
+                {
+                    openComment && (
+                        <AddCommentModal
+                            open={openComment}
+                            onClose={() => setOpenComment(false)}
+                            task={selectedTask}
+                        />
+                    )
+                }
+                {openReport && (
+                    <AddReportModal
+                        open={openReport}
+                        onClose={() => setOpenReport(false)}
+                        taskId={selectedTask}
+                    />
+                )}
+
+                {editTask && <AddTaskModal task={task} open={editTask} onClose={() => { setEditTask(false), fetchTasks() }} />}
             </div>
         )
     }
@@ -191,12 +234,16 @@ export default function Tasks() {
                     </div>
 
                     <div className="flex gap-4 my-6">
-                        <button
-                            onClick={() => setAddTaskOpen(true)}
-                            className="btn-primary rounded-lg py-3 px-6 text-white"
-                        >
-                            + Assign Task
-                        </button>
+                        {
+                            role !== 'employee' &&
+                            <button
+                                onClick={() => setAddTaskOpen(true)}
+                                className="btn-primary rounded-lg py-3 px-6 text-white"
+                            >
+                                + Assign Task
+                            </button>
+                        }
+
                         <button className="bg-white rounded-lg py-3 px-6 border">
                             Daily Reports
                         </button>
