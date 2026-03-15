@@ -10,21 +10,31 @@ interface Employee {
     name: string,
     email: string
 }
-export default function AddTaskModal({ open, onClose }: { open: boolean, onClose: () => void }) {
+interface Task{
+    id?:string
+    title:string
+    description:string
+    assigned_to:string
+    priority:string
+    start_date:string
+    end_date:string
+    notify:boolean
+}
+export default function AddTaskModal({ open, onClose , task}: { open: boolean, onClose: () => void, task?:Task }) {
     const supabase = createClient()
-
+    const isEdit = !!task
     // Form States
     const [loading, setLoading] = useState(false)
     const [employees, setEmployees] = useState<Employee[]>([])
     const[assignedBy, setAssignedBy] = useState<string>()
     const[userCompanyId, setUserCompanyId] = useState<string>()
     const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        assigned_to: '',
-        priority: 'medium',
-        start_date: '',
-        end_date: '',
+        title: "",
+        description: "",
+        assigned_to: "",
+        priority:  'medium',
+        start_date: "",
+        end_date: "",
         notify: false
     })
 
@@ -65,10 +75,21 @@ useEffect(() => {
 
         getUser()
     }, [])
+useEffect(() => {
+    if (task) {
+        setFormData({
+            title: task.title ?? "",
+            description: task.description ?? "",
+            assigned_to: task.assigned_to ?? "",
+            priority: task.priority ?? "medium",
+            start_date: task.start_date?.split('T')[0] ?? "",
+            end_date: task.end_date?.split('T')[0] ?? "",
+            notify: task.notify ?? false
+        })
+    }
+}, [task])
 
-    // 1. Import the action at the top
-
-    // 2. Inside your handleSubmit function:
+    
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
@@ -78,26 +99,43 @@ useEffect(() => {
         // Find the full employee object so we can get their email
         const selectedEmployee = employees.find(emp => emp.id === formData.assigned_to)
 
-        // Save to Supabase
-        const { error } = await supabase
-            .from('tasks')
-            .insert([{
-                company_id:userCompanyId,
-                title: formData.title,
-                description: formData.description,
-                assigned_to: formData.assigned_to,
-                assigned_by:assignedBy,
-                priority: formData.priority,
-                start_date: formData.start_date,
-                end_date: formData.end_date,
-                notify: formData.notify
-            }])
+        let error
 
-        if (error) {
-            toast.error(error.message)
-            setLoading(false)
-            return
-        }
+if (isEdit) {
+    const { error: updateError } = await supabase
+        .from('tasks')
+        .update({
+            title: formData.title,
+            description: formData.description,
+            assigned_to: formData.assigned_to,
+            priority: formData.priority,
+            start_date: formData.start_date,
+            end_date: formData.end_date,
+            notify: formData.notify
+        })
+        .eq('id', task?.id)
+
+    error = updateError
+
+} else {
+
+    const { error: insertError } = await supabase
+        .from('tasks')
+        .insert([{
+            company_id: userCompanyId,
+            title: formData.title,
+            description: formData.description,
+            assigned_to: formData.assigned_to,
+            assigned_by: assignedBy,
+            priority: formData.priority,
+            start_date: formData.start_date,
+            end_date: formData.end_date,
+            notify: formData.notify
+        }])
+
+    error = insertError
+}
+     
 
         // 3. IF "Notify" is checked, send the email!
         if (formData.notify && selectedEmployee) {
@@ -109,7 +147,7 @@ useEffect(() => {
         }
 
         setLoading(false)
-        toast.success("Task created and employee notified!")
+       toast.success(isEdit ? "Task updated successfully!" : "Task created successfully!")
         onClose()
     }
 
@@ -122,7 +160,7 @@ useEffect(() => {
             <form onSubmit={handleSubmit} className="relative z-50 w-full mt-20 rounded-lg bg-white max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col shadow-lg">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white z-10">
-                    <h2 className="text-lg font-semibold">Assign New Task</h2>
+                    <h2 className="text-lg font-semibold"> {`${isEdit ? "Edit Task" : "Add New Task"}`}</h2>
                     <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
                 </div>
 
@@ -225,7 +263,7 @@ useEffect(() => {
                         disabled={loading}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300 flex items-center gap-2"
                     >
-                        {loading ? <ClipLoader size={18} color="#fff" /> : 'Create Task'}
+                        {loading ? <ClipLoader size={18} color="#fff" /> : isEdit ? 'Update Task' : 'Create Task'}
                     </button>
                 </div>
             </form>

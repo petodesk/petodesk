@@ -11,7 +11,8 @@ export default function Tasks() {
     const [viewMore, setViewMore] = useState(false)
     const [selectedTask, setSelectedTask] = useState<any>(null)
     const [addTaskOpen, setAddTaskOpen] = useState<boolean>(false)
-    
+    const[editTask, setEditTask] = useState(false)
+    const[task, setTask] = useState()
     // Updated stats for Tasks
     const [stats, setStats] = useState({
         in_progress: 0,
@@ -83,7 +84,25 @@ export default function Tasks() {
             setSelectedTask(task)
             setViewMore(true)
         }
+        const addComment = async (taksId: string) => {
+            const profileId = getProfileId()
+            const comment = prompt('Enter Comment')
 
+            const { error } = await supabase
+                .from("tasks")
+                .insert({
+                    comment,
+                    commented_by: profileId,
+                    commented_at: new Date()
+                })
+                .eq("id", taksId)
+                setOpen(false)
+        }
+        const editTaskHandler = ()=>{
+            setEditTask(true)
+            setTask(task)
+            
+        }
         return (
             <div className="relative">
                 <button
@@ -105,9 +124,19 @@ export default function Tasks() {
                             <li onClick={() => updateStatus("in_progress")} className="px-3 py-2 hover:bg-blue-50 text-blue-700 cursor-pointer">
                                 Set In Progress
                             </li>
+                            <li onClick={editTaskHandler}
+                            className="px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-800">
+                                Edit Task
+                            </li>
+                            <li
+                                onClick={() => addComment(task.id)}
+                                className="px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-800">
+                                Add Comment
+                            </li>
                         </ul>
                     </div>
                 )}
+                {editTask && <AddTaskModal task={task} open={editTask} onClose={()=>setEditTask(false)}/>}
             </div>
         )
     }
@@ -160,9 +189,9 @@ export default function Tasks() {
                         <h1 className="text-md md:text-xl font-semibold">Tasks & Daily Activities</h1>
                         <p className="text-gray-600">Assign tasks, track progress, and submit daily work reports</p>
                     </div>
-                    
+
                     <div className="flex gap-4 my-6">
-                        <button 
+                        <button
                             onClick={() => setAddTaskOpen(true)}
                             className="btn-primary rounded-lg py-3 px-6 text-white"
                         >
@@ -237,9 +266,9 @@ export default function Tasks() {
                                         <td className="px-4 py-3 capitalize">{task.priority}</td>
                                         <td className="px-4 py-3">
                                             <span className={`px-2 py-1 rounded text-xs font-medium capitalize
-                                                ${task.status === "completed" ? "bg-green-100 text-green-700" : 
-                                                  task.status === "in_progress" ? "bg-blue-100 text-blue-700" : 
-                                                  "bg-yellow-100 text-yellow-700"}`}>
+                                                ${task.status === "completed" ? "bg-green-100 text-green-700" :
+                                                    task.status === "in_progress" ? "bg-blue-100 text-blue-700" :
+                                                        "bg-yellow-100 text-yellow-700"}`}>
                                                 {task.status?.replace('_', ' ')}
                                             </span>
                                         </td>
@@ -256,11 +285,11 @@ export default function Tasks() {
                     </div>
 
                     {addTaskOpen && (
-                        <AddTaskModal 
-                            open={addTaskOpen} 
+                        <AddTaskModal
+                            open={addTaskOpen}
                             onClose={() => {
                                 setAddTaskOpen(false);
-                                fetchTasks(); // Refresh list after adding
+                                fetchTasks();
                             }}
                         />
                     )}
