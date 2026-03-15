@@ -6,8 +6,9 @@ import { toast } from 'react-toastify'
 import { ClipLoader } from 'react-spinners'
 import { sendTaskEmail } from '@/app/actions/sendEmail'
 interface Employee {
-    id: string,
-    name: string,
+    id: string
+    auth_user_id:string
+    name: string
     email: string
 }
 interface Task{
@@ -44,7 +45,7 @@ export default function AddTaskModal({ open, onClose , task}: { open: boolean, o
             const fetchEmployees = async () => {
                 const { data, error } = await supabase
                     .from('employees')
-                    .select('id, name, email')
+                    .select('id, name, email, auth_user_id')
                     .order('name', { ascending: true })
 
                 if (error) {
@@ -88,7 +89,9 @@ useEffect(() => {
         })
     }
 }, [task])
-
+  const selectedEmployee = employees.find(emp => emp.auth_user_id === formData.assigned_to)
+console.log(selectedEmployee)
+console.log('this task for',formData.assigned_to)
     
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -97,8 +100,7 @@ useEffect(() => {
             return;
         }
         // Find the full employee object so we can get their email
-        const selectedEmployee = employees.find(emp => emp.id === formData.assigned_to)
-
+      
         let error
 
 if (isEdit) {
@@ -197,7 +199,7 @@ if (isEdit) {
                             >
                                 <option value="">Select Employee</option>
                                 {employees.map(emp => (
-                                    <option key={emp.id} value={emp.id}>{emp.name}</option>
+                                    <option key={emp.auth_user_id} value={emp.auth_user_id}>{emp.name}</option>
                                 ))}
                             </select>
                         </div>

@@ -26,7 +26,7 @@ export const routePermissions: Record<
     plans: ["hr", "both"]
   },
    "/dashboard/tasks": {
-    roles: ["admin", "owner"],
+    roles: ["admin", "owner",'employee'],
     plans: ["hr", "both"]
   },
    "/dashboard/leave-management": {
