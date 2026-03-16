@@ -45,7 +45,7 @@ export default function AddReportModal({
                 task_id: taskId,
                 employee_id: employeeId,
                 title: formData.title,
-                work_summary: formData.work_summary,
+                summary: formData.work_summary,
                 challenges: formData.challenges,
                 time_spent: formData.time_spent
             }])
