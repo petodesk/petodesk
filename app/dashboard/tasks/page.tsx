@@ -35,13 +35,21 @@ export default function Tasks() {
 
     async function fetchTasks() {
         // Fetch tasks and join with employee profile to get the name
-        const { data, error } = await supabase
-            .from("tasks")
-            .select(`
-                *,
-                employees (name, email, department, role)
-            `)
-            .order('created_at', { ascending: false })
+ 
+            const { data, error } = await supabase
+    .from("tasks")
+    .select(`
+        *,
+        employees (name, email, department, role),
+        task_comments (
+            id,
+            comment,
+            created_at,
+            commented_by,
+            profiles (full_name, role)
+        )
+    `)
+    .order('created_at', { ascending: false })
 
         if (error) return;
 
@@ -188,7 +196,7 @@ export default function Tasks() {
         <>
             {viewMore ? (
                 /* ---------------- VIEW TASK PAGE ---------------- */
-                <div className="w-full min-h-screen p-6 rounded-lg border bg-white">
+                <div className="w-full min-h-screen p-2 md:p-6 rounded-lg border bg-white">
                     <div className="flex justify-between items-center mb-6">
                         <div>
                             <h2 className="text-2xl font-bold">Task Details</h2>
@@ -223,7 +231,38 @@ export default function Tasks() {
                                 <p className="text-sm bg-gray-50 p-2 rounded">{selectedTask.description || "No description provided."}</p>
                             </div>
                         </div>
+                        
                     </div>
+                    <div className="border rounded-xl p-2 md:p-5 space-y-4 mt-2 md:mt-4">
+                            <h3 className="font-semibold border-b pb-2">Comments</h3>
+
+                            {selectedTask?.task_comments?.length > 0 ? (
+                                <div className="space-y-3">
+                                    {selectedTask.task_comments.map((c: any) => (
+                                        <div key={c.id} className="bg-gray-50 p-3 rounded-lg border">
+
+                                            <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                                <div className="flex gap-10">
+                                                <span >{c.profiles?.full_name || "Unknown"} </span>
+
+                                                    <p className="hidden md:flex text-sm text-gray-900">Role:{' '}{c.profiles?.role}</p> 
+                                                </div>
+                                                <span>
+                                                    {new Date(c.created_at).toLocaleString()}
+                                                </span>
+                                            </div>
+
+                                            <p className="text-sm text-gray-800">
+                                                {c.comment}
+                                            </p>
+
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-gray-400">No comments yet.</p>
+                            )}
+                        </div>
                 </div>
             ) : (
                 /* ---------------- DASHBOARD ---------------- */
