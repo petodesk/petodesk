@@ -1,24 +1,17 @@
 'use client'
 
 import { useEffect, useState } from "react"
-import { HiSearch } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
-import AddTaskModal from "@/app/components/AddTaskModal"
 import AddCommentModal from "@/app/components/AddCommentModal"
-import AddReportModal from "@/app/components/AddReportModal"
 
 export default function Reports({ onClose, open }: { onClose: () => void, open: boolean }) {
     if (!open) return null;
     const supabase = createClient()
 
     const [viewMore, setViewMore] = useState<boolean>(false)
-    const [selectedTask, setSelectedTask] = useState<any>(null)
-    const [addTaskOpen, setAddTaskOpen] = useState<boolean>(false)
-    const [editTask, setEditTask] = useState<boolean>(false)
-    const [task, setTask] = useState()
+    const [selectedReport, setSelectedReport] = useState<any>(null)
     const [openComment, setOpenComment] = useState<boolean>(false)
     const [role, setRole] = useState()
-    const [openAddReport, setOpenAddReport] = useState<boolean>(false)
 
     const [stats, setStats] = useState({
         in_progress: 0,
@@ -90,10 +83,10 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
     function ActionMenu({ report }: { report: any }) {
         const [open, setOpen] = useState(false)
 
-        function viewTask() {
-            setSelectedTask(task)
-            setViewMore(true)
-        }
+     function viewTask() {
+    setSelectedReport(report)
+    setViewMore(true)
+}
 
         return (
             <div className="relative">
@@ -117,7 +110,7 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
 
                             <li
                                 onClick={() => {
-                                    setSelectedTask(task)
+                                    setSelectedReport(report)
                                     setOpenComment(true)
                                 }}
                                 className="px-3 py-2 hover:bg-gray-50 cursor-pointer">
@@ -154,22 +147,22 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
                     <div className="grid md:grid-cols-2 gap-6">
                         <div className="border rounded-xl p-5 space-y-4">
                             <h3 className="font-semibold border-b pb-2">Employee Info</h3>
-                            <InfoRow label="Name" value={selectedTask.profiles?.full_name} />
-                            <InfoRow label="Role" value={selectedTask.profiles?.role} />
+                            <InfoRow label="Name" value={selectedReport.profiles?.full_name} />
+                            <InfoRow label="Role" value={selectedReport.profiles?.role} />
                         </div>
 
                         <div className="border rounded-xl p-5 space-y-4">
                             <h3 className="font-semibold border-b pb-2">Task Info</h3>
-                            <InfoRow label="Title" value={selectedTask.tasks?.title} />
-                            <InfoRow label="Start Date" value={new Date(selectedTask.tasks?.start_date).toLocaleDateString()} />
-                            <InfoRow label="End Date" value={new Date(selectedTask.tasks?.end_date).toLocaleDateString()} />
+                            <InfoRow label="Title" value={selectedReport.tasks?.title} />
+                            <InfoRow label="Start Date" value={new Date(selectedReport.tasks?.start_date).toLocaleDateString()} />
+                            <InfoRow label="End Date" value={new Date(selectedReport.tasks?.end_date).toLocaleDateString()} />
                         </div>
                     </div>
 
                     <div className="border rounded-xl p-5 mt-4 space-y-3">
-                        <InfoRow label="Work Summary" value={selectedTask.summary} />
-                        <InfoRow label="Challenges" value={selectedTask.challenges} />
-                        <InfoRow label="Time Spent" value={selectedTask.time_spent} />
+                        <InfoRow label="Work Summary" value={selectedReport.summary} />
+                        <InfoRow label="Challenges" value={selectedReport.challenges} />
+                        <InfoRow label="Time Spent" value={selectedReport.time_spent} />
                     </div>
                 </div>
             ) : (
