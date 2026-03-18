@@ -176,8 +176,10 @@ export default function Tasks() {
                     openComment && (
                         <AddCommentModal
                             open={openComment}
-                            onClose={() => setOpenComment(false)}
-                            task={selectedTask}
+                            onClose={() =>{ setOpenComment(false), fetchTasks()} }
+                            type="task"
+                            entityId={task.id}
+                            title={task.title}
                         />
                     )
                 }
@@ -254,7 +256,7 @@ export default function Tasks() {
                                             </span>
                                         </div>
 
-                                        <p className="text-sm text-gray-800">
+                                        <p className="break-words">
                                             {c.comment}
                                         </p>
 
@@ -357,7 +359,11 @@ export default function Tasks() {
                                                     <td className="px-4 py-3 text-gray-500">
                                                         {new Date(task.created_at).toLocaleDateString()}
                                                     </td>
-                                                    <td className="px-4 py-3 font-medium">{task.title}</td>
+                                                    <td className="px-4 py-3 max-w-[250px]">
+                                                        <p className="line-clamp-2 break-words">
+                                                            {task.title}
+                                                        </p>
+                                                    </td>
                                                     <td className="px-4 py-3">{task.employees?.name}</td>
                                                     <td className="px-4 py-3">{new Date(task.end_date).toLocaleDateString()}</td>
                                                     <td className="px-4 py-3 capitalize">{task.priority}</td>

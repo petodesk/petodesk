@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { HiSearch } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
+import AddCommentModal from "@/app/components/AddCommentModal"
 
 export default function AdminDash() {
 
@@ -10,7 +11,7 @@ export default function AdminDash() {
 
     const [viewMore, setViewMore] = useState(false)
     const [selectedLeave, setSelectedLeave] = useState<any>(null)
-
+    const [openComment, setOpenComment] = useState(false)
     const [stats, setStats] = useState({
         approved_leaves: 0,
         pending_leaves: 0,
@@ -114,26 +115,7 @@ export default function AdminDash() {
             setSelectedLeave(leave)
             setViewMore(true)
         }
-        async function addComment(leaveId: string) {
-            const profileId = await getProfileId()
 
-            const comment = prompt("Enter comment")
-
-            if (!comment) return
-
-            const { error } = await supabase
-                .from("leaves")
-                .insert({
-                    comment,
-                    commented_by: profileId,
-                    commented_at: new Date()
-                })
-                .eq("id", leaveId)
-
-            if (!error) {
-                fetchDashboard()
-            }
-        }
 
         return (
             <div className="relative">
@@ -169,7 +151,7 @@ export default function AdminDash() {
                                 Reject
                             </li>
                             <li
-                                onClick={() => addComment(leave.id)}
+                                onClick={() => setOpenComment(true)}
                                 className='text-md p-1 text-blue-700 cursor-pointer hover:bg-blue-100'
                             >
                                 Add Comment
@@ -178,6 +160,13 @@ export default function AdminDash() {
                         </ul>
                     </div>
                 )}
+                <AddCommentModal
+                    open={openComment}
+                    onClose={() => setOpenComment(false)}
+                    type="leave"
+                    entityId={leave.id}
+                    title={leave.leave_type}
+                />
             </div>
         )
     }

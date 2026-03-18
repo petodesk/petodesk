@@ -7,8 +7,8 @@ import AddTaskModal from "@/app/components/AddTaskModal"
 import AddCommentModal from "@/app/components/AddCommentModal"
 import AddReportModal from "@/app/components/AddReportModal"
 
-export default function Reports({onClose, open}:{onClose:()=>void, open:boolean}) {
-    if(!open) return null;
+export default function Reports({ onClose, open }: { onClose: () => void, open: boolean }) {
+    if (!open) return null;
     const supabase = createClient()
 
     const [viewMore, setViewMore] = useState<boolean>(false)
@@ -71,7 +71,7 @@ export default function Reports({onClose, open}:{onClose:()=>void, open:boolean}
             completed: completed
         })
     }
-console.log(tasks)
+    console.log(tasks)
     async function getProfileId() {
         const { data: { user } } = await supabase.auth.getUser()
         return user?.id
@@ -87,7 +87,7 @@ console.log(tasks)
         setRole(data?.role)
     }
 
-    function ActionMenu({ task }: { task: any }) {
+    function ActionMenu({ report }: { report: any }) {
         const [open, setOpen] = useState(false)
 
         function viewTask() {
@@ -99,7 +99,7 @@ console.log(tasks)
             <div className="relative">
                 <button
                     onClick={() => setOpen(!open)}
-                    className="px-2 py-1 text-gray-600 hover:text-gray-900"
+                    className="px-2 py-1 text-gray-600 hover:text-gray-900 cursor-pointer"
                 >
                     ⋮
                 </button>
@@ -110,7 +110,10 @@ console.log(tasks)
                             <li onClick={viewTask} className="px-3 py-2 hover:bg-gray-100 cursor-pointer">
                                 View Full Report
                             </li>
-                            <li>Mark as reviewed</li>
+                            <li
+                                className="px-3 py-2 hover:bg-gray-50 cursor-pointer">
+
+                                Mark as reviewed</li>
 
                             <li
                                 onClick={() => {
@@ -128,7 +131,9 @@ console.log(tasks)
                     <AddCommentModal
                         open={openComment}
                         onClose={() => setOpenComment(false)}
-                        task={selectedTask}
+                        type="report"
+                        entityId={report.id}
+                        title={report.tasks?.title}
                     />
                 )}
             </div>
@@ -141,7 +146,7 @@ console.log(tasks)
                 <div className="w-full min-h-screen p-2 md:p-6 rounded-lg border bg-white">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-bold">Full Report</h2>
-                        <button onClick={() => setViewMore(false)} className="px-4 py-2 border rounded-lg bg-gray-100">
+                        <button onClick={() => setViewMore(false)} className="px-4 py-2 border rounded-lg bg-gray-100 cursor-pointer">
                             Back
                         </button>
                     </div>
@@ -162,20 +167,27 @@ console.log(tasks)
                     </div>
 
                     <div className="border rounded-xl p-5 mt-4 space-y-3">
-                        <InfoRow label="Work Summary" value={selectedTask.work_summary} />
+                        <InfoRow label="Work Summary" value={selectedTask.summary} />
                         <InfoRow label="Challenges" value={selectedTask.challenges} />
                         <InfoRow label="Time Spent" value={selectedTask.time_spent} />
                     </div>
                 </div>
             ) : (
-                <div className="w-full p-2 md:p-6">
-                    <div className="flex gap-10">
-                    <h1 className="text-xl font-semibold">Reports</h1>
-                    <button
-                    onClick={onClose}
-                    > Back</button>
+                <div className="w-full p-2 md:p-6 font-poppins">
+                    <div className="flex flex-col gap-5">
+
+                        <div className="gap-2">
+                            <h1 className="text-md md:text-xl font-semibold">Tasks & Daily Activities</h1>
+                            <p className="text-gray-600">Assign tasks, track progress, and submit daily work reports</p>
+                        </div>
+
+
+                        <button className="rounded-lg border bg-white p-2 w-40"
+                            onClick={onClose}
+                        > Go Back</button>
+
                     </div>
-                    
+
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-5 my-4">
                         <SummaryCard label="In Progress" value={stats.in_progress.toString()} />
@@ -183,7 +195,7 @@ console.log(tasks)
                         <SummaryCard label="Due Today" value={stats.due_today.toString()} />
                         <SummaryCard label="Completed" value={stats.completed.toString()} />
                     </div>
-                    <h1>Activity Reports</h1>
+                    <h1 className="text-md text-gray-900 py-4 font-semibold">Activity Reports</h1>
                     <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead className="bg-gray-50">
@@ -200,12 +212,20 @@ console.log(tasks)
                                 {tasks.map((task) => (
                                     <tr key={task.id} className="border-t">
                                         <td className="px-4 py-3">{new Date(task.created_at).toLocaleDateString()}</td>
-                                        <td className="px-4 py-3">{task.tasks?.title}</td>
+                                        <td className="px-4 py-3 max-w-[250px]">
+                                            <p className="line-clamp-2 break-words">
+                                                {task.tasks?.title}
+                                            </p>
+                                        </td>
                                         <td className="px-4 py-3">{task.profiles?.full_name}</td>
-                                        <td className="px-4 py-3">{task.summary}</td>
+                                        <td className="px-4 py-3 max-w-[250px]">
+                                            <p className="line-clamp-2 break-words">
+                                                {task.summary}
+                                            </p>
+                                        </td>
                                         <td className="px-4 py-3">{task.status}</td>
                                         <td className="px-4 py-3">
-                                            <ActionMenu task={task} />
+                                            <ActionMenu report={task} />
                                         </td>
                                     </tr>
                                 ))}
@@ -227,11 +247,15 @@ function SummaryCard({ label, value }: { label: string, value: string }) {
     )
 }
 
+
 function InfoRow({ label, value }: { label: string, value: any }) {
     return (
-        <div className="flex justify-between border-b pb-2">
-            <span className="text-gray-500">{label}</span>
-            <span>{value || "-"}</span>
+        <div className="flex flex-col md:flex-row md:justify-between border-b pb-2 gap-1">
+            <span className="text-gray-500 text-sm">{label}</span>
+
+            <span className="text-gray-900 text-sm font-medium break-words whitespace-pre-wrap max-w-full md:max-w-[60%]">
+                {value || "-"}
+            </span>
         </div>
     )
 }
