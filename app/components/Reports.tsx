@@ -1,0 +1,237 @@
+'use client'
+
+import { useEffect, useState } from "react"
+import { HiSearch } from "react-icons/hi"
+import { createClient } from "@/app/utils/supabase/client"
+import AddTaskModal from "@/app/components/AddTaskModal"
+import AddCommentModal from "@/app/components/AddCommentModal"
+import AddReportModal from "@/app/components/AddReportModal"
+
+export default function Reports({onClose, open}:{onClose:()=>void, open:boolean}) {
+    if(!open) return null;
+    const supabase = createClient()
+
+    const [viewMore, setViewMore] = useState<boolean>(false)
+    const [selectedTask, setSelectedTask] = useState<any>(null)
+    const [addTaskOpen, setAddTaskOpen] = useState<boolean>(false)
+    const [editTask, setEditTask] = useState<boolean>(false)
+    const [task, setTask] = useState()
+    const [openComment, setOpenComment] = useState<boolean>(false)
+    const [role, setRole] = useState()
+    const [openAddReport, setOpenAddReport] = useState<boolean>(false)
+
+    const [stats, setStats] = useState({
+        in_progress: 0,
+        overdue: 0,
+        due_today: 0,
+        completed: 0,
+    })
+
+    const [tasks, setTasks] = useState<any[]>([])
+
+    useEffect(() => {
+        fetchTasks()
+        fetchUser()
+    }, [])
+
+    async function fetchTasks() {
+
+        const { data, error } = await supabase
+            .from("task_reports")
+            .select(`
+                *,
+                tasks (
+                    id,
+                    title,
+                    start_date,
+                    end_date,
+                    priority,
+                    employees (name, email)
+                ),
+                profiles (full_name, role)
+            `)
+            .order('created_at', { ascending: false })
+
+        if (error) return;
+
+        const tasksData = data || []
+        const today = new Date().toISOString().split("T")[0]
+
+        // Stats based on report status
+        const inProgress = tasksData.filter(t => t.status === "in_progress").length
+        const completed = tasksData.filter(t => t.status === "completed").length
+        const dueToday = tasksData.filter(t => t.tasks?.end_date === today).length
+        const overdue = tasksData.filter(t => t.tasks?.end_date < today && t.status !== "completed").length
+
+        setTasks(tasksData)
+        setStats({
+            in_progress: inProgress,
+            overdue: overdue,
+            due_today: dueToday,
+            completed: completed
+        })
+    }
+console.log(tasks)
+    async function getProfileId() {
+        const { data: { user } } = await supabase.auth.getUser()
+        return user?.id
+    }
+
+    const fetchUser = async () => {
+        const userId = await getProfileId()
+        const { data } = await supabase.from('profiles')
+            .select('role')
+            .eq('id', userId)
+            .single()
+
+        setRole(data?.role)
+    }
+
+    function ActionMenu({ task }: { task: any }) {
+        const [open, setOpen] = useState(false)
+
+        function viewTask() {
+            setSelectedTask(task)
+            setViewMore(true)
+        }
+
+        return (
+            <div className="relative">
+                <button
+                    onClick={() => setOpen(!open)}
+                    className="px-2 py-1 text-gray-600 hover:text-gray-900"
+                >
+                    ⋮
+                </button>
+
+                {open && (
+                    <div className="absolute right-0 z-20 w-40 rounded-lg border bg-white shadow-lg">
+                        <ul className="py-2 flex flex-col text-sm">
+                            <li onClick={viewTask} className="px-3 py-2 hover:bg-gray-100 cursor-pointer">
+                                View Full Report
+                            </li>
+                            <li>Mark as reviewed</li>
+
+                            <li
+                                onClick={() => {
+                                    setSelectedTask(task)
+                                    setOpenComment(true)
+                                }}
+                                className="px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                                Add Comment
+                            </li>
+                        </ul>
+                    </div>
+                )}
+
+                {openComment && (
+                    <AddCommentModal
+                        open={openComment}
+                        onClose={() => setOpenComment(false)}
+                        task={selectedTask}
+                    />
+                )}
+            </div>
+        )
+    }
+
+    return (
+        <>
+            {viewMore ? (
+                <div className="w-full min-h-screen p-2 md:p-6 rounded-lg border bg-white">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold">Full Report</h2>
+                        <button onClick={() => setViewMore(false)} className="px-4 py-2 border rounded-lg bg-gray-100">
+                            Back
+                        </button>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div className="border rounded-xl p-5 space-y-4">
+                            <h3 className="font-semibold border-b pb-2">Employee Info</h3>
+                            <InfoRow label="Name" value={selectedTask.profiles?.full_name} />
+                            <InfoRow label="Role" value={selectedTask.profiles?.role} />
+                        </div>
+
+                        <div className="border rounded-xl p-5 space-y-4">
+                            <h3 className="font-semibold border-b pb-2">Task Info</h3>
+                            <InfoRow label="Title" value={selectedTask.tasks?.title} />
+                            <InfoRow label="Start Date" value={new Date(selectedTask.tasks?.start_date).toLocaleDateString()} />
+                            <InfoRow label="End Date" value={new Date(selectedTask.tasks?.end_date).toLocaleDateString()} />
+                        </div>
+                    </div>
+
+                    <div className="border rounded-xl p-5 mt-4 space-y-3">
+                        <InfoRow label="Work Summary" value={selectedTask.work_summary} />
+                        <InfoRow label="Challenges" value={selectedTask.challenges} />
+                        <InfoRow label="Time Spent" value={selectedTask.time_spent} />
+                    </div>
+                </div>
+            ) : (
+                <div className="w-full p-2 md:p-6">
+                    <div className="flex gap-10">
+                    <h1 className="text-xl font-semibold">Reports</h1>
+                    <button
+                    onClick={onClose}
+                    > Back</button>
+                    </div>
+                    
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-5 my-4">
+                        <SummaryCard label="In Progress" value={stats.in_progress.toString()} />
+                        <SummaryCard label="Overdue" value={stats.overdue.toString()} />
+                        <SummaryCard label="Due Today" value={stats.due_today.toString()} />
+                        <SummaryCard label="Completed" value={stats.completed.toString()} />
+                    </div>
+                    <h1>Activity Reports</h1>
+                    <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-4 py-3">Date</th>
+                                    <th className="px-4 py-3">Task worked on</th>
+                                    <th className="px-4 py-3">Employee nme</th>
+                                    <th className="px-4 py-3">Summary</th>
+                                    <th className="px-4 py-3">Status</th>
+                                    <th className="px-4 py-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {tasks.map((task) => (
+                                    <tr key={task.id} className="border-t">
+                                        <td className="px-4 py-3">{new Date(task.created_at).toLocaleDateString()}</td>
+                                        <td className="px-4 py-3">{task.tasks?.title}</td>
+                                        <td className="px-4 py-3">{task.profiles?.full_name}</td>
+                                        <td className="px-4 py-3">{task.summary}</td>
+                                        <td className="px-4 py-3">{task.status}</td>
+                                        <td className="px-4 py-3">
+                                            <ActionMenu task={task} />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+        </>
+    )
+}
+
+function SummaryCard({ label, value }: { label: string, value: string }) {
+    return (
+        <div className="flex flex-col items-center justify-center rounded-xl bg-white p-4 shadow-sm border">
+            <p className="text-sm text-gray-500">{label}</p>
+            <p className="text-2xl font-bold">{value}</p>
+        </div>
+    )
+}
+
+function InfoRow({ label, value }: { label: string, value: any }) {
+    return (
+        <div className="flex justify-between border-b pb-2">
+            <span className="text-gray-500">{label}</span>
+            <span>{value || "-"}</span>
+        </div>
+    )
+}
