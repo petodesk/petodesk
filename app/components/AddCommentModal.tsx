@@ -4,41 +4,60 @@ import { useState } from "react"
 import { createClient } from "@/app/utils/supabase/client"
 import { toast } from "react-toastify"
 import { ClipLoader } from "react-spinners"
-interface Task{
-    id:string
-    title:string
-    
-}
+
 export default function AddCommentModal({
     open,
     onClose,
-    task,
+    type,        // 'task' | 'report'
+    entityId,    // taskId OR reportId
+    title
 }: {
     open: boolean
     onClose: () => void
-    task: Task
+    type: 'task' | 'report' |'leave'
+    entityId: string
+    title?: string
 }) {
 
     const supabase = createClient()
     const [comment, setComment] = useState("")
     const [loading, setLoading] = useState(false)
 
-     async function getProfileId() {
+    async function getProfileId() {
         const { data: { user } } = await supabase.auth.getUser()
         return user?.id
     }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
-        const commenterId= await getProfileId()
 
-        const { error } = await supabase
-            .from('task_comments')
-            .insert({
-                task_id: task.id,
-                comment,
-                commented_by:commenterId
-            })
+        const userId = await getProfileId()
+
+        let table = ''
+        let payload: any = {
+            comment,
+            commented_by: userId,
+           
+        }
+
+        // dynamic logic
+        if (type === 'task') {
+            table = 'task_comments'
+            payload.task_id = entityId
+        }
+
+        if (type === 'report') {
+            table = 'report_comments'
+            payload.report_id = entityId
+        }
+
+        if(type === 'leave'){
+            table = 'leave_comments'
+            payload.leave_id = entityId
+        }
+
+        const { error } = await supabase.from(table).insert(payload)
 
         if (error) {
             toast.error(error.message)
@@ -46,7 +65,7 @@ export default function AddCommentModal({
             return
         }
 
-        toast.success("Comment added")
+        toast.success(`${type} Comment added`); 
         setComment("")
         setLoading(false)
         onClose()
@@ -68,7 +87,7 @@ export default function AddCommentModal({
             >
 
                 <h2 className="text-lg font-semibold mb-4">
-                    Add Comment for {task.title}
+                    Add Comment {title ? `for ${title}` : ""}
                 </h2>
 
                 <textarea
