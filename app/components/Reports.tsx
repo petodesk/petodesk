@@ -264,7 +264,7 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
                         </div>
 
 
-                        <button className="rounded-lg border bg-white p-2 w-40"
+                        <button className="rounded-lg border bg-white p-2 w-40 cursor-pointer"
                             onClick={onClose}
                         > Go Back</button>
 

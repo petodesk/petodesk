@@ -276,7 +276,7 @@ export default function Tasks() {
                         </div>
                         <button
                             onClick={() => setViewMore(false)}
-                            className="px-4 py-2 border rounded-lg bg-gray-100"
+                            className="px-4 py-2 border rounded-lg bg-gray-100 cursor-pointer"
                         >
                             Back
                         </button>
@@ -362,7 +362,7 @@ export default function Tasks() {
 
                                     <button
                                         onClick={() => setOpenReports(true)}
-                                        className="bg-white rounded-lg py-3 px-6 border">
+                                        className="bg-white rounded-lg py-3 px-6 border cursor-pointer">
                                         Daily Reports
                                     </button>
                                 </div>
