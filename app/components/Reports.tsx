@@ -24,6 +24,7 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
 
     useEffect(() => {
         fetchTasks()
+        fetchUser()
 
         const channel = supabase
             .channel('realtime-reports')
