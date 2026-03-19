@@ -66,6 +66,24 @@ export default function LeavePage() {
 
         getLeaves()
 
+        const channel = supabase
+        .channel('realtime-leaves')
+        .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'leave_comments' },
+            () => getLeaves()
+        )
+        .subscribe()
+
+    return () => {
+        supabase.removeChannel(channel)
+    }
+
+
+
+
+
+
     }, [userProfile, supabase])
 
     const handleSave = async () => {
