@@ -33,7 +33,49 @@ export default function Tasks() {
     useEffect(() => {
         fetchTasks()
         fetchUser()
-    }, [])
+
+        const channel = supabase
+            .channel('realtime-comments')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*', // listen to INSERT, UPDATE, DELETE
+                    schema: 'public',
+                    table: 'task_comments',
+                },
+                async (payload) => {
+                    console.log('Realtime comment change:', payload)
+
+                    // 🔥 REFETCH TASKS (simple + safe)
+                    await fetchTasks()
+
+                    // OPTIONAL (better UX): update selected task live
+                    if (selectedTask) {
+                        const { data } = await supabase
+                            .from("tasks")
+                            .select(`
+                            *,
+                            employees (name, email),
+                            task_comments (
+                                id,
+                                comment,
+                                created_at,
+                                profiles (full_name, role)
+                            )
+                        `)
+                            .eq("id", selectedTask.id)
+                            .single()
+
+                        setSelectedTask(data)
+                    }
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [selectedTask])
 
     async function fetchTasks() {
         // Fetch tasks and join with employee profile to get the name
@@ -90,6 +132,30 @@ export default function Tasks() {
         } catch (error) {
 
         }
+    }
+
+
+    function timeAgo(dateString: string) {
+        const now = new Date()
+        const past = new Date(dateString)
+        const diff = Math.floor((now.getTime() - past.getTime()) / 1000)
+
+        if (diff < 60) return "now"
+
+        const minutes = Math.floor(diff / 60)
+        if (minutes < 60) return `${minutes} min ago`
+
+        const hours = Math.floor(minutes / 60)
+        if (hours < 24) return `${hours} h ago`
+
+        const days = Math.floor(hours / 24)
+        if (days < 7) return `${days} day${days > 1 ? "s" : ""} ago`
+
+        const weeks = Math.floor(days / 7)
+        if (weeks < 4) return `${weeks} week${weeks > 1 ? "s" : ""} ago`
+
+        const months = Math.floor(days / 30)
+        return `${months} month${months > 1 ? "s" : ""} ago`
     }
 
     function ActionMenu({ task }: { task: any }) {
@@ -176,7 +242,7 @@ export default function Tasks() {
                     openComment && (
                         <AddCommentModal
                             open={openComment}
-                            onClose={() =>{ setOpenComment(false), fetchTasks()} }
+                            onClose={() => { setOpenComment(false), fetchTasks() }}
                             type="task"
                             entityId={task.id}
                             title={task.title}
@@ -251,8 +317,8 @@ export default function Tasks() {
 
                                                 <p className="hidden md:flex text-sm text-gray-900">Role:{' '}{c.profiles?.role}</p>
                                             </div>
-                                            <span>
-                                                {new Date(c.created_at).toLocaleString()}
+                                            <span className="text-xs text-gray-500">
+                                                {timeAgo(c.created_at)}
                                             </span>
                                         </div>
 

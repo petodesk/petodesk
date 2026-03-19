@@ -24,7 +24,27 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
 
     useEffect(() => {
         fetchTasks()
-        fetchUser()
+
+        const channel = supabase
+            .channel('realtime-reports')
+
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'task_reports' },
+                () => fetchTasks()
+            )
+
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'report_comments' },
+                () => fetchTasks()
+            )
+
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
     }, [])
 
     async function fetchTasks() {
@@ -41,7 +61,14 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
                     priority,
                     employees (name, email)
                 ),
-                profiles (full_name, role)
+                profiles (full_name, role),
+                  report_comments (
+            id,
+            comment,
+            created_at,
+            commented_by,
+            profiles (full_name, role)
+        )
             `)
             .order('created_at', { ascending: false })
 
@@ -80,14 +107,51 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
         setRole(data?.role)
     }
 
+    function timeAgo(dateString: string) {
+    const now = new Date()
+    const past = new Date(dateString)
+    const diff = Math.floor((now.getTime() - past.getTime()) / 1000)
+
+    if (diff < 60) return "now"
+
+    const minutes = Math.floor(diff / 60)
+    if (minutes < 60) return `${minutes} min ago`
+
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours} h ago`
+
+    const days = Math.floor(hours / 24)
+    if (days < 7) return `${days} day${days > 1 ? "s" : ""} ago`
+
+    const weeks = Math.floor(days / 7)
+    if (weeks < 4) return `${weeks} week${weeks > 1 ? "s" : ""} ago`
+
+    const months = Math.floor(days / 30)
+    return `${months} month${months > 1 ? "s" : ""} ago`
+}
+
     function ActionMenu({ report }: { report: any }) {
         const [open, setOpen] = useState(false)
 
-     function viewTask() {
-    setSelectedReport(report)
-    setViewMore(true)
-}
+        function viewTask() {
+            setSelectedReport(report)
+            setViewMore(true)
+        }
 
+        async function updateStatus(newStatus: string) {
+            const profileId = await getProfileId()
+            await supabase
+                .from("task_reports")
+                .update({
+                    status: newStatus,
+                    updated_at: new Date(),
+                    updated_by: profileId
+                })
+                .eq("id", report.id)
+
+            setOpen(false)
+            fetchTasks()
+        }
         return (
             <div className="relative">
                 <button
@@ -104,6 +168,7 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
                                 View Full Report
                             </li>
                             <li
+                                onClick={() => updateStatus('reviewed')}
                                 className="px-3 py-2 hover:bg-gray-50 cursor-pointer">
 
                                 Mark as reviewed</li>
@@ -120,15 +185,7 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
                     </div>
                 )}
 
-                {openComment && (
-                    <AddCommentModal
-                        open={openComment}
-                        onClose={() => setOpenComment(false)}
-                        type="report"
-                        entityId={report.id}
-                        title={report.tasks?.title}
-                    />
-                )}
+
             </div>
         )
     }
@@ -164,6 +221,37 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
                         <InfoRow label="Challenges" value={selectedReport.challenges} />
                         <InfoRow label="Time Spent" value={selectedReport.time_spent} />
                     </div>
+                    <div className="border rounded-xl p-2 md:p-5 space-y-4 mt-2 md:mt-4">
+                        <h3 className="font-semibold border-b pb-2">Comments</h3>
+
+                        {selectedReport?.report_comments?.length > 0 ? (
+                            <div className="space-y-3">
+                                {selectedReport.report_comments.map((c: any) => (
+                                    <div key={c.id} className="bg-gray-50 p-3 rounded-lg border">
+
+                                        <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                            <div className="flex gap-10">
+                                                <span >{c.profiles?.full_name || "Unknown"} </span>
+
+                                                <p className="hidden md:flex text-sm text-gray-900">Role:{' '}{c.profiles?.role}</p>
+                                            </div>
+                                            <span>
+                                              {timeAgo(c.created_at)}
+                                            </span>
+                                        </div>
+
+                                        <p className="break-words">
+                                            {c.comment}
+                                        </p>
+
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-gray-400">No comments yet.</p>
+                        )}
+                    </div>
+
                 </div>
             ) : (
                 <div className="w-full p-2 md:p-6 font-poppins">
@@ -182,20 +270,41 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
                     </div>
 
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-5 my-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-5 my-4">
                         <SummaryCard label="In Progress" value={stats.in_progress.toString()} />
                         <SummaryCard label="Overdue" value={stats.overdue.toString()} />
                         <SummaryCard label="Due Today" value={stats.due_today.toString()} />
                         <SummaryCard label="Completed" value={stats.completed.toString()} />
                     </div>
-                    <h1 className="text-md text-gray-900 py-4 font-semibold">Activity Reports</h1>
+
+                    {/* -------- MOBILE CARDS -------- */}
+                    <div className="space-y-4 md:hidden">
+                        <h1>Activity Reports</h1>
+                        {tasks.map((task) => (
+                            <div key={task.id} className="rounded-xl bg-white p-4 shadow-sm border space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-md font-semibold text-gray-700">
+                                        {task.title}
+                                    </p>
+                                    <ActionMenu report={task} />
+                                </div>
+                                <hr />
+                                <InfoRow label="Task worked on" value={task.tasks?.title} />
+                                <InfoRow label="Employee name" value={task.profiles?.full_name} />
+                                <InfoRow label="Summary" value={task.summary} />
+                                <InfoRow label="Status" value={task.status} />
+                            </div>
+                        ))}
+                    </div>
                     <div className="hidden md:block overflow-x-auto">
+                    <h1 className="text-md text-gray-900 py-4 font-semibold">Activity Reports</h1>
+
                         <table className="w-full text-sm">
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-4 py-3">Date</th>
                                     <th className="px-4 py-3">Task worked on</th>
-                                    <th className="px-4 py-3">Employee nme</th>
+                                    <th className="px-4 py-3">Employee name</th>
                                     <th className="px-4 py-3">Summary</th>
                                     <th className="px-4 py-3">Status</th>
                                     <th className="px-4 py-3">Action</th>
@@ -226,6 +335,15 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
                         </table>
                     </div>
                 </div>
+            )}
+            {openComment && selectedReport && (
+                <AddCommentModal
+                    open={openComment}
+                    onClose={() => setOpenComment(false)}
+                    type="report"
+                    entityId={selectedReport.id}
+                    title={selectedReport.tasks?.title}
+                />
             )}
         </>
     )

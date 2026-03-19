@@ -22,8 +22,21 @@ export default function AdminDash() {
     const [leaves, setLeaves] = useState<any[]>([])
 
     useEffect(() => {
-        fetchDashboard()
-    }, [])
+   fetchDashboard()
+
+    const channel = supabase
+        .channel('realtime-leaves')
+        .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'leave_comments' },
+            () => fetchDashboard()
+        )
+        .subscribe()
+
+    return () => {
+        supabase.removeChannel(channel)
+    }
+}, [])
 
     async function fetchDashboard() {
 
