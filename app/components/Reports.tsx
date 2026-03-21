@@ -145,8 +145,6 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
                 .from("task_reports")
                 .update({
                     status: newStatus,
-                    updated_at: new Date(),
-                    updated_by: profileId
                 })
                 .eq("id", report.id)
 
@@ -264,7 +262,7 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
                         </div>
 
 
-                        <button className="rounded-lg border bg-white p-2 w-40"
+                        <button className="rounded-lg border bg-white p-2 w-40 cursor-pointer"
                             onClick={onClose}
                         > Go Back</button>
 
