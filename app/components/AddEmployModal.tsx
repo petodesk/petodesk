@@ -20,7 +20,7 @@ export function AddEmployModal({
 
 
     const [allowanceCart, setAllowanceCart] = useState<{ type: string, amount: number }[]>([]);
-    const [tempType, setTempType] = useState('Transport');
+    const [tempType, setTempType] = useState('');
     const [tempAmount, setTempAmount] = useState(0);
     // form state
     // Employee table fields
