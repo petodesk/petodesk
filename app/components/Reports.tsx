@@ -145,8 +145,6 @@ export default function Reports({ onClose, open }: { onClose: () => void, open: 
                 .from("task_reports")
                 .update({
                     status: newStatus,
-                    updated_at: new Date(),
-                    updated_by: profileId
                 })
                 .eq("id", report.id)
 
