@@ -65,7 +65,7 @@ if (isEdit) {
         .from('announcements')
         .update({
             title: formData.title,
-            description: formData.description,
+            description: formData.description
           
         })
         .eq('id', announce?.id)
@@ -103,7 +103,7 @@ if (isEdit) {
             <form onSubmit={handleSubmit} className="relative z-50 w-full mt-20 rounded-lg bg-white max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col shadow-lg">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white z-10">
-                    <h2 className="text-lg font-semibold"> {`${isEdit ? "Edit Task" : "Add New Task"}`}</h2>
+                    <h2 className="text-lg font-semibold"> {`${isEdit ? "Edit Announce" : "Add New Announce"}`}</h2>
                     <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
                 </div>
 
@@ -149,7 +149,7 @@ if (isEdit) {
                         disabled={loading}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300 flex items-center gap-2"
                     >
-                        {loading ? <ClipLoader size={18} color="#fff" /> : isEdit ? 'Update Task' : 'Create Task'}
+                        {loading ? <ClipLoader size={18} color="#fff" /> : isEdit ? 'Update ' : 'Create '}
                     </button>
                 </div>
             </form>
