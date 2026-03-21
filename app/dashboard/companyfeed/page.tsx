@@ -30,7 +30,7 @@ export default function AnnouncePage() {
                 created_at,
                 title,
                 description,
-                profiles(full_name)
+                profiles(full_name, role)
                 `)
             .order("created_at", { ascending: false })
 
@@ -48,21 +48,21 @@ export default function AnnouncePage() {
     }
 
     async function deleteAnnouncement(id: string) {
-    const confirmDelete = confirm("Are you sure you want to delete this announcement?")
-    if (!confirmDelete) return
+        const confirmDelete = confirm("Are you sure you want to delete this announcement?")
+        if (!confirmDelete) return
 
-    const { error } = await supabase
-        .from("announcements")
-        .delete()
-        .eq("id", id)
+        const { error } = await supabase
+            .from("announcements")
+            .delete()
+            .eq("id", id)
 
-    if (error) {
-        console.error(error)
-        alert("Failed to delete")
-    } else {
-        fetchTasks() 
+        if (error) {
+            console.error(error)
+            alert("Failed to delete")
+        } else {
+            fetchTasks()
+        }
     }
-}
     const fetchUser = async () => {
         const userId = await getProfileId()
         try {
@@ -81,7 +81,7 @@ export default function AnnouncePage() {
         <>
             <div className="w-full p-2 md:p-6 rounded-lg border-2 border-green-200">
 
-            <div className="max-h-[90vh] overflow-y-auto pr-2 scrollbar-none">
+                <div className="max-h-[90vh] overflow-y-auto pr-2 scrollbar-none">
 
 
                     <div className="flex flex-col md:flex-row gap-4 my-6">
@@ -109,74 +109,79 @@ export default function AnnouncePage() {
                         tasks.map((task) => (
 
 
-                                <div
-                                    key={task.id}
-                                    className="bg-white rounded-xl shadow-sm p-4 md:p-5 my-4
+                            <div
+                                key={task.id}
+                                className="bg-white rounded-xl shadow-sm p-4 md:p-5 my-4
                                             flex flex-col gap-4 md:grid md:grid-cols-2 md:gap-6 overflow-y-auto "
-                                >
+                            >
 
-                                    {/* LEFT SIDE */}
-                                    <div className="space-y-3">
+                                {/* LEFT SIDE */}
+                                <div className="space-y-3">
 
-                                        <div>
-                                            <p className="text-xs font-bold text-gray-900">Title</p>
-                                            <p className="text-xs font-semibold text-gray-800 break-words">
-                                                {task.title}
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-xs font-bold text-gray-900">Date</p>
-                                            <p className="text-xs text-gray-600">
-                                                {formatDateForAnnouncements(task.created_at)}
-                                            </p>
-                                        </div>
-
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-900">Title</p>
+                                        <p className="text-xs font-semibold text-gray-800 break-words">
+                                            {task.title}
+                                        </p>
                                     </div>
 
-                                    {/* RIGHT SIDE */}
-                                    <div className="space-y-3">
-
-                                        <div>
-                                            <p className="text-xs font-bold text-gray-900">Author</p>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                {task.profiles?.full_name || "-"}
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-xs font-bold text-gray-900">Description</p>
-                                            <p className="text-sm text-gray-700 break-words whitespace-pre-wrap ">
-                                                {task.description}
-                                            </p>
-                                        </div>
-
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-900">Date</p>
+                                        <p className="text-xs text-gray-600">
+                                            {formatDateForAnnouncements(task.created_at)}
+                                        </p>
                                     </div>
-                                    {
-                                        role === 'owner' && (
-                                            <div className="flex gap-20">
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedAnnounce(task)
-                                                        setEditAnounce(true)
-                                                    }}
-                                                    className="text-white bg-blue-600 rounded-lg p-2 w-40 cursor-pointer hover:bg-blue-400"
-                                                >Edit</button>
-                                                <button
-                                                onClick={()=>deleteAnnouncement(task.id)}
-                                                    className="text-white bg-red-300 rounded-lg p-2 w-40 cursor-pointer hover:bg-red-400"
-                                                >Delete</button>
-                                            </div>
-
-                                        )
-                                    }
-
 
                                 </div>
-                        
+
+                                {/* RIGHT SIDE */}
+                                <div className="space-y-3">
+
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-900">Author</p>
+                                        <div className="flex gap-3 items-center">
+                                            <p className="text-sm font-medium text-gray-700">
+                                                {task.profiles?.full_name || "-"}
+
+                                            </p>
+                                           <p className="text-sm text-gray-900"> role : {task.profiles?.role}</p>
+                                        </div>
+
+                                    </div>
+
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-900">Description</p>
+                                        <p className="text-sm text-gray-700 break-words whitespace-pre-wrap ">
+                                            {task.description}
+                                        </p>
+                                    </div>
+
+                                </div>
+                                {
+                                    role === 'owner' && (
+                                        <div className="flex gap-20">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedAnnounce(task)
+                                                    setEditAnounce(true)
+                                                }}
+                                                className="text-white bg-blue-600 rounded-lg p-2 w-40 cursor-pointer hover:bg-blue-400"
+                                            >Edit</button>
+                                            <button
+                                                onClick={() => deleteAnnouncement(task.id)}
+                                                className="text-white bg-red-300 rounded-lg p-2 w-40 cursor-pointer hover:bg-red-400"
+                                            >Delete</button>
+                                        </div>
+
+                                    )
+                                }
+
+
+                            </div>
+
                         ))
                     }
-                      
+
 
                     {addAnnounceOpen && (
                         <AddAnnounceModal
