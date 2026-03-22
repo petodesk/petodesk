@@ -278,7 +278,7 @@ useEffect(() => {
                         </div>
 
                         {/* Visible only if user is admin or owner */}
-                        {(role === 'admin' || role === 'owner' && selectedIssue.status !== 'resolved') &&  (
+                        {(role === 'admin' || role === 'owner') &&  (
                             <div className="border rounded-xl p-5 space-y-4">
                                 <h3 className="font-semibold border-b pb-2">Actions</h3>
                                 <div className="flex justify-between border-b pb-4 items-center">
