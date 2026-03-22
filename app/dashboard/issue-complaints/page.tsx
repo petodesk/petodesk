@@ -294,6 +294,7 @@ useEffect(() => {
                                         <option value="in progress">In progress</option>
                                         <option value="resolved">Resolved</option>
                                         <option value="rejected">Rejected</option>
+
                                     </select>
                                 </div>
 
@@ -312,6 +313,8 @@ useEffect(() => {
                                             <option value="warning">Warning</option>
                                             <option value="suspension">Suspension</option>
                                             <option value="leave reject">Leave Reject</option>
+                                            <option value="resolved">Resolved/ No action taken</option>
+
                                         </select>
                                     </div>
                                 )}
