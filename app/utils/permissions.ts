@@ -45,6 +45,10 @@ export const routePermissions: Record<
     roles: ["admin", "owner", "employee"],
     plans: ["hr", "both"]
   },
+     "/dashboard/issue-complaints": {
+    roles: ["admin", "owner", "employee"],
+    plans: ["hr", "both"]
+  },
   "/dashboard/reports": {
     roles: ["admin", "owner"],
     plans: ["inventory", "hr", "both"]
