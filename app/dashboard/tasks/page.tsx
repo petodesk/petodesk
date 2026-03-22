@@ -474,7 +474,7 @@ export default function Tasks() {
 
 function SummaryCard({ label, value }: { label: string, value: string }) {
     return (
-        <div className="flex flex-col items-center justify-center rounded-xl bg-white p-4 shadow-sm border">
+        <div className="flex flex-col items-center justify-center rounded-xl bg-white p-4 shadow-sm ">
             <p className="text-sm text-gray-500 uppercase tracking-wider">{label}</p>
             <p className="mt-2 text-2xl font-bold text-gray-800">{value}</p>
         </div>

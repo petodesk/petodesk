@@ -8,13 +8,13 @@ import { ClipLoader } from "react-spinners"
 export default function AddCommentModal({
     open,
     onClose,
-    type,        // 'task' | 'report'
-    entityId,    // taskId OR reportId
+    type,       
+    entityId,   
     title
 }: {
     open: boolean
     onClose: () => void
-    type: 'task' | 'report' |'leave'
+    type: 'task' | 'report' | 'leave' | 'issue'
     entityId: string
     title?: string
 }) {
@@ -38,7 +38,7 @@ export default function AddCommentModal({
         let payload: any = {
             comment,
             commented_by: userId,
-           
+
         }
 
         // dynamic logic
@@ -52,11 +52,14 @@ export default function AddCommentModal({
             payload.report_id = entityId
         }
 
-        if(type === 'leave'){
+        if (type === 'leave') {
             table = 'leave_comments'
             payload.leave_id = entityId
         }
-
+        if (type === 'issue') {
+            table = 'issue_comments'
+            payload.issue_id = entityId
+        }
         const { error } = await supabase.from(table).insert(payload)
 
         if (error) {
@@ -65,7 +68,7 @@ export default function AddCommentModal({
             return
         }
 
-        toast.success(`${type} Comment added`); 
+        toast.success(`${type} Comment added`);
         setComment("")
         setLoading(false)
         onClose()

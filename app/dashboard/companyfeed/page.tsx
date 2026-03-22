@@ -81,7 +81,7 @@ export default function AnnouncePage() {
         <>
             <div className="w-full p-2 md:p-6 rounded-lg border-2 border-green-200">
 
-                <div className="max-h-[90vh] overflow-y-auto pr-2 scrollbar-none">
+                <div className="max-h-[90vh] overflow-y-auto pr-2 scrollbar-hide">
 
 
                     <div className="flex flex-col md:flex-row gap-4 my-6">

@@ -48,6 +48,7 @@ const links = [
   { label: 'Leave Management', href: '/dashboard/leave-management', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr'] },
   { label: 'Leave', href: '/dashboard/leave', icon: HiOutlineUserCircle, roles: ['employee'], plans: ['both','hr'] },
 
+  { label: 'issues & Compliants', href: '/dashboard/issue-complaints', icon: HiOutlineMegaphone, roles: ['admin','owner','employee'], plans: ['both','hr'] },
   { label: 'Company Feed', href: '/dashboard/companyfeed', icon: HiOutlineMegaphone, roles: ['admin','owner','employee'], plans: ['both','hr'] },
 ]
 
