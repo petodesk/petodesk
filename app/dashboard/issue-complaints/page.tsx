@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react"
 import { HiSearch } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
-import AddTaskModal from "@/app/components/AddTaskModal"
 import AddCommentModal from "@/app/components/AddCommentModal"
-import AddReportModal from "@/app/components/AddReportModal"
 import AddIssueModal from "@/app/components/AddIssueModal"
 import { formatDate } from "@/app/utils/dateFormatter"
 
@@ -15,65 +13,62 @@ export default function Tasks() {
     const [viewMore, setViewMore] = useState<boolean>(false)
     const [selectedIssue, setSelectedIssue] = useState<any>(null)
     const [addTaskOpen, setAddTaskOpen] = useState<boolean>(false)
-    const [editTask, setEditTask] = useState<boolean>(false)
     const [openComment, setOpenComment] = useState<boolean>(false)
     const [role, setRole] = useState<string | undefined>()
-    const [openAddReport, setOpenAddReport] = useState<boolean>(false)
     const [searchTerm, setSearchTerm] = useState<string>("")
 
     const [issues, setIssues] = useState<any[]>([])
-
-    useEffect(() => {
+useEffect(() => {
         fetchTasks()
         fetchUser()
 
-        const channel = supabase
-            .channel('realtime-comments')
+        // 1. Create the channel for the Issues table
+        const issueChannel = supabase
+            .channel('issue-updates')
             .on(
                 'postgres_changes',
                 {
-                    event: '*', // listen to INSERT, UPDATE, DELETE
+                    event: '*', // Listen for INSERT, UPDATE, and DELETE
+                    schema: 'public',
+                    table: 'issue_complaints',
+                },
+                async (payload) => {
+                    console.log('Change received!', payload)
+                    // Refresh the list
+                    await fetchTasks()
+                    
+                    // If the user is currently looking at a specific issue, refresh that data too
+                    if (selectedIssue && payload.new && (payload.new as any).id === selectedIssue.id) {
+                        refreshSelectedIssue(selectedIssue.id)
+                    }
+                }
+            )
+            .subscribe()
+
+        // 2. Create a channel for Comments (Optional but recommended)
+        const commentChannel = supabase
+            .channel('comment-updates')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
                     schema: 'public',
                     table: 'issue_comments',
                 },
-                async (payload) => {
-                    console.log('Realtime comment change:', payload)
-
-                    // 🔥 REFETCH TASKS (simple + safe)
-                    await fetchTasks()
-
-                    // Update selected issue live if viewing it
+                async () => {
+                    // Only need to refresh if we are inside the detail view
                     if (selectedIssue) {
-                        const { data } = await supabase
-                            .from("issue_complaints")
-                            .select(`
-                                id,
-                                created_at,
-                                title,
-                                status,
-                                action_taken,
-                                description,
-                                profiles(full_name, role),
-                                issue_comments(
-                                    id,
-                                    comment,
-                                    created_at,
-                                    profiles(full_name, role)
-                                )
-                            `)
-                            .eq("id", selectedIssue.id)
-                            .single()
-
-                        setSelectedIssue(data)
+                        refreshSelectedIssue(selectedIssue.id)
                     }
                 }
             )
             .subscribe()
 
         return () => {
-            supabase.removeChannel(channel)
+            supabase.removeChannel(issueChannel)
+            supabase.removeChannel(commentChannel)
         }
-    }, [selectedIssue?.id])
+    }, [selectedIssue?.id]) // Dependency on ID ensures we refresh the correct context
 
     // Refetches selected issue data when viewMore is opened to ensure up-to-date values.
     useEffect(() => {
