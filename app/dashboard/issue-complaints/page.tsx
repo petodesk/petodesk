@@ -370,10 +370,10 @@ useEffect(() => {
                 /* ---------------- DASHBOARD ---------------- */
                 <div className="w-full p-2 md:p-6 rounded-lg border-2 border-green-200">
                     <div>
-                        <div className="flex gap-4 my-6">
+                        <div className="flex gap-4 my-6 max-sm:justify-center w-full">
                             <button
                                 onClick={() => setAddTaskOpen(true)}
-                                className="btn-primary rounded-lg py-3 px-6 text-white bg-green-600 hover:bg-green-700"
+                                className="btn-primary rounded-lg py-3 px-6 text-white bg-blue-600 hover:bg-green-700 w-60"
                             >
                                 Raise Issue
                             </button>
@@ -409,11 +409,12 @@ useEffect(() => {
                                 <div key={task.id} className="rounded-xl bg-white p-4 shadow-sm border space-y-3">
                                     <div className="flex items-center justify-between">
                                         <p className="text-md font-semibold text-gray-700">
-                                            {task.title}
+                                            {formatDate(task.created_at)}
                                         </p>
                                         <ActionMenu task={task} />
                                     </div>
                                     <hr />
+                                    <InfoRow label="Title" value={task.title} />
                                     <InfoRow label="Raised by" value={task.profiles?.full_name} />
                                     <InfoRow label="Role" value={task.profiles?.role} />
                                     <InfoRow label="Status" value={task.status} />
@@ -490,7 +491,7 @@ function SummaryCard({ label, value }: { label: string, value: string }) {
 
 function InfoRow({ label, value }: { label: string, value: any }) {
     return (
-        <div className="flex justify-between items-center border-b border-gray-50 pb-2">
+        <div className="flex justify-between items-center border-b border-green-200 pb-2">
             <span className="text-gray-500 text-sm capitalize">{label}</span>
             <span className="text-gray-900 text-sm font-medium">{value || "-"}</span>
         </div>

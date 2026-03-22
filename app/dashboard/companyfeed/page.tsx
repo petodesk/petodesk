@@ -84,21 +84,19 @@ export default function AnnouncePage() {
                 <div className="max-h-[90vh] overflow-y-auto pr-2 scrollbar-hide">
 
 
-                    <div className="flex flex-col md:flex-row gap-4 my-6">
+                    <div className="flex flex-col md:flex-row gap-5 md:gap-10 my-6">
                         <button
                             onClick={() => setAddAnnounceOpen(true)}
                             className="btn-primary rounded-lg py-3 px-6 text-white"
                         >
                             + Add announcement
                         </button>
-
-                        <button className="bg-white rounded-lg py-3 px-6 border cursor-pointer">
-                            Issue & Complaints
-                        </button>
+                       {/* SUMMARY */}
+                    <SummaryCard label="Announcements" value={tasks.length.toString()} />
+                       
                     </div>
 
-                    {/* SUMMARY */}
-                    <SummaryCard label="Announcements" value={tasks.length.toString()} />
+                   
 
                     {/* TITLE */}
                     <div className="my-5">
@@ -208,9 +206,9 @@ export default function AnnouncePage() {
 
 function SummaryCard({ label, value }: { label: string, value: string }) {
     return (
-        <div className="flex flex-col items-center justify-center rounded-xl bg-white p-4 shadow-sm border w-full md:w-54">
-            <p className="text-sm text-gray-500 tracking-wider">{label}</p>
-            <p className="mt-2 text-2xl font-bold text-gray-800">{value}</p>
+        <div className="flex items-center gap-4 rounded-xl bg-white px-10 md:px-2 shadow-sm border w-full md:w-54">
+            <p className="text-sm text-gray-500 tracking-wider">{label}:</p>
+            <p className="mt-2 text-2xl font-semibold text-gray-800">{value}</p>
         </div>
     )
 }
