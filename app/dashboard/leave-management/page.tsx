@@ -266,11 +266,7 @@ export default function AdminDash() {
 
                     <div className="w-full p-2 md:p-6 rounded-lg border-2 border-green-200">
 
-                        <div className="text-center my-3">
-                            <button className="btn-primary rounded-lg py-3 px-6 text-white">
-                                Manage Employee Leave Requests
-                            </button>
-                        </div>
+                
 
                         {/* -------- SUMMARY CARDS -------- */}
 
