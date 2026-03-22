@@ -5,9 +5,9 @@ import { HiSearch } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
 import AddCommentModal from "@/app/components/AddCommentModal"
 import AddIssueModal from "@/app/components/AddIssueModal"
-import { formatDate } from "@/app/utils/dateFormatter"
+import { formatDate, formatDateForAnnouncements } from "@/app/utils/dateFormatter"
 
-export default function Tasks() {
+export default function Issues() {
     const supabase = createClient()
 
     const [viewMore, setViewMore] = useState<boolean>(false)
@@ -409,7 +409,7 @@ useEffect(() => {
                                 <div key={task.id} className="rounded-xl bg-white p-4 shadow-sm border space-y-3">
                                     <div className="flex items-center justify-between">
                                         <p className="text-md font-semibold text-gray-700">
-                                            {formatDate(task.created_at)}
+                                            {formatDateForAnnouncements(task.created_at)}
                                         </p>
                                         <ActionMenu task={task} />
                                     </div>
@@ -441,7 +441,7 @@ useEffect(() => {
                                     {filteredIssues.map((issue) => (
                                         <tr key={issue.id} className="border-t hover:bg-gray-50">
                                             <td className="px-4 py-3 text-gray-500">
-                                                {formatDate(issue.created_at)}
+                                                {formatDateForAnnouncements(issue.created_at)}
                                             </td>
                                             <td className="px-4 py-3 max-w-[250px]">
                                                 <p className="line-clamp-2 break-words">
