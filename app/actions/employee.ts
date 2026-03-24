@@ -2,7 +2,9 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-// ✅ Basic type (expand later if needed)
+// ✅ Helper to normalize values
+const clean = (v: any) => v ?? null
+
 type Allowance = {
   amount: string | number
 }
@@ -92,10 +94,9 @@ export async function createEmployeeAction(formData: EmployeeForm) {
     }
 
     // -------------------------------------------------
-    // 1️⃣ CREATE MODE – Generate slug + Create Auth User
+    // 1️⃣ CREATE MODE
     // -------------------------------------------------
     if (!isEditMode) {
-      // ⚠️ Still not perfect (best moved to DB), but kept as requested
       const { count, error: countError } = await supabaseAdmin
         .from('employees')
         .select('*', { count: 'exact', head: true })
@@ -117,13 +118,11 @@ export async function createEmployeeAction(formData: EmployeeForm) {
           formData.email,
           {
             data: { full_name: formData.name },
-           redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/set-password`
+            redirectTo: `${baseUrl}/set-password`
           }
         )
 
-      if (authError) {
-        throw new Error(authError.message)
-      }
+      if (authError) throw new Error(authError.message)
 
       if (!authUser?.user?.id) {
         throw new Error('Failed to create auth user')
@@ -133,7 +132,7 @@ export async function createEmployeeAction(formData: EmployeeForm) {
     }
 
     // -------------------------------------------------
-    // 2️⃣ EDIT MODE – Update email only if changed
+    // 2️⃣ EDIT MODE – Update email
     // -------------------------------------------------
     if (
       isEditMode &&
@@ -149,7 +148,7 @@ export async function createEmployeeAction(formData: EmployeeForm) {
     }
 
     // -------------------------------------------------
-    // 3️⃣ Salary & Payroll Calculations
+    // 3️⃣ Salary Calculations
     // -------------------------------------------------
     const base = Number(formData.baseSalary ?? 0)
     const taxRate = Number(formData.tax_rate ?? 0)
@@ -173,7 +172,7 @@ export async function createEmployeeAction(formData: EmployeeForm) {
       base + totalAllowancesValue - totalDeductions
 
     // -------------------------------------------------
-    // 4️⃣ Call RPC
+    // 4️⃣ RPC CALL//
     // -------------------------------------------------
     const { data, error: rpcError } =
       await supabaseAdmin.rpc('add_employee_full', {
@@ -182,27 +181,27 @@ export async function createEmployeeAction(formData: EmployeeForm) {
         p_employee_id_slug: customIdSlug,
 
         p_name: formData.name,
-        p_role: formData.role,
-        p_department: formData.department,
+        p_role: clean(formData.role),
+        p_department: clean(formData.department),
         p_email: formData.email,
-        p_phone: formData.phone,
-        p_alt_phone: formData.alternativePhone,
-        p_birth_date: formData.birthDate || null,
-        p_home_address1: formData.homeAddress1,
-        p_home_address2: formData.homeAddress2,
+        p_phone: clean(formData.phone),
+        p_alt_phone: clean(formData.alternativePhone),
+        p_birth_date: clean(formData.birthDate),
+        p_home_address1: clean(formData.homeAddress1),
+        p_home_address2: clean(formData.homeAddress2),
 
         // Employment
         p_company_id: formData.userCompanyId,
-        p_joined_date: formData.joinedDate || null,
-        p_contract_type: formData.contractType,
-        p_contract_start: formData.contractStartDate || null,
-        p_contract_end: formData.contractEndDate || null,
-        p_probation_end: formData.probationEndDate || null,
-        p_next_promotion: formData.nextPromotionDate || null,
-        p_employee_status: formData.employeeStatus,
+        p_joined_date: clean(formData.joinedDate),
+        p_contract_type: clean(formData.contractType),
+        p_contract_start: clean(formData.contractStartDate),
+        p_contract_end: clean(formData.contractEndDate),
+        p_probation_end: clean(formData.probationEndDate),
+        p_next_promotion: clean(formData.nextPromotionDate),
+        p_employee_status: clean(formData.employeeStatus),
 
         // Salary
-        p_salary_type: formData.salaryType,
+        p_salary_type: clean(formData.salaryType),
         p_base_salary: base,
         p_allowances_json: allowancesArray,
         p_tax_rate: taxRate,
@@ -213,35 +212,31 @@ export async function createEmployeeAction(formData: EmployeeForm) {
         p_net_salary: netSalary,
 
         // Bank
-        p_bank_name: formData.bankName,
-        p_bank_account_number: formData.bankAccountNumber,
-        p_bank_account_name: formData.bankAccountName,
+        p_bank_name: clean(formData.bankName),
+        p_bank_account_number: clean(formData.bankAccountNumber),
+        p_bank_account_name: clean(formData.bankAccountName),
 
         // Emergency
-        p_emergency_name: formData.emergencyContactName,
-        p_emergency_phone: formData.emergencyContactPhone,
-        p_emergency_phone2: formData.emergencyContactPhone2,
-        p_emergency_relationship:
-          formData.emergencyContactRelationship,
-        p_emergency_email:
-          formData.emergencyContactEmail,
-        p_emergency_company:
-          formData.emergencyContactCompany,
-        p_emergency_address:
-          formData.emergencyContactAddress,
+        p_emergency_name: clean(formData.emergencyContactName),
+        p_emergency_phone: clean(formData.emergencyContactPhone),
+        p_emergency_phone2: clean(formData.emergencyContactPhone2),
+        p_emergency_relationship: clean(formData.emergencyContactRelationship),
+        p_emergency_email: clean(formData.emergencyContactEmail),
+        p_emergency_company: clean(formData.emergencyContactCompany),
+        p_emergency_address: clean(formData.emergencyContactAddress),
 
-        p_notes: formData.notes,
+        p_notes: clean(formData.notes),
 
         // Assessment
-        p_interview_score: formData.interViewScore,
-        p_test: formData.test,
-        p_stage: formData.stage,
-        p_interviewer_name: formData.interviewerName,
-        p_hiring_note: formData.hiringNote
+        p_interview_score: formData.interViewScore ?? null,
+        p_test: clean(formData.test),
+        p_stage: clean(formData.stage),
+        p_interviewer_name: clean(formData.interviewerName),
+        p_hiring_note: clean(formData.hiringNote)
       })
 
     // -------------------------------------------------
-    // ❗ Rollback auth user if RPC fails
+    // ❗ Rollback if failed
     // -------------------------------------------------
     if (rpcError) {
       if (!isEditMode && authUserId) {
