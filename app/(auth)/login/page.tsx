@@ -47,24 +47,30 @@ export default function Home() {
         checkUser()
     }, [router])
 
-    const handleSignIn = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setLoading(true)
+  const handleSendOtp = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setLoading(true)
 
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        })
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: true, // 🔥 key: auto signup if not exists
+    },
+  })
 
-        setLoading(false)
+  setLoading(false)
 
-        if (error) {
-            toast.error(error.message)
-            return
-        }
+   if (error) {
+  if (error.message.includes('rate limit')) {
+    toast.error('You can only request a new code once per minute. Please wait.')
+  } else {
+    toast.error(error.message)
+  }
+  return
+}
 
-        router.replace('/dashboard')
-    }
+  router.push(`/verify?email=${email}`)
+}
 
     const handleForgotPassword = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -113,7 +119,7 @@ export default function Home() {
 
                 {/* Login Form */}
                 <div className="p-3 md:p-6">
-                    <form onSubmit={handleSignIn} className="flex flex-col gap-3">
+                    <form onSubmit={handleSendOtp} className="flex flex-col gap-3">
                         {/* Email */}
                         <div className="flex flex-col gap-3">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
