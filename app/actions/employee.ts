@@ -2,68 +2,9 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-// ✅ Helper to normalize values
-const clean = (v: any) => v ?? null
 
-type Allowance = {
-  amount: string | number
-}
 
-type EmployeeForm = {
-  employeeId?: string
-  authUserId?: string
-  employeeSlug?: string
-
-  name: string
-  email: string
-  originalEmail?: string
-
-  role?: string
-  department?: string
-  phone?: string
-  alternativePhone?: string
-  birthDate?: string
-
-  homeAddress1?: string
-  homeAddress2?: string
-
-  userCompanyId: string
-  joinedDate?: string
-  contractType?: string
-  contractStartDate?: string
-  contractEndDate?: string
-  probationEndDate?: string
-  nextPromotionDate?: string
-  employeeStatus?: string
-
-  salaryType?: string
-  baseSalary?: number | string
-  tax_rate?: number | string
-  pension_rate?: number | string
-  allowancesJson?: Allowance[]
-
-  bankName?: string
-  bankAccountNumber?: string
-  bankAccountName?: string
-
-  emergencyContactName?: string
-  emergencyContactPhone?: string
-  emergencyContactPhone2?: string
-  emergencyContactRelationship?: string
-  emergencyContactEmail?: string
-  emergencyContactCompany?: string
-  emergencyContactAddress?: string
-
-  notes?: string
-
-  interViewScore?: number
-  test?: string
-  stage?: string
-  interviewerName?: string
-  hiringNote?: string
-}
-
-export async function createEmployeeAction(formData: EmployeeForm) {
+export async function createEmployeeAction(formData:any) {
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -94,9 +35,10 @@ export async function createEmployeeAction(formData: EmployeeForm) {
     }
 
     // -------------------------------------------------
-    // 1️⃣ CREATE MODE
+    // 1️⃣ CREATE MODE – Generate slug + Create Auth User
     // -------------------------------------------------
     if (!isEditMode) {
+      // ⚠️ Still not perfect (best moved to DB), but kept as requested
       const { count, error: countError } = await supabaseAdmin
         .from('employees')
         .select('*', { count: 'exact', head: true })
@@ -118,11 +60,13 @@ export async function createEmployeeAction(formData: EmployeeForm) {
           formData.email,
           {
             data: { full_name: formData.name },
-            redirectTo: `${baseUrl}/set-password`
+           redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/set-password`
           }
         )
 
-      if (authError) throw new Error(authError.message)
+      if (authError) {
+        throw new Error(authError.message)
+      }
 
       if (!authUser?.user?.id) {
         throw new Error('Failed to create auth user')
@@ -132,7 +76,7 @@ export async function createEmployeeAction(formData: EmployeeForm) {
     }
 
     // -------------------------------------------------
-    // 2️⃣ EDIT MODE – Update email
+    // 2️⃣ EDIT MODE – Update email only if changed
     // -------------------------------------------------
     if (
       isEditMode &&
@@ -148,7 +92,7 @@ export async function createEmployeeAction(formData: EmployeeForm) {
     }
 
     // -------------------------------------------------
-    // 3️⃣ Salary Calculations
+    // 3️⃣ Salary & Payroll Calculations
     // -------------------------------------------------
     const base = Number(formData.baseSalary ?? 0)
     const taxRate = Number(formData.tax_rate ?? 0)
@@ -159,7 +103,7 @@ export async function createEmployeeAction(formData: EmployeeForm) {
       : []
 
     const totalAllowancesValue = allowancesArray.reduce(
-      (sum: number, item: Allowance) =>
+      (sum: number, item: any) =>
         sum + (Number(item.amount) || 0),
       0
     )
@@ -172,7 +116,7 @@ export async function createEmployeeAction(formData: EmployeeForm) {
       base + totalAllowancesValue - totalDeductions
 
     // -------------------------------------------------
-    // 4️⃣ RPC CALL//
+    // 4️⃣ Call RPC
     // -------------------------------------------------
     const { data, error: rpcError } =
       await supabaseAdmin.rpc('add_employee_full', {
@@ -181,27 +125,27 @@ export async function createEmployeeAction(formData: EmployeeForm) {
         p_employee_id_slug: customIdSlug,
 
         p_name: formData.name,
-        p_role: clean(formData.role),
-        p_department: clean(formData.department),
+        p_role: formData.role,
+        p_department: formData.department,
         p_email: formData.email,
-        p_phone: clean(formData.phone),
-        p_alt_phone: clean(formData.alternativePhone),
-        p_birth_date: clean(formData.birthDate),
-        p_home_address1: clean(formData.homeAddress1),
-        p_home_address2: clean(formData.homeAddress2),
+        p_phone: formData.phone,
+        p_alt_phone: formData.alternativePhone,
+        p_birth_date: formData.birthDate || null,
+        p_home_address1: formData.homeAddress1,
+        p_home_address2: formData.homeAddress2,
 
         // Employment
         p_company_id: formData.userCompanyId,
-        p_joined_date: clean(formData.joinedDate),
-        p_contract_type: clean(formData.contractType),
-        p_contract_start: clean(formData.contractStartDate),
-        p_contract_end: clean(formData.contractEndDate),
-        p_probation_end: clean(formData.probationEndDate),
-        p_next_promotion: clean(formData.nextPromotionDate),
-        p_employee_status: clean(formData.employeeStatus),
+        p_joined_date: formData.joinedDate || null,
+        p_contract_type: formData.contractType,
+        p_contract_start: formData.contractStartDate || null,
+        p_contract_end: formData.contractEndDate || null,
+        p_probation_end: formData.probationEndDate || null,
+        p_next_promotion: formData.nextPromotionDate || null,
+        p_employee_status: formData.employeeStatus,
 
         // Salary
-        p_salary_type: clean(formData.salaryType),
+        p_salary_type: formData.salaryType,
         p_base_salary: base,
         p_allowances_json: allowancesArray,
         p_tax_rate: taxRate,
@@ -212,31 +156,35 @@ export async function createEmployeeAction(formData: EmployeeForm) {
         p_net_salary: netSalary,
 
         // Bank
-        p_bank_name: clean(formData.bankName),
-        p_bank_account_number: clean(formData.bankAccountNumber),
-        p_bank_account_name: clean(formData.bankAccountName),
+        p_bank_name: formData.bankName,
+        p_bank_account_number: formData.bankAccountNumber,
+        p_bank_account_name: formData.bankAccountName,
 
         // Emergency
-        p_emergency_name: clean(formData.emergencyContactName),
-        p_emergency_phone: clean(formData.emergencyContactPhone),
-        p_emergency_phone2: clean(formData.emergencyContactPhone2),
-        p_emergency_relationship: clean(formData.emergencyContactRelationship),
-        p_emergency_email: clean(formData.emergencyContactEmail),
-        p_emergency_company: clean(formData.emergencyContactCompany),
-        p_emergency_address: clean(formData.emergencyContactAddress),
+        p_emergency_name: formData.emergencyContactName,
+        p_emergency_phone: formData.emergencyContactPhone,
+        p_emergency_phone2: formData.emergencyContactPhone2,
+        p_emergency_relationship:
+          formData.emergencyContactRelationship,
+        p_emergency_email:
+          formData.emergencyContactEmail,
+        p_emergency_company:
+          formData.emergencyContactCompany,
+        p_emergency_address:
+          formData.emergencyContactAddress,
 
-        p_notes: clean(formData.notes),
+        p_notes: formData.notes,
 
         // Assessment
-        p_interview_score: formData.interViewScore ?? null,
-        p_test: clean(formData.test),
-        p_stage: clean(formData.stage),
-        p_interviewer_name: clean(formData.interviewerName),
-        p_hiring_note: clean(formData.hiringNote)
+        p_interview_score: formData.interViewScore,
+        p_test: formData.test,
+        p_stage: formData.stage,
+        p_interviewer_name: formData.interviewerName,
+        p_hiring_note: formData.hiringNote
       })
 
     // -------------------------------------------------
-    // ❗ Rollback if failed
+    // ❗ Rollback auth user if RPC fails
     // -------------------------------------------------
     if (rpcError) {
       if (!isEditMode && authUserId) {
