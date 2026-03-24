@@ -3,12 +3,15 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/app/utils/supabase/client'
+import { toast } from 'react-toastify'
 
 export default function VerifyEmailContent() {
   const [otp, setOtp] = useState('')
   const [email, setEmail] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [timer, setTimer] = useState(60)
+const [canResend, setCanResend] = useState(false)
 
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -24,23 +27,70 @@ export default function VerifyEmailContent() {
     }
   }, [otp, email])
 
-  const handleVerify = async () => {
-    if (!email || otp.length !== 6) return
-
-    setLoading(true)
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: 'signup',
-    })
-    setLoading(false)
-
-    if (error) {
-      alert(error.message)
-    } else {
-      router.push('/company')
-    }
+  useEffect(() => {
+  if (timer === 0) {
+    setCanResend(true)
+    return
   }
+
+  const interval = setInterval(() => {
+    setTimer((prev) => prev - 1)
+  }, 1000)
+
+  return () => clearInterval(interval)
+}, [timer])
+
+
+const handleResend = async () => {
+  if (!email) return
+
+  setCanResend(false)
+  setTimer(60)
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+  })
+
+  if (error) {
+    alert(error.message)
+  }
+}
+
+  const handleVerify = async () => {
+  if (!email || otp.length !== 6) return
+
+  setLoading(true)
+
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token: otp,
+    type: 'email',
+  })
+
+  setLoading(false)
+
+ if (error) {
+  if (error.message.includes('rate limit')) {
+    toast.error('You can only request a new code once per minute. Please wait.')
+  } else {
+    toast.error(error.message)
+  }
+  return
+}
+
+  // 🔥 Check if profile exists
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', data.user?.id)
+    .maybeSingle()
+
+  if (!profile) {
+    router.push('/company') // new user
+  } else {
+    router.push('/dashboard') // existing user
+  }
+}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4">
@@ -103,6 +153,13 @@ export default function VerifyEmailContent() {
         >
           {loading ? 'Verifying…' : 'Verify email'}
         </button>
+        <button
+  onClick={handleResend}
+  disabled={!canResend}
+  className="text-sm text-blue-600 mt-4"
+>
+  {canResend ? 'Resend Code' : `Resend in ${timer}s`}
+</button>
       </div>
     </div>
   )

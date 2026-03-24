@@ -2,53 +2,150 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-export async function createEmployeeAction(formData: any) {
+// ✅ Basic type (expand later if needed)
+type Allowance = {
+  amount: string | number
+}
+
+type EmployeeForm = {
+  employeeId?: string
+  authUserId?: string
+  employeeSlug?: string
+
+  name: string
+  email: string
+  originalEmail?: string
+
+  role?: string
+  department?: string
+  phone?: string
+  alternativePhone?: string
+  birthDate?: string
+
+  homeAddress1?: string
+  homeAddress2?: string
+
+  userCompanyId: string
+  joinedDate?: string
+  contractType?: string
+  contractStartDate?: string
+  contractEndDate?: string
+  probationEndDate?: string
+  nextPromotionDate?: string
+  employeeStatus?: string
+
+  salaryType?: string
+  baseSalary?: number | string
+  tax_rate?: number | string
+  pension_rate?: number | string
+  allowancesJson?: Allowance[]
+
+  bankName?: string
+  bankAccountNumber?: string
+  bankAccountName?: string
+
+  emergencyContactName?: string
+  emergencyContactPhone?: string
+  emergencyContactPhone2?: string
+  emergencyContactRelationship?: string
+  emergencyContactEmail?: string
+  emergencyContactCompany?: string
+  emergencyContactAddress?: string
+
+  notes?: string
+
+  interViewScore?: number
+  test?: string
+  stage?: string
+  interviewerName?: string
+  hiringNote?: string
+}
+
+export async function createEmployeeAction(formData: EmployeeForm) {
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
   try {
+    // -------------------------------------------------
+    // ✅ 0️⃣ Validation
+    // -------------------------------------------------
+    if (!formData.email) throw new Error('Email is required')
+    if (!formData.name) throw new Error('Name is required')
+    if (!formData.userCompanyId) throw new Error('Company ID is required')
+
     const isEditMode = !!formData.employeeId
     let authUserId = formData.authUserId ?? null
     let customIdSlug = formData.employeeSlug ?? null
 
     // -------------------------------------------------
+    // ✅ Base URL check
+    // -------------------------------------------------
+    const baseUrl =
+      process.env.NODE_ENV === 'development'
+        ? process.env.NEXT_PUBLIC_APP_URL
+        : process.env.NEXT_PUBLIC_LIVE_URL
+
+    if (!baseUrl) {
+      throw new Error('Base URL is not configured')
+    }
+
+    // -------------------------------------------------
     // 1️⃣ CREATE MODE – Generate slug + Create Auth User
     // -------------------------------------------------
     if (!isEditMode) {
-      const { count } = await supabaseAdmin
+      // ⚠️ Still not perfect (best moved to DB), but kept as requested
+      const { count, error: countError } = await supabaseAdmin
         .from('employees')
         .select('*', { count: 'exact', head: true })
 
+      if (countError) throw countError
+
       const nextNumber = (count || 0) + 1
       const paddedNumber = nextNumber.toString().padStart(3, '0')
+
       const firstName = formData.name
         ? formData.name.split(' ')[0].toLowerCase()
         : 'employee'
 
       customIdSlug = `${firstName} ${paddedNumber}`
 
+      // ✅ Create auth user
       const { data: authUser, error: authError } =
-        await supabaseAdmin.auth.admin.createUser({
-          email: formData.email,
-          password: 'TempPassword123!',
-          email_confirm: true,
-          user_metadata: { full_name: formData.name }
-        })
+        await supabaseAdmin.auth.admin.inviteUserByEmail(
+          formData.email,
+          {
+            data: { full_name: formData.name },
+           redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/set-password`
+          }
+        )
 
-      if (authError) throw authError
+      if (authError) {
+        throw new Error(authError.message)
+      }
+
+      if (!authUser?.user?.id) {
+        throw new Error('Failed to create auth user')
+      }
 
       authUserId = authUser.user.id
     }
 
     // -------------------------------------------------
-    // 2️⃣ EDIT MODE – Only update auth email if changed
+    // 2️⃣ EDIT MODE – Update email only if changed
     // -------------------------------------------------
-    if (isEditMode && authUserId) {
-      await supabaseAdmin.auth.admin.updateUserById(authUserId, {
-        email: formData.email
-      })
+    if (
+      isEditMode &&
+      authUserId &&
+      formData.email !== formData.originalEmail
+    ) {
+      const { error: updateError } =
+        await supabaseAdmin.auth.admin.updateUserById(authUserId, {
+          email: formData.email
+        })
+
+      if (updateError) throw updateError
     }
 
     // -------------------------------------------------
@@ -63,8 +160,8 @@ export async function createEmployeeAction(formData: any) {
       : []
 
     const totalAllowancesValue = allowancesArray.reduce(
-      (sum: number, item: any) =>
-        sum + (parseFloat(item.amount) || 0),
+      (sum: number, item: Allowance) =>
+        sum + (Number(item.amount) || 0),
       0
     )
 
@@ -76,11 +173,11 @@ export async function createEmployeeAction(formData: any) {
       base + totalAllowancesValue - totalDeductions
 
     // -------------------------------------------------
-    // 4️⃣ Call RPC (Works for both create & update)
+    // 4️⃣ Call RPC
     // -------------------------------------------------
     const { data, error: rpcError } =
       await supabaseAdmin.rpc('add_employee_full', {
-        p_employee_id: formData.employeeId ?? null, 
+        p_employee_id: formData.employeeId ?? null,
         p_auth_user_id: authUserId,
         p_employee_id_slug: customIdSlug,
 
@@ -132,6 +229,7 @@ export async function createEmployeeAction(formData: any) {
           formData.emergencyContactCompany,
         p_emergency_address:
           formData.emergencyContactAddress,
+
         p_notes: formData.notes,
 
         // Assessment
@@ -142,10 +240,17 @@ export async function createEmployeeAction(formData: any) {
         p_hiring_note: formData.hiringNote
       })
 
-    if (rpcError) throw rpcError
+    // -------------------------------------------------
+    // ❗ Rollback auth user if RPC fails
+    // -------------------------------------------------
+    if (rpcError) {
+      if (!isEditMode && authUserId) {
+        await supabaseAdmin.auth.admin.deleteUser(authUserId)
+      }
+      throw rpcError
+    }
 
     return { success: true, employeeId: data }
-
   } catch (error: any) {
     console.error('Error saving employee:', error)
     return { success: false, error: error.message }
