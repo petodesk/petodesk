@@ -60,7 +60,7 @@ export async function createEmployeeAction(formData:any) {
           formData.email,
           {
             data: { full_name: formData.name },
-           redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/set-password`
+           redirectTo: `${baseUrl}/set-password`
           }
         )
 
