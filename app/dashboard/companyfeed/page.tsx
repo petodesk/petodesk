@@ -12,7 +12,6 @@ export default function AnnouncePage() {
     const [addAnnounceOpen, setAddAnnounceOpen] = useState<boolean>(false)
     const [editAnnonce, setEditAnounce] = useState<boolean>(false)
     const [selectedAnnounce, setSelectedAnnounce] = useState<any>()
-    const [task, setTask] = useState<any>()
     const [role, setRole] = useState<any>()
 
     const [tasks, setTasks] = useState<any[]>([])
@@ -21,6 +20,10 @@ export default function AnnouncePage() {
         fetchTasks()
         fetchUser()
     }, [])
+
+
+
+
 
     async function fetchTasks() {
         const { data, error } = await supabase
