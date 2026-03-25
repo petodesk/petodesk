@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
-import OwnerSidebar from '../components/sidebars/OwnerSidebar'
+import OwnerSidebar from '../components/sidebars/Sidebar'
 import DashHeader from '../components/DashHeader'
 import { Loading } from '../components/Loading'
 
