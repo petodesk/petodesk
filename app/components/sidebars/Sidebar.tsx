@@ -4,6 +4,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { HiClock } from 'react-icons/hi'
 
 import {
   HiSquares2X2,
@@ -45,6 +46,7 @@ const links = [
   { label: 'Recruitment', href: '/dashboard/recruitment', icon: HiOutlineUserPlus, roles: ['admin','owner'], plans: ['both','hr'] },
 
   { label: 'Employee', href: '/dashboard/employee', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr', 'inventory'] },
+  { label: 'Clock In/Out', href: '/dashboard/clock_in_out', icon: HiClock, roles: ['admin','owner'], plans: ['both','hr', 'inventory'] },
   { label: 'Leave Management', href: '/dashboard/leave-management', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr'] },
   { label: 'Leave', href: '/dashboard/leave', icon: HiOutlineUserCircle, roles: ['employee'], plans: ['both','hr'] },
 
@@ -53,7 +55,7 @@ const links = [
 ]
 
 
-export default function OwnerSidebar({ onClose }: { onClose?: () => void }) {
+export default function Sidebar({ onClose }: { onClose?: () => void }) {
 
   const pathname = usePathname()
   const router = useRouter()
@@ -137,11 +139,11 @@ console.log('Fetched Plan:', company?.service_type)
   /* -------------------------------- */
 
   return (
-    <aside className="flex flex-col h-screen w-64 bg-white shadow-sm">
+    <aside className="flex flex-col h-screen w-64 bg-white shadow-sm max-h-[90vh]">
 
       {/* HEADER */}
 
-      <div className="bg-blue-600 text-white p-4 font-bold text-center rounded-t-lg my-2">
+      <div className="bg-blue-600 text-white p-4 font-bold text-center rounded-t-lg my-2 ">
         My Petodesk Account
       </div>
 
@@ -177,13 +179,9 @@ console.log('Fetched Plan:', company?.service_type)
               </li>
             )
           })}
-
-        </ul>
-
-
         {/* ACCOUNT SECTION */}
 
-        <div className="border-t mt-4">
+        <div className="border-t mt-1">
 
           <div className="px-3 py-3 space-y-1">
 
@@ -207,6 +205,11 @@ console.log('Fetched Plan:', company?.service_type)
           </div>
 
         </div>
+
+        </ul>
+  
+
+        
 
       </nav>
 

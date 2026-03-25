@@ -37,6 +37,10 @@ export const routePermissions: Record<
     roles: ["admin", "owner"],
     plans: ["hr", "both",'inventory']
   },
+    "/dashboard/clock_in/out": {
+    roles: ["admin", "owner"],
+    plans: ["hr", "both",'inventory']
+  },
  "/dashboard/leave": {
     roles: ["admin", "owner", "employee"],
     plans: ["hr", "both"]
