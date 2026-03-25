@@ -7,6 +7,7 @@ export default function AttendanceButton() {
   const [attendanceRecord, setAttendanceRecord] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const[userCompanyId,setUserCompanyId] = useState()
   const supabase = createClient();
 
   // Check status on load
@@ -14,6 +15,15 @@ export default function AttendanceButton() {
     const checkStatus = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('company_id')
+                .eq('id', user.id)
+                .single()
+
+            setUserCompanyId(profile?.company_id ?? null)
+    
 
       const today = new Date().toISOString().split('T')[0];
 
@@ -54,6 +64,7 @@ export default function AttendanceButton() {
       .from('attendance')
       .insert([{
         user_id: user?.id,
+        company_id:userCompanyId,
         clock_in: new Date().toISOString(),
         location_in: coords,
         status: 'Active'

@@ -27,11 +27,6 @@ export default function DashHeader({ userName, onToggleSidebar }: DashHeaderProp
     return () => clearInterval(timer)
   }, [])
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
-    router.refresh()
-  }
 
   const formattedDate = time.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -45,7 +40,7 @@ export default function DashHeader({ userName, onToggleSidebar }: DashHeaderProp
       
       {/* LEFT: Logo & User Welcome */}
       <div className="flex items-center gap-6">
-        <Image src={logo} alt="logo" className="h-10 w-auto" />
+        <Image src={logo} alt="logo" className="w-20 md:w-30" />
         
         <div className="hidden lg:block h-8 w-[1px] bg-gray-200"></div>
         
@@ -59,11 +54,11 @@ export default function DashHeader({ userName, onToggleSidebar }: DashHeaderProp
       <div className="flex items-center gap-2 md:gap-6">
         
         {/* ATTENDANCE SECTION */}
-        <div className="hidden sm:flex flex-col items-end border-r pr-6 border-gray-100">
-           <div className="w-40">
+        <div className="flex flex-col items-end border-r pr-6 border-gray-100">
+           <div className="w-30 sm:w-40">
              <AttendanceButton />
            </div>
-           <div className="flex items-center gap-1.5 mt-1">
+           <div className="hidden md:flex items-center gap-1.5 mt-1">
              <span className="flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -78,7 +73,7 @@ export default function DashHeader({ userName, onToggleSidebar }: DashHeaderProp
             <HiSearchCircle size={28} />
           </button>
 
-          <button className="relative p-2 text-gray-400 hover:bg-gray-50 rounded-full transition-colors">
+          <button className="hidden md:block relative p-2 text-gray-400 hover:bg-gray-50 rounded-full transition-colors">
             <HiOutlineBell size={24} />
             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
           </button>
