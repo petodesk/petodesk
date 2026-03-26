@@ -141,7 +141,7 @@ export default function AdminAttendanceDashboard() {
     <div className="w-full bg-gray-50 min-h-screen md:p-8">
 
       {/* Header */}
-      <div className="flex justify-between items-start my-8 text-right">
+      <div className="flex justify-between items-start mb-6 text-right">
         <div>
           <AttendanceButton />
         </div>
