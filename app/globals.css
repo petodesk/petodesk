@@ -72,3 +72,6 @@
   --tw-bg-opacity: 1 !important;
 }
 
+
+/* id="leafletcss" */
+@import "leaflet/dist/leaflet.css";

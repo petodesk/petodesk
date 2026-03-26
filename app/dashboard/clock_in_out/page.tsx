@@ -15,12 +15,14 @@ interface AttendanceRecord {
   date: string
   location_in: string | null
   location_out: string | null
+  distance_out: number 
+  is_verified_out: boolean
   status: string
   profiles: {
-    id:string
+    id: string
     full_name: string
-    role:string
-    email:string
+    role: string
+    email: string
   }
 }
 
@@ -35,6 +37,8 @@ export default function AdminAttendanceDashboard() {
   const [stats, setStats] = useState({ today: '0 hrs', week: '0 hrs', month: '0 hrs' })
   const [selectedAttendance, setSelectedAttendance] = useState<AttendanceRecord>()
   const [viewMore, setViewMore] = useState(false)
+    const [now, setNow] = useState(new Date());
+
   // modal state
   const [viewAllOpen, setViewAllOpen] = useState(false)
 
@@ -43,6 +47,16 @@ export default function AdminAttendanceDashboard() {
     if (!iso) return 'Nil'
     return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
   }
+
+
+  // Update every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 1000);
+
+    return () => clearInterval(interval); // Clean up
+  }, []);
 
   const calculateDuration = (inTime: string, outTime: string | null) => {
     if (!outTime) return 'Nil'
@@ -100,8 +114,8 @@ export default function AdminAttendanceDashboard() {
     const totalMins = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60))
     return `${totalHrs} hrs ${totalMins} mins`
   }
- 
- 
+
+
 
   function ActionMenu({ attendance }: { attendance: any }) {
     const [open, setOpen] = useState(false)
@@ -141,14 +155,18 @@ export default function AdminAttendanceDashboard() {
     <div className="w-full bg-gray-50 min-h-screen md:p-8">
 
       {/* Header */}
-      <div className="flex justify-between items-start mb-6 text-right">
+      <div className="flex justify-between items-start my-6 md:mb-6 text-right">
         <div>
           <AttendanceButton />
         </div>
-        <div>
-          <p className="text-sm text-gray-500 font-medium">Date: <span className="text-gray-900">{new Date().toDateString()}</span></p>
-          <p className="text-sm text-gray-500 font-medium"> Time: <span className="text-gray-900">{new Date().toLocaleTimeString()}</span></p>
-        </div>
+       <div>
+      <p className="text-sm text-gray-500 font-medium">
+        Date: <span className="text-gray-900">{now.toDateString()}</span>
+      </p>
+      <p className="text-sm text-gray-500 font-medium">
+        Time: <span className="text-gray-900">{now.toLocaleTimeString()}</span>
+      </p>
+    </div>
       </div>
 
       {/* --- 1. SUMMARY CARDS --- */}
@@ -165,8 +183,9 @@ export default function AdminAttendanceDashboard() {
       </div>
 
       {/* --- 2. FILTERS --- */}
-      <div className="flex flex-wrap items-center gap-2 mb-6">
-        <span className="text-gray-700 font-bold mr-2">Filter by:</span>
+      <div className='flex flex-col gap-2 md:flex-row items-center mb-4'>
+        <span className="text-gray-700 font-bold ">Filter by:-</span>
+         <div className="flex flex-wrap items-center gap-2">
         {(['today', 'this_week', 'this_month', 'all'] as FilterRange[]).map((f) => (
           <button
             key={f}
@@ -178,6 +197,8 @@ export default function AdminAttendanceDashboard() {
           </button>
         ))}
       </div>
+      </div>
+     
 
       {/* -------- MOBILE CARDS -------- */}
       <div className="space-y-4 md:hidden">
@@ -197,7 +218,18 @@ export default function AdminAttendanceDashboard() {
             <InfoRow label="Clock In" value={formatTime(row.clock_in)} />
             <InfoRow label="Clock Out" value={formatTime(row.clock_out)} />
             <InfoRow label="Hours" value={calculateDuration(row.clock_in, row.clock_out)} />
-            <InfoRow label="Location" value={!row.clock_out ? 'Active' : 'Completed'} />
+            <InfoRow
+              label="Location"
+              value={
+                row.is_verified_out ? (
+                  <span className="text-green-600 font-semibold">✅ Verified</span>
+                ) : (
+                  <span className="text-red-500 font-semibold">
+                    ❌ Outside ({Math.round(row.distance_out)}m)
+                  </span>
+                )
+              }
+            />
             <InfoRow label="Status" value={!row.clock_out ? 'Active' : 'Completed'} />
 
           </div>
@@ -235,7 +267,13 @@ export default function AdminAttendanceDashboard() {
                   <td className="p-4 text-sm text-gray-600">{formatTime(row.clock_in)}</td>
                   <td className="p-4 text-sm text-gray-600">{formatTime(row.clock_out)}</td>
                   <td className="p-4 text-sm text-gray-600">{calculateDuration(row.clock_in, row.clock_out)}</td>
-                  <td className="p-4 text-sm text-gray-600">{row.clock_out ? 'Verified' : 'Nil'}</td>
+                  <td className="p-4 text-sm">
+                    {row.is_verified_out ? (
+                      <span className="text-green-600 font-semibold">Verified</span>
+                    ) : (
+                      <span className="text-red-500 font-semibold">Outside</span>
+                    )}
+                  </td>
                   <td className="p-4">
                     <span className={`px-3 py-1 rounded-lg text-xs font-bold ${!row.clock_out ? 'text-blue-500 bg-blue-50' : 'text-green-500 bg-green-50'
                       }`}>
@@ -354,31 +392,31 @@ export default function AdminAttendanceDashboard() {
 
       {
         selectedAttendance && viewMore && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
 
-          <div className="bg-white w-full max-w-2xl rounded-2xl p-6 max-h-[80vh] overflow-y-auto">
+            <div className="bg-white w-full max-w-2xl rounded-2xl p-6 max-h-[80vh] overflow-y-auto">
 
-            <div className="flex justify-between mb-4 border-b-2 py-2">
-              <h2 className="font-bold text-lg">Attendance Detail</h2>
-              <button onClick={() => {
-                setViewMore(false)
-                setFilter('all')
-              }}>Close</button>
-            </div>
-            <div className='grid grid-cols-2 gap-6'>
-                
-            <Attendance label='Employee Name' value={selectedAttendance.profiles?.full_name}/>
-            <Attendance label='Employee Role' value={selectedAttendance.profiles?.role}/>
-            <Attendance label='Date' value={selectedAttendance.date}/>
-            <Attendance label='Clock in time' value={formatTime(selectedAttendance.clock_in)}/>
-            <Attendance label='Clock out time' value= {formatTime(selectedAttendance.clock_out)}/>
-            <Attendance label='Total Time' value={calculateDuration(selectedAttendance.clock_in, selectedAttendance.clock_out)}/>
-            <Attendance label='Location In' value={selectedAttendance.location_in}/>
-            <Attendance label='Location Out' value={selectedAttendance.location_out}/>
-            <Attendance label='Location Out' value={selectedAttendance.location_out}/>
-            <Attendance label='Location' value={'verified'}/>
-            <Attendance label='Status' value={selectedAttendance.status}/>
-            </div>
+              <div className="flex justify-between mb-4 border-b-2 py-2">
+                <h2 className="font-bold text-lg">Attendance Detail</h2>
+                <button onClick={() => {
+                  setViewMore(false)
+                  setFilter('all')
+                }}>Close</button>
+              </div>
+              <div className='grid grid-cols-2 gap-6'>
+
+                <Attendance label='Employee Name' value={selectedAttendance.profiles?.full_name} />
+                <Attendance label='Employee Role' value={selectedAttendance.profiles?.role} />
+                <Attendance label='Date' value={selectedAttendance.date} />
+                <Attendance label='Clock in time' value={formatTime(selectedAttendance.clock_in)} />
+                <Attendance label='Clock out time' value={formatTime(selectedAttendance.clock_out)} />
+                <Attendance label='Total Time' value={calculateDuration(selectedAttendance.clock_in, selectedAttendance.clock_out)} />
+                <Attendance label='Location In' value={selectedAttendance.location_in} />
+                <Attendance label='Location Out' value={selectedAttendance.location_out} />
+                <Attendance label='Location Out' value={selectedAttendance.location_out} />
+                <Attendance label='Location' value={'verified'} />
+                <Attendance label='Status' value={selectedAttendance.status} />
+              </div>
 
             </div>
 
