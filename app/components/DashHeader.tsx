@@ -40,7 +40,7 @@ export default function DashHeader({ userName, onToggleSidebar }: DashHeaderProp
       
       {/* LEFT: Logo & User Welcome */}
       <div className="flex items-center gap-6">
-        <Image src={logo} alt="logo" className="w-20 md:w-30" />
+        <Image src={logo} alt="logo" className=" w-30" />
         
         <div className="hidden lg:block h-8 w-[1px] bg-gray-200"></div>
         
