@@ -52,21 +52,6 @@ export default function DashHeader({ userName, onToggleSidebar }: DashHeaderProp
 
       {/* RIGHT: Attendance & Actions */}
       <div className="flex items-center gap-2 md:gap-6">
-        
-        {/* ATTENDANCE SECTION */}
-        <div className="flex flex-col items-end border-r pr-6 border-gray-100">
-           <div className="w-30 sm:w-40">
-             <AttendanceButton />
-           </div>
-           <div className="hidden md:flex items-center gap-1.5 mt-1">
-             <span className="flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-             </span>
-             <p className="text-[10px] text-gray-400 italic font-medium">GPS location active</p>
-           </div>
-        </div>
-
         {/* ICON BUTTONS */}
         <div className="flex items-center gap-1 md:gap-3">
           <button className="p-2 text-gray-400 hover:bg-gray-50 rounded-full transition-colors hidden sm:block">

@@ -46,7 +46,7 @@ const links = [
   { label: 'Recruitment', href: '/dashboard/recruitment', icon: HiOutlineUserPlus, roles: ['admin','owner'], plans: ['both','hr'] },
 
   { label: 'Employee', href: '/dashboard/employee', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr', 'inventory'] },
-  { label: 'Clock In/Out', href: '/dashboard/clock_in_out', icon: HiClock, roles: ['admin','owner'], plans: ['both','hr', 'inventory'] },
+  { label: 'Clock In/Out', href: '/dashboard/clock_in_out', icon: HiClock, roles: ['admin','owner','employee'], plans: ['both','hr', 'inventory'] },
   { label: 'Leave Management', href: '/dashboard/leave-management', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr'] },
   { label: 'Leave', href: '/dashboard/leave', icon: HiOutlineUserCircle, roles: ['employee'], plans: ['both','hr'] },
 
