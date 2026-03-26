@@ -100,7 +100,8 @@ export default function AdminAttendanceDashboard() {
     const totalMins = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60))
     return `${totalHrs} hrs ${totalMins} mins`
   }
-  console.log(selectedAttendance)
+ 
+ 
 
   function ActionMenu({ attendance }: { attendance: any }) {
     const [open, setOpen] = useState(false)
@@ -266,7 +267,7 @@ export default function AdminAttendanceDashboard() {
       {/* -------- VIEW ALL MODAL -------- */}
       {viewAllOpen && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-          <div className="bg-white w-full max-w-lg rounded-2xl p-6 max-h-[80vh] overflow-y-auto">
+          <div className="bg-white w-full max-w-7xl rounded-2xl p-6 max-h-[80vh] overflow-y-auto">
 
             <div className="flex justify-between mb-4">
               <h2 className="font-bold text-lg">All Attendance</h2>
