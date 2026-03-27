@@ -99,6 +99,8 @@ export default function AttendanceButton() {
     if (companyError || !company) {
       throw new Error("Company location not set")
     }
+       console.log("User:", coords.lat, coords.lng)
+      console.log("Company:", company.office_lat, company.office_lng)
 
     // ✅ 3. Calculate distance
     const distance = getDistance(
@@ -163,6 +165,8 @@ export default function AttendanceButton() {
     if (companyError || !company) {
       throw new Error("Company location not set")
     }
+    console.log("User:", coords.lat, coords.lng)
+console.log("Company:", company.office_lat, company.office_lng)
 
     // ✅ 4. Calculate distance
     const distance = getDistance(

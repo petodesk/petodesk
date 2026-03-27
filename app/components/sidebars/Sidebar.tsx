@@ -4,6 +4,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { HiOutlineCurrencyDollar } from 'react-icons/hi'
 
 import {
   HiSquares2X2,
@@ -38,7 +39,7 @@ const links = [
 
   { label: 'Tasks', href: '/dashboard/tasks', icon: HiOutlineClipboardDocumentList, roles: ['admin','owner','employee'], plans: ['both','hr'] },
 
-  { label: 'Payroll', href: '/dashboard/payroll', icon: HiOutlineUsers, roles: ['admin','owner'], plans: ['both','hr'] },
+  { label: 'Payroll', href: '/dashboard/payroll', icon: HiOutlineCurrencyDollar, roles: ['admin','owner'], plans: ['both','hr'] },
 
   { label: 'Invoicing', href: '/dashboard/invoicing', icon: HiOutlineDocumentText, roles: ['admin','owner','employee'], plans: ['both','hr', 'inventory'] },
 
