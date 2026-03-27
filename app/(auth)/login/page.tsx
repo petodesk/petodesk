@@ -109,19 +109,19 @@ export default function Home() {
     if (checkingSession) return <Loading />
 
     return (
-        <div className="flex items-center justify-center bg-gray-60 p-4 ">
+        <div className="flex items-center justify-center bg-gray-60 p-4 h-screen ">
             <div className="w-full max-w-xl rounded-lg shadow-lg m-5 py-6 my-6">
                 {/* Header */}
                 <div className="text-center mb-8">
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome to PetoDesk</h1>
-                    <p className="text-gray-600">Log in to manage your business operations.</p>
+                    <p className="text-gray-600">Log in or Create account to manage your business operations.</p>
                 </div>
 
                 {/* Login Form */}
                 <div className="p-3 md:p-6">
                     <form onSubmit={handleSendOtp} className="flex flex-col gap-3">
                         {/* Email */}
-                        <div className="flex flex-col gap-3">
+                        {/* <div className="flex flex-col gap-3">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Email Address *
                             </label>
@@ -134,10 +134,10 @@ export default function Home() {
                                 className="w-full px-3 py-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Enter your email"
                             />
-                        </div>
+                        </div> */}
 
                         {/* Password */}
-                        <div className="flex flex-col gap-3">
+                        {/* <div className="flex flex-col gap-3">
                             <div className=" mb-1">
                                 <PasswordInput
                                     label="Password *"
@@ -156,10 +156,10 @@ export default function Home() {
                             >
                                 Forgot password?
                             </button>
-                        </div>
+                        </div> */}
 
                         {/* Continue Button */}
-                        <button
+                        {/* <button
                             type="submit"
                             disabled={loading}
                             className="w-full bg-blue-600 text-white font-medium py-2.5 px-4 rounded-md btn-primary flex items-center justify-center gap-2 disabled:opacity-70"
@@ -174,29 +174,29 @@ export default function Home() {
                             ) : (
                                 'Continue'
                             )}
-                        </button>
+                        </button> */}
 
                     </form>
 
                     {/* Sign up Link */}
-                    <div className="text-center mt-6">
+                    {/* <div className="text-center mt-6">
                         <p className="text-gray-600">
                             Don't have an account?{" "}
                             <Link href="/signup" className="text-blue-600 font-medium hover:text-blue-800">
                                 Sign up
                             </Link>
                         </p>
-                    </div>
+                    </div> */}
 
                     {/* Divider */}
-                    <div className="relative my-6">
+                    {/* <div className="relative my-6">
                         <div className="absolute inset-0 flex items-center">
                             <div className="w-full border-t border-gray-300"></div>
                         </div>
                         <div className="relative flex justify-center">
                             <span className="bg-white px-3 text-gray-500 text-sm">OR</span>
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Google */}
                     <button
