@@ -185,7 +185,7 @@ export default function OfficeLocationPage() {
         .update({
           office_lat: coords.lat,
           office_lng: coords.lng,
-          allowed_radius: 300
+          allowed_radius: 100
         })
         .eq('id', userCompanyId)
 
