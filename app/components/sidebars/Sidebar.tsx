@@ -4,23 +4,24 @@ import { createClient } from '@/app/utils/supabase/client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { HiClock } from 'react-icons/hi'
 
 import {
   HiSquares2X2,
   HiOutlineShoppingCart,
   HiOutlineWallet,
   HiOutlineCube,
-  HiOutlineCheckBadge,
   HiOutlineUsers,
   HiOutlineDocumentText,
   HiOutlineChartBar,
   HiOutlineUserPlus,
   HiOutlineUserCircle,
-  HiOutlineMegaphone,
   HiOutlineArrowRightOnRectangle,
+  HiOutlineClipboardDocumentList,
+  HiOutlineClock,
+  HiOutlineCalendarDays,
+  HiOutlineSpeakerWave,
+  HiOutlineExclamationTriangle,
 } from 'react-icons/hi2'
-
 
 /* -------------------------------- */
 /* Sidebar Links Configuration      */
@@ -35,7 +36,7 @@ const links = [
 
   { label: 'Inventory', href: '/dashboard/inventory', icon: HiOutlineCube, roles: ['admin','owner','employee'], plans: ['both','inventory'] },
 
-  { label: 'Tasks', href: '/dashboard/tasks', icon: HiOutlineCheckBadge, roles: ['admin','owner','employee'], plans: ['both','hr'] },
+  { label: 'Tasks', href: '/dashboard/tasks', icon: HiOutlineClipboardDocumentList, roles: ['admin','owner','employee'], plans: ['both','hr'] },
 
   { label: 'Payroll', href: '/dashboard/payroll', icon: HiOutlineUsers, roles: ['admin','owner'], plans: ['both','hr'] },
 
@@ -45,13 +46,17 @@ const links = [
 
   { label: 'Recruitment', href: '/dashboard/recruitment', icon: HiOutlineUserPlus, roles: ['admin','owner'], plans: ['both','hr'] },
 
-  { label: 'Employee', href: '/dashboard/employee', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr', 'inventory'] },
-  { label: 'Clock In/Out', href: '/dashboard/clock_in_out', icon: HiClock, roles: ['admin','owner','employee'], plans: ['both','hr', 'inventory'] },
-  { label: 'Leave Management', href: '/dashboard/leave-management', icon: HiOutlineUserCircle, roles: ['admin','owner'], plans: ['both','hr'] },
-  { label: 'Leave', href: '/dashboard/leave', icon: HiOutlineUserCircle, roles: ['employee'], plans: ['both','hr'] },
+  { label: 'Employee', href: '/dashboard/employee', icon: HiOutlineUsers, roles: ['admin','owner'], plans: ['both','hr', 'inventory'] },
 
-  { label: 'issues & Compliants', href: '/dashboard/issue-complaints', icon: HiOutlineMegaphone, roles: ['admin','owner','employee'], plans: ['both','hr'] },
-  { label: 'Company Feed', href: '/dashboard/companyfeed', icon: HiOutlineMegaphone, roles: ['admin','owner','employee'], plans: ['both','hr'] },
+  { label: 'Clock In/Out', href: '/dashboard/clock_in_out', icon: HiOutlineClock, roles: ['admin','owner','employee'], plans: ['both','hr', 'inventory'] },
+
+  { label: 'Leave Management', href: '/dashboard/leave-management', icon: HiOutlineCalendarDays, roles: ['admin','owner'], plans: ['both','hr'] },
+
+  { label: 'Leave', href: '/dashboard/leave', icon: HiOutlineCalendarDays, roles: ['employee'], plans: ['both','hr'] },
+
+  { label: 'issues & Compliants', href: '/dashboard/issue-complaints', icon: HiOutlineExclamationTriangle, roles: ['admin','owner','employee'], plans: ['both','hr'] },
+
+  { label: 'Company Feed', href: '/dashboard/companyfeed', icon: HiOutlineSpeakerWave, roles: ['admin','owner','employee'], plans: ['both','hr'] },
 ]
 
 

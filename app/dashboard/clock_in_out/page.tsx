@@ -5,6 +5,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import { FaEllipsisV } from 'react-icons/fa'
 import AttendanceButton from '@/app/components/AttendanceButton'
 import { formatDate } from '@/app/utils/dateFormatter'
+import LiveClock from '@/app/components/Clock'
 
 // --- Types ---
 interface AttendanceRecord {
@@ -15,7 +16,7 @@ interface AttendanceRecord {
   date: string
   location_in: string | null
   location_out: string | null
-  distance_out: number 
+  distance_out: number
   is_verified_out: boolean
   status: string
   profiles: {
@@ -23,7 +24,7 @@ interface AttendanceRecord {
     full_name: string
     role: string
     email: string
-  }
+  } | null
 }
 
 type FilterRange = 'today' | 'this_week' | 'this_month' | 'all'
@@ -37,9 +38,7 @@ export default function AdminAttendanceDashboard() {
   const [stats, setStats] = useState({ today: '0 hrs', week: '0 hrs', month: '0 hrs' })
   const [selectedAttendance, setSelectedAttendance] = useState<AttendanceRecord>()
   const [viewMore, setViewMore] = useState(false)
-    const [now, setNow] = useState(new Date());
 
-  // modal state
   const [viewAllOpen, setViewAllOpen] = useState(false)
 
   /* ---------------- HELPERS ---------------- */
@@ -48,22 +47,35 @@ export default function AdminAttendanceDashboard() {
     return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
   }
 
-
-  // Update every second
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(new Date());
-    }, 1000);
-
-    return () => clearInterval(interval); // Clean up
-  }, []);
-
   const calculateDuration = (inTime: string, outTime: string | null) => {
     if (!outTime) return 'Nil'
     const diff = new Date(outTime).getTime() - new Date(inTime).getTime()
     const hours = Math.floor(diff / (1000 * 60 * 60))
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
     return `${hours} hrs ${minutes} mins`
+  }
+
+  const calculateDurationSum = (data: any[]) => {
+    let totalMs = 0
+    data.forEach(item => {
+      if (item.clock_in && item.clock_out) {
+        totalMs += new Date(item.clock_out).getTime() - new Date(item.clock_in).getTime()
+      }
+    })
+    const totalHrs = Math.floor(totalMs / (1000 * 60 * 60))
+    const totalMins = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60))
+    return `${totalHrs} hrs ${totalMins} mins`
+  }
+
+  /* ---------------- FETCH PROFILE (for realtime) ---------------- */
+  const fetchProfile = async (user_id: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, role')
+      .eq('id', user_id)
+      .single()
+
+    return data
   }
 
   /* ---------------- DATA FETCHING ---------------- */
@@ -103,20 +115,60 @@ export default function AdminAttendanceDashboard() {
     fetchData()
   }, [fetchData])
 
-  const calculateDurationSum = (data: any[]) => {
-    let totalMs = 0
-    data.forEach(item => {
-      if (item.clock_in && item.clock_out) {
-        totalMs += new Date(item.clock_out).getTime() - new Date(item.clock_in).getTime()
-      }
-    })
-    const totalHrs = Math.floor(totalMs / (1000 * 60 * 60))
-    const totalMins = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60))
-    return `${totalHrs} hrs ${totalMins} mins`
-  }
+  /* ---------------- REALTIME ---------------- */
+  useEffect(() => {
+    const channel = supabase
+      .channel('attendance-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'attendance',
+        },
+        async (payload) => {
+          const newRecord = payload.new as AttendanceRecord
+          const oldRecord = payload.old as AttendanceRecord
 
+          // INSERT
+          if (payload.eventType === 'INSERT') {
+            const profile = await fetchProfile(newRecord.user_id)
 
+            setAttendance((prev) => [
+              { ...newRecord, profiles: profile },
+              ...prev,
+            ])
+          }
 
+          // UPDATE
+          if (payload.eventType === 'UPDATE') {
+            const profile = await fetchProfile(newRecord.user_id)
+
+            setAttendance((prev) =>
+              prev.map((item) =>
+                item.id === newRecord.id
+                  ? { ...newRecord, profiles: profile }
+                  : item
+              )
+            )
+          }
+
+          // DELETE
+          if (payload.eventType === 'DELETE') {
+            setAttendance((prev) =>
+              prev.filter((item) => item.id !== oldRecord.id)
+            )
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase])
+
+  /* ---------------- ACTION MENU ---------------- */
   function ActionMenu({ attendance }: { attendance: any }) {
     const [open, setOpen] = useState(false)
 
@@ -124,6 +176,7 @@ export default function AdminAttendanceDashboard() {
       setSelectedAttendance(attendance)
       setViewMore(true)
     }
+
     return (
       <div className="relative">
         <button
@@ -159,15 +212,9 @@ export default function AdminAttendanceDashboard() {
         <div>
           <AttendanceButton />
         </div>
-       <div>
-      <p className="text-sm text-gray-500 font-medium">
-        Date: <span className="text-gray-900">{now.toDateString()}</span>
-      </p>
-      <p className="text-sm text-gray-500 font-medium">
-        Time: <span className="text-gray-900">{now.toLocaleTimeString()}</span>
-      </p>
-    </div>
+        <LiveClock />
       </div>
+
 
       {/* --- 1. SUMMARY CARDS --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -185,20 +232,20 @@ export default function AdminAttendanceDashboard() {
       {/* --- 2. FILTERS --- */}
       <div className='flex flex-col gap-2 md:flex-row items-center mb-4'>
         <span className="text-gray-700 font-bold ">Filter by:-</span>
-         <div className="flex flex-wrap items-center gap-2">
-        {(['today', 'this_week', 'this_month', 'all'] as FilterRange[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-2 py-2 rounded-xl text-sm font-bold transition-all ${filter === f ? 'bg-white shadow-md text-blue-600 border-blue-100 border' : 'bg-transparent text-gray-500'
-              }`}
-          >
-            {f.replace('_', ' ').toUpperCase()}
-          </button>
-        ))}
+        <div className="flex flex-wrap items-center gap-2">
+          {(['today', 'this_week', 'this_month', 'all'] as FilterRange[]).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-2 py-2 rounded-xl text-sm font-bold transition-all ${filter === f ? 'bg-white shadow-md text-blue-600 border-blue-100 border' : 'bg-transparent text-gray-500'
+                }`}
+            >
+              {f.replace('_', ' ').toUpperCase()}
+            </button>
+          ))}
+        </div>
       </div>
-      </div>
-     
+
 
       {/* -------- MOBILE CARDS -------- */}
       <div className="space-y-4 md:hidden">
@@ -333,7 +380,18 @@ export default function AdminAttendanceDashboard() {
                   <InfoRow label="Clock In" value={formatTime(row.clock_in)} />
                   <InfoRow label="Clock Out" value={formatTime(row.clock_out)} />
                   <InfoRow label="Hours" value={calculateDuration(row.clock_in, row.clock_out)} />
-                  <InfoRow label="Location" value={!row.clock_out ? 'Active' : 'Completed'} />
+                  <InfoRow
+                    label="Location"
+                    value={
+                      row.is_verified_out ? (
+                        <span className="text-green-600 font-semibold">✅ Verified</span>
+                      ) : (
+                        <span className="text-red-500 font-semibold">
+                          ❌ Outside ({Math.round(row.distance_out)}m)
+                        </span>
+                      )
+                    }
+                  />
                   <InfoRow label="Status" value={!row.clock_out ? 'Active' : 'Completed'} />
 
                 </div>
@@ -370,7 +428,13 @@ export default function AdminAttendanceDashboard() {
                         <td className="p-4 text-sm text-gray-600">{formatTime(row.clock_in)}</td>
                         <td className="p-4 text-sm text-gray-600">{formatTime(row.clock_out)}</td>
                         <td className="p-4 text-sm text-gray-600">{calculateDuration(row.clock_in, row.clock_out)}</td>
-                        <td className="p-4 text-sm text-gray-600">{row.clock_out ? 'Verified' : 'Nil'}</td>
+                        <td className="p-4 text-sm">
+                          {row.is_verified_out ? (
+                            <span className="text-green-600 font-semibold">Verified</span>
+                          ) : (
+                            <span className="text-red-500 font-semibold">Outside</span>
+                          )}
+                        </td>
                         <td className="p-4">
                           <span className={`px-3 py-1 rounded-lg text-xs font-bold ${!row.clock_out ? 'text-blue-500 bg-blue-50' : 'text-green-500 bg-green-50'
                             }`}>
@@ -413,8 +477,18 @@ export default function AdminAttendanceDashboard() {
                 <Attendance label='Total Time' value={calculateDuration(selectedAttendance.clock_in, selectedAttendance.clock_out)} />
                 <Attendance label='Location In' value={selectedAttendance.location_in} />
                 <Attendance label='Location Out' value={selectedAttendance.location_out} />
-                <Attendance label='Location Out' value={selectedAttendance.location_out} />
-                <Attendance label='Location' value={'verified'} />
+                <Attendance 
+                  label="Location"
+                    value={
+                      selectedAttendance.is_verified_out ? (
+                        <span className="text-green-600 font-semibold">✅ Verified</span>
+                      ) : (
+                        <span className="text-red-500 font-semibold">
+                          ❌ Outside ({Math.round(selectedAttendance.distance_out)}m)
+                        </span>
+                      )
+                    }
+                />
                 <Attendance label='Status' value={selectedAttendance.status} />
               </div>
 
