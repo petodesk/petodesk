@@ -46,30 +46,42 @@ export default function Home() {
 
         checkUser()
     }, [router])
-
-  const handleSendOtp = async (e: React.FormEvent) => {
+const handleSignIn = async (e: React.FormEvent) => {
   e.preventDefault()
   setLoading(true)
 
-  const { error } = await supabase.auth.signInWithOtp({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
-    options: {
-      shouldCreateUser: true, // 🔥 key: auto signup if not exists
-    },
+    password,
   })
 
   setLoading(false)
 
-   if (error) {
-  if (error.message.includes('rate limit')) {
-    toast.error('You can only request a new code once per minute. Please wait.')
-  } else {
-    toast.error(error.message)
+  if (error) {
+    if (error.message.toLowerCase().includes('invalid login')) {
+      toast.error('Invalid email or password')
+    } else if (error.message.toLowerCase().includes('email not confirmed')) {
+      toast.error('Please verify your email first')
+    } else {
+      toast.error(error.message)
+    }
+    return
   }
-  return
-}
 
-  router.push(`/verify?email=${email}`)
+  const user = data.user
+
+  // ✅ same redirect logic you already use
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (!profile) {
+    router.replace('/company')
+  } else {
+    router.replace('/dashboard')
+  }
 }
 
     const handleForgotPassword = async (e: React.MouseEvent) => {
@@ -119,9 +131,9 @@ export default function Home() {
 
                 {/* Login Form */}
                 <div className="p-3 md:p-6">
-                    <form onSubmit={handleSendOtp} className="flex flex-col gap-3">
+                    <form onSubmit={handleSignIn} className="flex flex-col gap-3">
                         {/* Email */}
-                        {/* <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-3">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Email Address *
                             </label>
@@ -134,10 +146,10 @@ export default function Home() {
                                 className="w-full px-3 py-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Enter your email"
                             />
-                        </div> */}
+                        </div>
 
                         {/* Password */}
-                        {/* <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-3">
                             <div className=" mb-1">
                                 <PasswordInput
                                     label="Password *"
@@ -156,10 +168,10 @@ export default function Home() {
                             >
                                 Forgot password?
                             </button>
-                        </div> */}
+                        </div>
 
                         {/* Continue Button */}
-                        {/* <button
+                        <button
                             type="submit"
                             disabled={loading}
                             className="w-full bg-blue-600 text-white font-medium py-2.5 px-4 rounded-md btn-primary flex items-center justify-center gap-2 disabled:opacity-70"
@@ -174,29 +186,29 @@ export default function Home() {
                             ) : (
                                 'Continue'
                             )}
-                        </button> */}
+                        </button>
 
                     </form>
 
                     {/* Sign up Link */}
-                    {/* <div className="text-center mt-6">
+                    <div className="text-center mt-6">
                         <p className="text-gray-600">
                             Don't have an account?{" "}
                             <Link href="/signup" className="text-blue-600 font-medium hover:text-blue-800">
                                 Sign up
                             </Link>
                         </p>
-                    </div> */}
+                    </div>
 
                     {/* Divider */}
-                    {/* <div className="relative my-6">
+                    <div className="relative my-6">
                         <div className="absolute inset-0 flex items-center">
                             <div className="w-full border-t border-gray-300"></div>
                         </div>
                         <div className="relative flex justify-center">
                             <span className="bg-white px-3 text-gray-500 text-sm">OR</span>
                         </div>
-                    </div> */}
+                    </div>
 
                     {/* Google */}
                     <button
