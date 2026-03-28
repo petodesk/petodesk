@@ -100,7 +100,7 @@ export default function Signup() {
         </div>
 
         <form onSubmit={handleSignup} className="space-y-6">
-          {/* <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <div className='flex flex-col gap-3'>
               <label className="text-md">Email Address *</label>
               <input
@@ -174,15 +174,15 @@ export default function Signup() {
                 <ClipLoader size={20} color="#ffffff" />
                 <span>Creating Account...</span>
               </div> : 'Create Account'}
-          </button> */}
+          </button>
 
 
           {/* Divider */}
-          {/* <div className="flex items-center gap-4 my-4">
+          <div className="flex items-center gap-4 my-4">
             <div className="h-px bg-gray-200 flex-1" />
             <span className="text-xs text-gray-400">or sign in using</span>
             <div className="h-px bg-gray-200 flex-1" />
-          </div> */}
+          </div>
 
           {/* Google */}
           <button
