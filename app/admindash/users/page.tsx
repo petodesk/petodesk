@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react"
 import { HiSearch } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
-import OnlineUsers from "../components/OnlineUsers"
+import { FaEllipsisV } from "react-icons/fa"
+import { formatDate } from "@/app/utils/dateFormatter"
+
 interface CompanyData {
     id: string,
     created_at: string,
@@ -28,13 +30,8 @@ export default function AdminDash() {
 
     const [stats, setStats] = useState({
         totalUsers: 0,
-        activeUsers: 0,
-        suspendedUsers: 0,
-        businesses: 0,
-        simpleHr: 0,
-        simpleinv: 0,
-        both: 0,
-        premium: 0
+        activeUsers: 0
+
     })
 
     const [companies, setCompanies] = useState<any[]>([])
@@ -95,23 +92,13 @@ export default function AdminDash() {
                 employee_count: employeeMap[c.id] || 0
             })) || []
 
-        /* -------- PLAN COUNTS -------- */
-        const simpleHr = companiesData?.filter(c => c.service_type === "hr").length || 0
-        const simpleinv = companiesData?.filter(c => c.service_type === "inventory").length || 0
-        const both = companiesData?.filter(c => c.service_type === "both").length || 0
-        const premium = companiesData?.filter(c => c.service_type === "premium").length || 0
 
         setCompanies(companiesWithEmployees)
 
         setStats({
             totalUsers: totalUsers || 0,
             activeUsers: activeUsers || 0,
-            suspendedUsers: suspendedUsers || 0,
-            businesses: businesses || 0,
-            simpleHr,
-            simpleinv,
-            both,
-            premium
+
         })
     }
     console.log(SelectedCompany)
@@ -142,6 +129,43 @@ export default function AdminDash() {
 
         }
 
+        const updateCompanyStatus = async (companyId: string, status: string) => {
+            const { error } = await supabase
+                .from("companies")
+                .update({ status })
+                .eq("id", companyId)
+
+            if (error) {
+                console.error(error)
+                return
+            }
+
+            // refresh UI
+            fetchDashboard()
+            setOpen(false)
+        }
+
+        const deleteCompany = async (companyId: string) => {
+    const { error } = await supabase
+        .from("companies")
+        .update({ status: "deleted" })
+        .eq("id", companyId)
+
+    if (error) {
+        console.error(error)
+        return
+    }
+
+    fetchDashboard()
+    setOpen(false)
+}
+
+const deleteCompany1 = async (companyId: string) => {
+    await supabase.from("profiles").delete().eq("company_id", companyId)
+    await supabase.from("companies").delete().eq("id", companyId)
+
+    fetchDashboard()
+}
 
         return (
             <div className="relative">
@@ -149,7 +173,9 @@ export default function AdminDash() {
                     onClick={() => setOpen(!open)}
                     className="px-2 py-1 text-gray-600 hover:text-gray-900 cursor-pointer"
                 >
-                    ⋮
+                    <p className="p-4 text-gray-400">
+                        <FaEllipsisV />
+                    </p>
                 </button>
                 {
                     open && (
@@ -158,10 +184,25 @@ export default function AdminDash() {
                                 <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'
                                     onClick={() => fetchMoreAboutCompany(company.id)}
                                 >View</li>
-                                <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'>Reactivate</li>
-                                <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'>Suspend</li>
-                                <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'>Edit</li>
+
+            
+                                <li
+                                    onClick={() => updateCompanyStatus(company.id, "active")}
+                                    className="text-md p-1 hover:bg-gray-200 cursor-pointer"
+                                >
+                                    Reactivate
+                                </li>
+
+                                <li
+                                    onClick={() => updateCompanyStatus(company.id, "suspended")}
+                                    className="text-md p-1 hover:bg-gray-200 cursor-pointer"
+                                >
+                                    Suspend
+                                </li>
+            
                                 <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'>Reset Password</li>
+                                <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'>Delete</li>
+
                             </ul>
                         </div>
                     )
@@ -186,7 +227,7 @@ export default function AdminDash() {
                                             {SelectedCompany[0].name}
                                         </h2>
                                         <p className="text-gray-500 text-sm">
-                                            Joined {new Date(SelectedCompany[0].created_at).toLocaleDateString()}
+                                            Joined {formatDate(SelectedCompany[0].created_at)}
                                         </p>
                                     </div>
 
@@ -249,28 +290,118 @@ export default function AdminDash() {
                 ) : (
 
                     <div className=" w-full minh-screen p-2 md:p-6 rounded-lg border-2 border-green-200">
-                        <div className=" flex text-center max-sm:justify-center my-3">
-                            <button className="btn-primary rounded-lg py-3 px-6 text-white">Export Data (CSV)</button>
+
+
+
+
+                        {/* -------- SEARCH -------- */}
+                        <div className="flex items-center gap-2 rounded-lg bg-gray-300 w-full p-4 my-8">
+                            <HiSearch size={25} />
+                            <input type="text" placeholder="Search" className="w-full outline-none" />
+                        </div>
+                        <div>
+                            <h1>Users</h1>
+                        </div>
+                        {/* -------- MOBILE CARD -------- */}
+                        <div className="space-y-4 md:hidden">
+                            {companies.slice(0, 4).map((ex) => (
+                                <div
+                                    key={ex.id}
+                                    className="rounded-xl bg-white p-4 shadow-sm border space-y-3"
+                                >
+
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-md font-semibold text-gray-700 mb-1">
+                                            {formatDate(ex.created_at)}
+                                        </p>
+                                        {ex.status !== "Cancelled" && (
+                                            <ActionMenu company={ex} />
+                                        )}
+                                    </div>
+
+                                    <hr />
+
+                                    <InfoRow label="Business" value={ex.name} />
+                                    <InfoRow label="Email" value={ex.profiles[0]?.email} />
+                                    <InfoRow label="No.of Employee" value={ex.employee_count} />
+                                    <InfoRow label="Plan" value={ex.service_type} />
+                                    <InfoRow label="Status" value={
+
+                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize
+                                             ${ex.status === "suspended"
+                                                ? "bg-red-100 text-red-700"
+                                                : "bg-green-100 text-green-700"}`}>
+                                            {ex.status}
+                                        </span>} />
+
+
+
+                                </div>
+                            ))}
+
+                            {companies.length === 0 && (
+                                <p className="px-4 py-10 text-center text-gray-400">
+                                    No user/company info.
+                                </p>
+                            )}
                         </div>
 
-                        {/* -------- SUMMARY CARDS -------- */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
-                            <SummaryCard label="Total Businesses" value={stats.businesses.toString()} />
+                        {/* -------- TABLE -------- */}
+                        <div className="hidden md:block overflow-x-auto">
 
-                            <SummaryCard label="Total Users" value={stats.totalUsers.toString()} />
-                            <SummaryCard label="Active Users" value={stats.activeUsers.toString()} />
-                            <SummaryCard label="Suspended Users" value={stats.suspendedUsers.toString()} />
-                            <SummaryCard label="Inventory – Simple Start" value={stats.simpleinv.toString()} />
-                            <SummaryCard label="Simple Start – HR Users" value={stats.simpleHr.toString()} />
-                            <SummaryCard label="Business Plus Users" value={stats.both.toString()} />
-                            <SummaryCard label="Premium Users" value={stats.premium.toString()} />
+                            <table className="hidden md:table w-full text-sm">
+                                <thead className="bg-gray-50 text-gray-700">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left font-medium">Date Joined</th>
+                                        <th className="px-4 py-3 text-left font-medium">Business/ User</th>
+                                        {/* <th className="px-4 py-3 text-left font-medium">Email</th> */}
+                                        <th className="px-4 py-3 text-left font-medium">No.of <br /> employee</th>
+                                        <th className="px-4 py-3 text-left font-medium">Plan</th>
+                                        <th className="px-4 py-3 text-left font-medium">payment</th>
+                                        <th className="px-4 py-3 text-left font-medium">Status</th>
+                                        <th className="px-4 py-3 text-left font-medium">Action</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    {companies.map((company) => (
+                                        <tr key={company.id} className="border-t hover:bg-gray-50">
+
+                                            <td className="px-4 py-1">
+                                                {formatDate(company.created_at)}
+                                            </td>
+
+                                            <td className="px-4 py-1">
+                                                {company.name}
+                                            </td>
+                                            {/* <td className="px-4 py-1">
+                                                {company.profiles[0]?.email}
+                                            </td> */}
+                                            <td className="px-4 py-1">
+                                                {company.employee_count}
+                                            </td>
+
+
+                                            <td className="px-4 py-1">
+                                                {company.service_type}
+                                            </td>
+                                            <td className="px-4 py-1">
+                                                {company.service_type}
+                                            </td>
+                                            <td className="px-4 py-1">
+                                                {company.status || "active"}
+                                            </td>
+
+                                            <td className="px-4 py-1">
+                                                <ActionMenu company={company} />
+                                            </td>
+
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
 
                         </div>
-                        <div className="p-6">
-                            <OnlineUsers />
-                        </div>
-
-
                     </div>
                 )
             }

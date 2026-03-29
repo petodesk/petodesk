@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react"
 import { HiSearch } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
-import OnlineUsers from "../components/OnlineUsers"
+import { formatDate, formatDateForAnnouncements } from "@/app/utils/dateFormatter"
+import { FaEllipsisV } from "react-icons/fa"
 interface CompanyData {
     id: string,
     created_at: string,
@@ -20,7 +21,7 @@ interface CompanyData {
 
 
 }
-export default function AdminDash() {
+export default function VerificationCenter() {
 
     const supabase = createClient()
     const [viewMore, setViewMore] = useState(false)
@@ -29,12 +30,7 @@ export default function AdminDash() {
     const [stats, setStats] = useState({
         totalUsers: 0,
         activeUsers: 0,
-        suspendedUsers: 0,
-        businesses: 0,
-        simpleHr: 0,
-        simpleinv: 0,
-        both: 0,
-        premium: 0
+
     })
 
     const [companies, setCompanies] = useState<any[]>([])
@@ -105,13 +101,8 @@ export default function AdminDash() {
 
         setStats({
             totalUsers: totalUsers || 0,
-            activeUsers: activeUsers || 0,
-            suspendedUsers: suspendedUsers || 0,
-            businesses: businesses || 0,
-            simpleHr,
-            simpleinv,
-            both,
-            premium
+            activeUsers: activeUsers || 0
+
         })
     }
     console.log(SelectedCompany)
@@ -149,7 +140,9 @@ export default function AdminDash() {
                     onClick={() => setOpen(!open)}
                     className="px-2 py-1 text-gray-600 hover:text-gray-900 cursor-pointer"
                 >
-                    ⋮
+                    <p className="p-4 text-gray-400">
+                        <FaEllipsisV />
+                    </p>
                 </button>
                 {
                     open && (
@@ -249,28 +242,115 @@ export default function AdminDash() {
                 ) : (
 
                     <div className=" w-full minh-screen p-2 md:p-6 rounded-lg border-2 border-green-200">
-                        <div className=" flex text-center max-sm:justify-center my-3">
-                            <button className="btn-primary rounded-lg py-3 px-6 text-white">Export Data (CSV)</button>
-                        </div>
-
-                        {/* -------- SUMMARY CARDS -------- */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
-                            <SummaryCard label="Total Businesses" value={stats.businesses.toString()} />
-
-                            <SummaryCard label="Total Users" value={stats.totalUsers.toString()} />
-                            <SummaryCard label="Active Users" value={stats.activeUsers.toString()} />
-                            <SummaryCard label="Suspended Users" value={stats.suspendedUsers.toString()} />
-                            <SummaryCard label="Inventory – Simple Start" value={stats.simpleinv.toString()} />
-                            <SummaryCard label="Simple Start – HR Users" value={stats.simpleHr.toString()} />
-                            <SummaryCard label="Business Plus Users" value={stats.both.toString()} />
-                            <SummaryCard label="Premium Users" value={stats.premium.toString()} />
+                        <div className="flex gap-30 mb-6 w-full">
+                            <SummaryCard label="Paid Users" value={stats.totalUsers.toString()} />
+                            <SummaryCard label="Expired Users" value={stats.activeUsers.toString()} />
 
                         </div>
-                        <div className="p-6">
-                            <OnlineUsers />
+
+
+                        {/* -------- SEARCH -------- */}
+                        <div className="flex items-center gap-2 rounded-lg bg-gray-300 w-full p-4 my-8">
+                            <HiSearch size={25} />
+                            <input type="text" placeholder="Search" className="w-full outline-none" />
+                        </div>
+                        <div>
+                            <h1>Users</h1>
+                        </div>
+                        {/* -------- MOBILE CARD -------- */}
+                        <div className="space-y-4 md:hidden">
+                            {companies.slice(0, 4).map((ex) => (
+                                <div
+                                    key={ex.id}
+                                    className="rounded-xl bg-white p-4 shadow-sm border space-y-3"
+                                >
+
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-md font-semibold text-gray-700 mb-1">
+                                            {formatDate(ex.created_at)}
+                                        </p>
+                                        {ex.status !== "Cancelled" && (
+                                            <ActionMenu company={ex} />
+                                        )}
+                                    </div>
+
+                                    <hr />
+
+                                    <InfoRow label="Business Name" value={ex.name} />
+                                    <InfoRow label="Document Status" value={ex.profiles[0]?.email} />
+                                    <InfoRow label="Status" value={ex.employee_count} />
+                                    <InfoRow label="Plan" value={ex.service_type} />
+                                    <InfoRow label="Status" value={
+
+                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize
+                                             ${ex.status === "suspended"
+                                                ? "bg-red-100 text-red-700"
+                                                : "bg-green-100 text-green-700"}`}>
+                                            {ex.status}
+                                        </span>} />
+
+
+
+                                </div>
+                            ))}
+
+                            {companies.length === 0 && (
+                                <p className="px-4 py-10 text-center text-gray-400">
+                                    No user/company info.
+                                </p>
+                            )}
                         </div>
 
+                        {/* -------- TABLE -------- */}
+                        <div className="hidden md:block overflow-x-auto">
 
+                            <table className="hidden md:table w-full text-sm">
+                                <thead className="bg-gray-50 text-gray-700">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left font-medium">Date Joined</th>
+                                        <th className="px-4 py-3 text-left font-medium">Business Name</th>
+                                        <th className="px-4 py-3 text-left font-medium">Document Status</th>
+                                        <th className="px-4 py-3 text-left font-medium">Plan</th>
+                                        <th className="px-4 py-3 text-left font-medium">Status</th>
+                                        <th className="px-4 py-3 text-left font-medium">Action</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    {companies.map((company) => (
+                                        <tr key={company.id} className="border-t hover:bg-gray-50">
+
+                                            <td className="px-4 py-1">
+                                                {new Date(company.created_at).toLocaleDateString()}
+                                            </td>
+
+                                            <td className="px-4 py-1">
+                                                {company.name}
+                                            </td>
+                                            <td className="px-4 py-1">
+                                                {company.profiles[0]?.email}
+                                            </td>
+                                         
+
+
+                                            <td className="px-4 py-1">
+                                                {company.service_type}
+                                            </td>
+
+                                            <td className="px-4 py-1">
+                                                {company.status || "active"}
+                                            </td>
+
+                                            <td className="px-4 py-1">
+                                                <ActionMenu company={company} />
+                                            </td>
+
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+
+                        </div>
                     </div>
                 )
             }
@@ -290,7 +370,7 @@ function SummaryCard({
     value: string
 }) {
     return (
-        <div className="flex flex-col items-center justify-center rounded-xl bg-white p-4 shadow-sm">
+        <div className="flex w-60 flex-col items-center justify-center rounded-xl bg-white p-4 shadow-sm">
             <p className="text-md text-gray-900">{label}</p>
             <p className="mt-2 text-2xl font-bold text-gray-800">{value}</p>
         </div>

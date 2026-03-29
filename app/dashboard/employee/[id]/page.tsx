@@ -5,10 +5,12 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
 import { AddEmployModal } from '@/app/components/AddEmployModal';
 import Link from 'next/dist/client/link';
+import { toast } from 'react-toastify';
 
 type Employee = {
     id: string;
     employee_id_slug?: string;
+    company_id:string;
     name: string;
     role: string;
     created_at: string;
@@ -62,6 +64,7 @@ export default function EmployeeDetailsPage() {
     const supabase = createClient();
     const [employee, setEmployee] = useState<Employee | null>(null);
     const [open, setOpen] = useState(false)
+    const[loading, setLoading] = useState(false)
 
     useEffect(() => {
         async function getFullDetails() {
@@ -190,7 +193,33 @@ export default function EmployeeDetailsPage() {
         { label: "  Policy Compliance ", value: "Good" },
         { label: "Manager Feedback", value: "Positive" },
     ];
+const handleSendSetupLink = async () => {
+  if (!employee || !employee.company_id) return
 
+  try {
+    setLoading(true)
+
+    const res = await fetch('/api/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: employee.email,
+        companyId: employee.company_id
+      })
+    })
+
+    const data = await res.json()
+    console.log(data)
+
+    if (!res.ok) throw new Error(data.error)
+
+    toast.success("Invite sent 🚀")
+  } catch (err: any) {
+    toast.error(err.message)
+  } finally {
+    setLoading(false)
+  }
+}
     return (
         <section className="w-full px-6 py-6 bg-gray-50 max-h-screen overflow-y-auto scrollbar-none">
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-20">
@@ -204,6 +233,13 @@ export default function EmployeeDetailsPage() {
                     className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
                 >
                     + Edit Employee
+                </button>
+                <button
+                disabled={loading}
+                    onClick={handleSendSetupLink}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700"
+                >
+                   {loading ?"sending":"Send Setup Link"} 
                 </button>
             </div>
 
