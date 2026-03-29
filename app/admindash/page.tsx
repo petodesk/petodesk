@@ -116,60 +116,139 @@ export default function AdminDash() {
     }
     console.log(SelectedCompany)
 
-    /* ---------------- ACTION MENU ---------------- */
-    function ActionMenu({ company }: { company: any }) {
-        const [open, setOpen] = useState(false)
+    const [actionLoading, setActionLoading] = useState<string | null>(null)
 
-        const fetchMoreAboutCompany = async (companyId: any) => {
+const updateCompanyStatus = async (companyId: string, status: string) => {
+    setActionLoading(companyId + status)
 
-            const { data: company, error } = await supabase.from('companies').select(`
-                  id,
-                  created_at,
-                  name,
-                  service_type,
-                  industry,
-                  location,
-                  profiles(email, full_name, phone, status, acquisition),
-                  status
-                `)
-                .eq('id', companyId)
-            setSelectedCompany(company ?? [])
-            if (error) {
-                console.error(error)
-                return
-            }
-            setViewMore(true)
+    const { error } = await supabase
+        .from('companies')
+        .update({ status })
+        .eq('id', companyId)
 
+    if (error) {
+        console.error(error)
+        alert('Failed to update status')
+        setActionLoading(null)
+        return
+    }
+
+    // update UI instantly
+    setCompanies(prev =>
+        prev.map(c =>
+            c.id === companyId ? { ...c, status } : c
+        )
+    )
+
+    setActionLoading(null)
+}
+
+   function ActionMenu({ company }: { company: any }) {
+
+    const [open, setOpen] = useState(false)
+
+    // close on outside click
+    useEffect(() => {
+        const handleClick = () => setOpen(false)
+        if (open) {
+            window.addEventListener('click', handleClick)
+        }
+        return () => window.removeEventListener('click', handleClick)
+    }, [open])
+
+    const stopPropagation = (e: any) => e.stopPropagation()
+
+    const fetchMoreAboutCompany = async (companyId: any) => {
+
+        const { data, error } = await supabase
+            .from('companies')
+            .select(`
+                id,
+                created_at,
+                name,
+                service_type,
+                industry,
+                location,
+                profiles(email, full_name, phone, status, acquisition),
+                status
+            `)
+            .eq('id', companyId)
+
+        if (error) {
+            console.error(error)
+            return
         }
 
-
-        return (
-            <div className="relative">
-                <button
-                    onClick={() => setOpen(!open)}
-                    className="px-2 py-1 text-gray-600 hover:text-gray-900 cursor-pointer"
-                >
-                    ⋮
-                </button>
-                {
-                    open && (
-                        <div className="absolute right-0 z-20 w-40 rounded-lg border bg-white shadow-lg">
-                            <ul className="py-3 flex flex-col gap-2">
-                                <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'
-                                    onClick={() => fetchMoreAboutCompany(company.id)}
-                                >View</li>
-                                <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'>Reactivate</li>
-                                <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'>Suspend</li>
-                                <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'>Edit</li>
-                                <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'>Reset Password</li>
-                            </ul>
-                        </div>
-                    )
-                }
-
-            </div>
-        )
+        setSelectedCompany(data ?? [])
+        setViewMore(true)
     }
+
+    return (
+        <div className="relative" onClick={stopPropagation}>
+
+            {/* BUTTON */}
+            <button
+                onClick={(e) => {
+                    e.stopPropagation()
+                    setOpen(!open)
+                }}
+                className="px-2 py-1 text-gray-600 hover:text-gray-900"
+            >
+                ⋮
+            </button>
+
+            {/* MENU */}
+            {open && (
+                <div className="absolute right-0 z-20 w-44 rounded-lg border bg-white shadow-lg">
+
+                    <ul className="py-2 text-sm">
+
+                        <li
+                            onClick={() => fetchMoreAboutCompany(company.id)}
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                        >
+                            View
+                        </li>
+
+                        {company.status === 'suspended' ? (
+                            <li
+                                onClick={() => {
+                                    if (confirm('Reactivate this company?')) {
+                                        updateCompanyStatus(company.id, 'active')
+                                    }
+                                }}
+                                className="px-3 py-2 hover:bg-green-100 text-green-700 cursor-pointer"
+                            >
+                                Reactivate
+                            </li>
+                        ) : (
+                            <li
+                                onClick={() => {
+                                    if (confirm('Suspend this company?')) {
+                                        updateCompanyStatus(company.id, 'suspended')
+                                    }
+                                }}
+                                className="px-3 py-2 hover:bg-red-100 text-red-600 cursor-pointer"
+                            >
+                                Suspend
+                            </li>
+                        )}
+
+                        <li className="px-3 py-2 hover:bg-gray-100 cursor-pointer">
+                            Edit (coming soon)
+                        </li>
+
+                        <li className="px-3 py-2 hover:bg-gray-100 cursor-pointer">
+                            Reset Password (coming soon)
+                        </li>
+
+                    </ul>
+
+                </div>
+            )}
+        </div>
+    )
+}
 
     return (
         <>

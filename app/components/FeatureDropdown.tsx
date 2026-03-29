@@ -22,7 +22,7 @@ const features = [
     desc: 'Inventory Management -  Stock • Sales • Expenses • IReports',
   },
   {
-    id: 'both',
+    id: 'business_plus',
     title: 'HR & Inventory',
     desc: 'Complete business management solution',
   },
