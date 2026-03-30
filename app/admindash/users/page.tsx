@@ -187,12 +187,7 @@
 //             setOpen(false)
 //         }
 
-//         const deleteCompany1 = async (companyId: string) => {
-//             await supabase.from("profiles").delete().eq("company_id", companyId)
-//             await supabase.from("companies").delete().eq("id", companyId)
-
-//             fetchDashboard()
-//         }
+//       
 
 //         return (
 //             <div className="relative">
@@ -707,19 +702,11 @@ export default function AdminDash() {
             setOpen(false)
         }
 
-        const deleteCompany = async () => {
-            const { error } = await supabase
-                .from("companies")
-                .update({ status: "deleted" })
-                .eq("id", company.id)
-
-            if (error) {
-                toast.error("Failed to delete company")
-                return
-            }
+     const deleteCompany = async (companyId: string) => {
+            await supabase.from("companies").delete().eq("id", companyId)
 
             fetchDashboard()
-            setIsDeleting(false)
+                setIsDeleting(false)
         }
 
         return (
@@ -739,27 +726,39 @@ export default function AdminDash() {
 
                             <li
                                 className='text-md p-1 cursor-pointer hover:bg-gray-200'
-                                onClick={() => fetchMoreAboutCompany(company.id)}
+                                onClick={() => 
+                                    {fetchMoreAboutCompany(company.id)
+                                        setOpen(false)
+                                    }}
                             >
                                 View
                             </li>
 
                             <li
-                                onClick={() => updateCompanyStatus(isActive ? "suspended" : "active")}
+                                onClick={() => 
+                                    {updateCompanyStatus(isActive ? "suspended" : "active")
+                                        setOpen(false)
+                                    }}
                                 className="text-md p-1 hover:bg-gray-200 cursor-pointer"
                             >
                                 {isActive ? "Suspend" : "Reactivate"}
                             </li>
 
                             <li
-                                onClick={() => handleResetPassword(company.profiles?.[0]?.email)}
+                                onClick={() => 
+                                    {handleResetPassword(company.profiles?.[0]?.email)
+                                        setOpen(false)
+                                    }}
                                 className='text-md p-1 cursor-pointer hover:bg-gray-200'
                             >
                                 Reset Password
                             </li>
 
                             <li
-                                onClick={() => setIsDeleting(true)}
+                                onClick={() => 
+                                    {setIsDeleting(true)
+                                        setOpen(false)
+                                    }}
                                 className='text-md p-1 cursor-pointer hover:bg-gray-200 text-red-600'
                             >
                                 Delete
@@ -802,7 +801,7 @@ export default function AdminDash() {
                                 </button>
 
                                 <button
-                                    onClick={deleteCompany}
+                                    onClick={() => deleteCompany(company.id)}
                                     className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
                                 >
                                     Delete
