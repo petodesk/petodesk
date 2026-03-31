@@ -1,6 +1,7 @@
 'use client'
 
 import html2pdf from 'html2pdf.js'
+import { useCompany } from './CompanyContext'
 
 type ReceiptModalProps = {
   open: boolean
@@ -19,6 +20,7 @@ export default function ReceiptModal({
   company,
 }: ReceiptModalProps) {
   if (!open) return null
+  const {currency } = useCompany()
 
   const handlePrint = () => {
     window.print()
@@ -87,18 +89,18 @@ export default function ReceiptModal({
                       {item.products?.name}
                       {item.discount_percent > 0 && (
                         <div className="text-[10px] text-gray-500">
-                          Discount: {item.discount_percent}% =  ₦{item.discount}
+                          Discount: {item.discount_percent}% =  {currency} {item.discount}
                         </div>
                       )}
                       
                       {item.tax_percent > 0 && (
                         <div className="text-[10px] text-gray-500">
-                          Tax: {item.tax_percent}% =  ₦{item.tax_amount}
+                          Tax: {item.tax_percent}% =  {currency} {item.tax_amount}
                         </div>
                       )}
                       {item.tax_percent > 0 && (
                         <div className="text-[10px] text-gray-900 text-right">
-                          Subtotal:  ₦{amount}
+                          Subtotal:  {currency} {amount}
                         </div>
                       )}
                     </td>
@@ -106,7 +108,7 @@ export default function ReceiptModal({
                       {item.quantity} × {item.selling_price}
                     </td>
                     <td className="py-1 text-right">
-                      ₦{item.selling_price * item.quantity}
+                      {currency} {item.selling_price * item.quantity}
                     </td>
                   </tr>
                 )
@@ -120,15 +122,15 @@ export default function ReceiptModal({
           <div className="space-y-1 text-xs">
             <div className="flex justify-between font-semibold">
               <span>Total</span>
-              <span>₦{sale.total_amount.toLocaleString()}</span>
+              <span>{currency} {sale.total_amount.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span>Cash</span>
-              <span>₦{sale.total_amount.toLocaleString()}</span>
+              <span>{currency} {sale.total_amount.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span>Change</span>
-              <span>₦0</span>
+              <span>{currency}  0</span>
             </div>
           </div>
 

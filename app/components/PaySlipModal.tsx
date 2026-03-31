@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from "react"
+import { useCompany } from "./CompanyContext"
 
 type InvoiceItem = {
     item_name: string
@@ -58,14 +59,7 @@ export function PaySlipModal({
 
     // Handle undefined arrays
     const allowances = payroll.allowances || []
-    // const invoicePayments = invoice.invoice_payments || []
-
-    // const subtotal =
-    //     invoice.subtotal ??
-    //     invoiceItems.reduce(
-    //         (sum, i) => sum + i.quantity * i.unit_price,
-    //         0
-    //     )
+    const{ currency } = useCompany()
 
     const [isExporting, setIsExporting] = useState(false)
 
@@ -246,12 +240,12 @@ export function PaySlipModal({
                                     <tr key={i} className="border-b">
                                         <td className="p-2">{earning?.name || ""}</td>
                                         <td className="p-2 text-center">
-                                            {earning ? `₦${earning.amount.toLocaleString()}` : ""}
+                                            {earning ? `${currency} ${earning.amount.toLocaleString()}` : ""}
                                         </td>
 
                                         <td className="p-2 text-right">{deduction?.name || ""}</td>
                                         <td className="p-2 text-right">
-                                            {deduction ? `₦${deduction.amount.toLocaleString()}` : ""}
+                                            {deduction ? `${currency} ${deduction.amount.toLocaleString()}` : ""}
                                         </td>
                                     </tr>
                                 )
@@ -261,12 +255,12 @@ export function PaySlipModal({
                             <tr className="font-semibold border-t">
                                 <td className="p-2">Gross Pay:</td>
                                 <td className="p-2 text-center">
-                                    ₦{payroll.base_salary + allowances.reduce((s: any, a: any) => s + a.amount, 0)}
+                                    {currency} {payroll.base_salary + allowances.reduce((s: any, a: any) => s + a.amount, 0)}
                                 </td>
 
                                 <td className="p-2 text-right">Total Deductions:</td>
                                 <td className="p-2 text-right">
-                                    ₦{payroll.deduction}
+                                    {currency} {payroll.deduction}
                                 </td>
                             </tr>
                         </tbody>
@@ -279,7 +273,7 @@ export function PaySlipModal({
                         </div>
 
                         <div className="bg-blue-200 text-blue-600 px-6 py-4 font-bold text-lg"  style={{ backgroundColor: '#bfdbfe' }}>
-                            ₦{payroll.net_salary.toLocaleString()}
+                            {currency} {payroll.net_salary.toLocaleString()}
                         </div>
                     </div>
                     <p className="text-center text-gray-700 py-3">This payroll is generated automatically by PetoDesk Payroll and, therefore, does not require a signature.

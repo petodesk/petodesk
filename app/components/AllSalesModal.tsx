@@ -1,6 +1,8 @@
 'use client'
 
 import { FaTimes } from 'react-icons/fa'
+import { useCompany } from './CompanyContext'
+import { formatDate } from '../utils/dateFormatter'
 
 type Sale = {
   id: string
@@ -40,7 +42,7 @@ export default function AllSalesModal({
   setEditQty:any
 }) {
   if (!open) return null
-
+const{ currency } = useCompany()
   return (
       <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div
@@ -125,7 +127,7 @@ export default function AllSalesModal({
                                 Selling Price
                               </span>
                               <span className="font-semibold text-gray-900">
-                                ₦{item.selling_price.toLocaleString()}
+                                {currency} {item.selling_price.toLocaleString()}
                               </span>
                             </div>
 
@@ -135,7 +137,7 @@ export default function AllSalesModal({
                                 Amount
                               </span>
                               <span className="font-semibold text-gray-900">
-                                ₦{amount.toLocaleString()}
+                                {currency} {amount.toLocaleString()}
                               </span>
                             </div>
 
@@ -204,7 +206,7 @@ export default function AllSalesModal({
                         className="border-t"
                       >
                         <td className="px-4 py-3">
-                          {new Date(sale.created_at).toLocaleDateString()}
+                          {formatDate(sale.created_at)}
                         </td>
 
                         <td className="px-4 py-3">
@@ -234,7 +236,7 @@ export default function AllSalesModal({
                         <td className="px-4 py-3">{item.selling_price}</td>
 
                         <td className="px-4 py-3">
-                          ₦{amount.toLocaleString()}
+                          {currency} {amount.toLocaleString()}
                         </td>
 
                         <td className="px-4 py-3">

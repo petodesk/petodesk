@@ -1,15 +1,15 @@
 'use client';
 
+import { useCompany } from '@/app/components/CompanyContext';
 import { PaySlipModal } from '@/app/components/PaySlipModal';
 import { formatNumber } from '@/app/utils/numberFormatter';
 import { createClient } from '@/app/utils/supabase/client';
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { HiSearch } from 'react-icons/hi';
-import { HiArrowLeft, HiArrowLongLeft } from 'react-icons/hi2';
+import { HiArrowLeft } from 'react-icons/hi2';
 import { toast } from 'react-toastify';
 
 export default function PayrollTrigger() {
-  const [userCompanyId, setUserCompanyId] = useState(null);
   const [search, setSearch] = useState('')
   const supabase = createClient();
   const [payrolls, setPayrolls] = useState<any[]>([]);
@@ -26,46 +26,12 @@ export default function PayrollTrigger() {
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [employeeFilter, setEmployeeFilter] = useState('all');
-  const [company, setCompany] = useState<any>(null)
   const [openSlip, setOpenSlip] = useState(false)
   const [selectedPayroll, setSelectedPayroll] = useState<any>(null)
+  const{currency,profile, company} = useCompany()
+const userCompanyId = profile?.company_id
 
 
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single()
-
-      setUserCompanyId(profile?.company_id ?? null)
-    }
-
-    getUser()
-  }, [])
-
-  useEffect(() => {
-    const fetchCompanyProfile = async () => {
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData?.user) return
-
-
-      const { data: company } = await supabase
-        .from('companies')
-        .select('name, location')
-        .eq('id', userCompanyId)
-        .single()
-
-      setCompany(company)
-    }
-
-    fetchCompanyProfile()
-  }, [])
   useEffect(() => {
     if (!selectedPeriod || !userCompanyId) return;
 
@@ -644,7 +610,7 @@ export default function PayrollTrigger() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 lg:grid-cols-4 md:gap-5 mb-6">
             <SummaryCard
               label={`Total Payroll This Month `}
-              value={formatNumber(totalPayroll)}
+              value={`${currency} ${formatNumber(totalPayroll)}`}
             // value={totalPayroll.toLocaleString()}
             />
             <SummaryCard
@@ -654,12 +620,12 @@ export default function PayrollTrigger() {
             />
             <SummaryCard
               label={`Total Deductions`}
-              value={formatNumber(totalDeductions)}
+              value={`${currency} ${formatNumber(totalDeductions)}`}
             // value={formatNumber(totalDeductions)}
             />
             <SummaryCard
               label="Net Payroll Amount"
-              value={formatNumber(totalNet)}
+              value={`${currency} ${formatNumber(totalNet)}`}
             />
 
 
@@ -742,7 +708,7 @@ export default function PayrollTrigger() {
                 <div className="flex items-center justify-between">
                   <p className="text-md font-semibold text-gray-700 mb-1">Base Salary</p>
                   <p className="font-medium text-gray-800">
-                    ₦{Number(p.base_salary).toLocaleString()}
+                    {currency} {Number(p.base_salary).toLocaleString()}
                   </p>
                 </div>
 
@@ -750,13 +716,13 @@ export default function PayrollTrigger() {
                 <div className="flex items-center justify-between">
                   <p className="text-md font-semibold text-gray-700 mb-1"> Dedution</p>
                   <p className="font-semibold text-gray-900">
-                    ₦{Number(p.deduction).toLocaleString()}
+                    {currency} {Number(p.deduction).toLocaleString()}
                   </p>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-md font-semibold text-gray-700 mb-1"> Net Pay</p>
                   <p className="font-semibold text-gray-900">
-                    ₦{Number(p.net_salary).toLocaleString()}
+                    {currency} {Number(p.net_salary).toLocaleString()}
                   </p>
                 </div>
 
@@ -845,15 +811,15 @@ export default function PayrollTrigger() {
                         <td className="px-4 py-3">{pay.role}</td>
 
                         <td className="px-4 py-3">
-                          {Number(pay.base_salary).toLocaleString()}
+                          {currency} {Number(pay.base_salary).toLocaleString()}
                         </td>
 
                         <td className="px-4 py-3">
-                          {Number(pay.deduction).toLocaleString()}
+                          {currency} {Number(pay.deduction).toLocaleString()}
                         </td>
 
                         <td className="px-4 py-3 font-semibold text-green-600">
-                          {Number(pay.net_salary).toLocaleString()}
+                          {currency} {Number(pay.net_salary).toLocaleString()}
                         </td>
 
                         <td className="px-4 py-3 capitalize">
@@ -1051,21 +1017,21 @@ export default function PayrollTrigger() {
                 <div className="flex items-center justify-between">
                   <p className="text-md font-semibold text-gray-700 mb-1">Base Salary</p>
                   <p className="font-medium text-gray-800">
-                    ₦{Number(p.base_salary).toLocaleString()}
+                    {currency} {Number(p.base_salary).toLocaleString()}
                   </p>
                 </div>
 
                 {/* Price */}
                 <div className="flex items-center justify-between">
-                  <p className="text-md font-semibold text-gray-700 mb-1"> Dedution</p>
+                  <p className="text-md font-semibold text-gray-700 mb-1"> Deduction</p>
                   <p className="font-semibold text-gray-900">
-                    ₦{Number(p.deduction).toLocaleString()}
+                    {currency} {Number(p.deduction).toLocaleString()}
                   </p>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-md font-semibold text-gray-700 mb-1"> Net Pay</p>
                   <p className="font-semibold text-gray-900">
-                    ₦{Number(p.net_salary).toLocaleString()}
+                    {currency} {Number(p.net_salary).toLocaleString()}
                   </p>
                 </div>
 
@@ -1154,15 +1120,15 @@ export default function PayrollTrigger() {
                         <td className="px-4 py-3">{pay.role}</td>
 
                         <td className="px-4 py-3">
-                          {Number(pay.base_salary).toLocaleString()}
+                          {currency} {Number(pay.base_salary).toLocaleString()}
                         </td>
 
                         <td className="px-4 py-3">
-                          {Number(pay.deduction).toLocaleString()}
+                          {currency} {Number(pay.deduction).toLocaleString()}
                         </td>
 
                         <td className="px-4 py-3 font-semibold text-green-600">
-                          {Number(pay.net_salary).toLocaleString()}
+                          {currency} {Number(pay.net_salary).toLocaleString()}
                         </td>
 
                         <td className="px-4 py-3 capitalize">

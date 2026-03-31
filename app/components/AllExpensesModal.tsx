@@ -2,6 +2,7 @@
 
 import { AddExpendeModal } from './AddExpendeModal'
 import { useState } from 'react'
+import { useCompany } from './CompanyContext'
 type Expense = {
   id: string
   amount: number
@@ -28,6 +29,7 @@ export function AllExpensesModal({
   ActionMenu: any
 }) {
   if (!open) return null
+  const { company, currency } = useCompany()
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -83,7 +85,7 @@ export function AllExpensesModal({
                 <div className="flex justify-between">
                   <span className="text-gray-500">Amount</span>
                   <span className="font-semibold">
-                    ₦{ex.amount.toLocaleString()}
+                   {currency} {ex.amount?.toLocaleString() || '—'}
                   </span>
                 </div>
 
@@ -137,7 +139,7 @@ export function AllExpensesModal({
                       </span>
                     </td>
                     <td className="px-4 py-3 font-medium">
-                      ₦{ex.amount.toLocaleString()}
+                      {currency} {ex.amount.toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
                       {ex.profiles?.full_name ?? '—'}

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { FadeLoader } from "react-spinners"
+import { formatDate } from "../utils/dateFormatter"
 
 type Employee = {
   id: string
@@ -95,7 +96,7 @@ export function AllEmployeeModal({
                          </td></tr>
                        ) : employees.map((emp) => (
                          <tr key={emp.id} className="border-t hover:bg-gray-50">
-                           <td className="px-4 py-3">{new Date(emp.created_at).toLocaleDateString()}</td>
+                           <td className="px-4 py-3">{formatDate(emp.created_at)}</td>
                            <td className="px-4 py-3 font-medium">{emp.name}</td>
                            <td className="px-4 py-3">
                              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">{emp.role}</span>
@@ -133,7 +134,7 @@ export function AllEmployeeModal({
          
                          <p className="text-md font-semibold text-gray-700 mb-1">
          
-                           {new Date(emp.created_at).toLocaleDateString()}
+                           {formatDate(emp.created_at)}
          
                          </p>
          

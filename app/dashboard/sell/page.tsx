@@ -9,6 +9,8 @@ import ReceiptModal from '@/app/components/ReceiptModal'
 import AllSalesModal from '@/app/components/AllSalesModal'
 import { HiSearch } from 'react-icons/hi'
 import CameraScanner from '@/app/components/CameraScanner'
+import { useCompany } from '@/app/components/CompanyContext'
+import { formatDate } from '@/app/utils/dateFormatter'
 
 type Range =
   | 'today'
@@ -55,6 +57,7 @@ type Status = 'all' | 'Sold' | 'Cancelled'
 
 export default function SellPage() {
   const supabase = createClient()
+  const { company, currency } = useCompany()
 
   const [range, setRange] = useState<Range>('this_month')
   const [sales, setSales] = useState<Sale[]>([])
@@ -65,7 +68,6 @@ export default function SellPage() {
   //  Receipt modal state
   const [receiptOpen, setReceiptOpen] = useState(false)
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
-  const [company, setCompany] = useState<{ name: string; location: string } | null>(null)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<Status>('all')
 
@@ -223,15 +225,7 @@ console.log(sales)
 
       setSellerCompanyId(profile?.company_id || null)
       setRole(profile?.role)
-      if (!profile?.company_id) return
-
-      const { data: company } = await supabase
-        .from('companies')
-        .select('name, location')
-        .eq('id', profile.company_id)
-        .single()
-
-      setCompany(company)
+    
     }
 
     fetchCompany()
@@ -692,7 +686,7 @@ console.log(sales)
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <SummaryCard
           label="Total Sales"
-          value={`₦${totalSales.toLocaleString()}`}
+          value={`${currency} ${totalSales.toLocaleString()}`}
           show={show}
           onToggle={() => setShow(!show)}
         />
@@ -700,7 +694,7 @@ console.log(sales)
   role === 'owner' && (
  <SummaryCard
           label="Total Profit"
-          value={`₦${totalProfit.toLocaleString()}`}
+          value={`${currency} ${totalProfit.toLocaleString()}`}
           show={show}
           onToggle={() => setShow(!show)}
         />
@@ -773,7 +767,7 @@ console.log(sales)
                     {/* Header */}
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-gray-600">
-                        {new Date(sale.created_at).toLocaleDateString()}
+                        {formatDate(sale.created_at)}
                       </p>
                       <ActionMenu
                         sale={sale}
@@ -821,7 +815,7 @@ console.log(sales)
                         Selling Price
                       </span>
                       <span className="font-semibold text-gray-900">
-                        ₦{item.selling_price.toLocaleString()}
+                        {currency} {item.selling_price.toLocaleString()}
                       </span>
                     </div>
 
@@ -831,7 +825,7 @@ console.log(sales)
                         Amount
                       </span>
                       <span className="font-semibold text-gray-900">
-                        ₦{amount.toLocaleString()}
+                        {currency} {amount.toLocaleString()}
                       </span>
                     </div>
 
@@ -903,7 +897,7 @@ console.log(sales)
                         className="border-t"
                       >
                         <td className="px-4 py-3">
-                          {new Date(sale.created_at).toLocaleDateString()}
+                          {formatDate(sale.created_at)}
                         </td>
 
                         <td className="px-4 py-3">
@@ -933,7 +927,7 @@ console.log(sales)
                         <td className="px-4 py-3">{item.selling_price}</td>
 
                         <td className="px-4 py-3">
-                          ₦{amount.toLocaleString()}
+                          {currency} {amount.toLocaleString()}
                         </td>
 
                         <td className="px-4 py-3">
