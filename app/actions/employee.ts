@@ -22,58 +22,44 @@ export async function createEmployeeAction(formData:any) {
     let authUserId = formData.authUserId ?? null
     let customIdSlug = formData.employeeSlug ?? null
 
-    // -------------------------------------------------
-    // ✅ Base URL check
-    // -------------------------------------------------
-    const baseUrl =
-      process.env.NODE_ENV === 'development'
-        ? process.env.NEXT_PUBLIC_APP_URL
-        : process.env.NEXT_PUBLIC_LIVE_URL
 
-    if (!baseUrl) {
-      throw new Error('Base URL is not configured')
-    }
+  if (!isEditMode) {
+  const { count, error: countError } = await supabaseAdmin
+    .from('employees')
+    .select('*', { count: 'exact', head: true })
 
-    // -------------------------------------------------
-    // 1️⃣ CREATE MODE – Generate slug + Create Auth User
-    // -------------------------------------------------
-    if (!isEditMode) {
-      // ⚠️ Still not perfect (best moved to DB), but kept as requested
-      const { count, error: countError } = await supabaseAdmin
-        .from('employees')
-        .select('*', { count: 'exact', head: true })
+  if (countError) throw countError
 
-      if (countError) throw countError
+  const nextNumber = (count || 0) + 1
+  const paddedNumber = nextNumber.toString().padStart(3, '0')
 
-      const nextNumber = (count || 0) + 1
-      const paddedNumber = nextNumber.toString().padStart(3, '0')
+  const firstName = formData.name
+    ? formData.name.split(' ')[0].toLowerCase()
+    : 'employee'
 
-      const firstName = formData.name
-        ? formData.name.split(' ')[0].toLowerCase()
-        : 'employee'
+  customIdSlug = `${firstName} ${paddedNumber}`
 
-      customIdSlug = `${firstName} ${paddedNumber}`
-
-      // ✅ Create auth user
-      const { data: authUser, error: authError } =
-        await supabaseAdmin.auth.admin.inviteUserByEmail(
-          formData.email,
-          {
-            data: { full_name: formData.name },
-           redirectTo: `${baseUrl}/set-password`
-          }
-        )
-
-      if (authError) {
-        throw new Error(authError.message)
+  // ✅ NEW: Create user
+  const { data: authUser, error: authError } =
+    await supabaseAdmin.auth.admin.createUser({
+      email: formData.email,
+      password: crypto.randomUUID(),
+      email_confirm: true,
+      user_metadata: {
+        full_name: formData.name
       }
+    })
 
-      if (!authUser?.user?.id) {
-        throw new Error('Failed to create auth user')
-      }
+  if (authError) {
+    throw new Error(authError.message)
+  }
 
-      authUserId = authUser.user.id
-    }
+  if (!authUser?.user?.id) {
+    throw new Error('Failed to create auth user')
+  }
+
+  authUserId = authUser.user.id
+}
 
     // -------------------------------------------------
     // 2️⃣ EDIT MODE – Update email only if changed

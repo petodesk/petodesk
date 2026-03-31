@@ -447,7 +447,7 @@ import { createEmployeeAction } from '../actions/employee'
 import warning_icon from '../assets/warning.png'
 import Image from 'next/image'
 import { toast } from 'react-toastify'
-import { useCompany } from './CompanyContext'
+import { useCompany } from '../context/CompanyContext'
 
 export function AddEmployModal({
     onClose,

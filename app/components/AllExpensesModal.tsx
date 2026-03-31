@@ -2,7 +2,7 @@
 
 import { AddExpendeModal } from './AddExpendeModal'
 import { useState } from 'react'
-import { useCompany } from './CompanyContext'
+import { useCompany } from '../context/CompanyContext'
 type Expense = {
   id: string
   amount: number

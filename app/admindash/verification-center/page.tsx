@@ -24,336 +24,250 @@ interface CompanyData {
 export default function VerificationCenter() {
 
     const supabase = createClient()
-    const [viewMore, setViewMore] = useState(false)
     const [SelectedCompany, setSelectedCompany] = useState<any[]>([])
+    const [companies, setCompanies] = useState<any[]>([])
+
 
     const [stats, setStats] = useState({
-        totalUsers: 0,
-        activeUsers: 0,
+        PaidUsers: 0,
+        ExpiredUsers: 0,
 
     })
 
-    const [companies, setCompanies] = useState<any[]>([])
 
     useEffect(() => {
         fetchDashboard()
     }, [])
 
+
+
     async function fetchDashboard() {
 
-        /* -------- USERS -------- */
-        const { count: totalUsers } = await supabase
-            .from("profiles")
-            .select("*", { count: "exact", head: true })
-
-        const { count: activeUsers } = await supabase
-            .from("profiles")
-            .select("*", { count: "exact", head: true })
-            .eq("status", "active")
-
-        const { count: suspendedUsers } = await supabase
-            .from("profiles")
-            .select("*", { count: "exact", head: true })
-            .eq("status", "suspended")
-
-        /* -------- BUSINESSES -------- */
-        const { data: companiesData, count: businesses } = await supabase
-            .from("companies")
+        // 🔹 get payments with company
+        const { data, error } = await supabase
+            .from('payments')
             .select(`
+            *,
+            companies (
                 id,
-    created_at,
-    name,
-    service_type,
-    industry,
-    profiles(email),
-    status
-                ` ,
-                { count: "exact" })
+                name,
+                service_type,
+                status,
+                profiles(email)
+            )
+        `)
+            .order('created_at', { ascending: false })
 
+        if (error) {
+            console.error(error)
+            return
+        }
 
-        /* -------- EMPLOYEE COUNTS -------- */
-        const { data: employeeData } = await supabase
-            .from("profiles")
-            .select("company_id")
+        setCompanies(data || [])
 
-        const employeeMap: Record<string, number> = {}
-
-        employeeData?.forEach((p: any) => {
-            if (!employeeMap[p.company_id]) {
-                employeeMap[p.company_id] = 0
-            }
-            employeeMap[p.company_id]++
-        })
-
-        const companiesWithEmployees =
-            companiesData?.map((c: any) => ({
-                ...c,
-                employee_count: employeeMap[c.id] || 0
-            })) || []
-
-        /* -------- PLAN COUNTS -------- */
-        const simpleHr = companiesData?.filter(c => c.service_type === "hr").length || 0
-        const simpleinv = companiesData?.filter(c => c.service_type === "inventory").length || 0
-        const both = companiesData?.filter(c => c.service_type === "both").length || 0
-        const premium = companiesData?.filter(c => c.service_type === "premium").length || 0
-
-        setCompanies(companiesWithEmployees)
+        // 🔹 stats
+        const paid = data?.filter(p => p.status === 'paid').length || 0
+        const expired = data?.filter(p => p.status === 'expired').length || 0
 
         setStats({
-            totalUsers: totalUsers || 0,
-            activeUsers: activeUsers || 0
-
+            PaidUsers: paid,
+            ExpiredUsers: expired
         })
     }
-    console.log(SelectedCompany)
 
     /* ---------------- ACTION MENU ---------------- */
     function ActionMenu({ company }: { company: any }) {
+
         const [open, setOpen] = useState(false)
 
-        const fetchMoreAboutCompany = async (companyId: any) => {
+        const updatePayment = async (status: string, verified?: boolean) => {
 
-            const { data: company, error } = await supabase.from('companies').select(`
-                  id,
-                  created_at,
-                  name,
-                  service_type,
-                  industry,
-                  location,
-                  profiles(email, full_name, phone, status, acquisition),
-                  status
-                `)
-                .eq('id', companyId)
-            setSelectedCompany(company ?? [])
+            const { error } = await supabase
+                .from('payments')
+                .update({
+                    status,
+                    verified: verified ?? false,
+                    payment_date: status === 'paid' ? new Date() : null
+                })
+                .eq('id', company.id)
+
             if (error) {
                 console.error(error)
+                alert('Failed')
                 return
             }
-            setViewMore(true)
 
+            fetchDashboard()
         }
-
 
         return (
             <div className="relative">
-                <button
-                    onClick={() => setOpen(!open)}
-                    className="px-2 py-1 text-gray-600 hover:text-gray-900 cursor-pointer"
-                >
-                    <p className="p-4 text-gray-400">
-                        <FaEllipsisV />
-                    </p>
+                <button onClick={() => setOpen(!open)}>
+                    <FaEllipsisV />
                 </button>
-                {
-                    open && (
-                        <div className="absolute right-0 z-20 w-40 rounded-lg border bg-white shadow-lg">
-                            <ul className="py-3 flex flex-col gap-2">
-                                <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'
-                                    onClick={() => fetchMoreAboutCompany(company.id)}
-                                >View</li>
-                                <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'>Reactivate</li>
-                                <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'>Suspend</li>
-                                <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'>Edit</li>
-                                <li className='text-md p-1 text-gray-800 cursor-pointer hover:bg-gray-200'>Reset Password</li>
-                            </ul>
-                        </div>
-                    )
-                }
 
+                {open && (
+                    <div className="absolute right-0 w-44 bg-white shadow rounded-lg">
+
+                        <ul className="py-2 text-sm">
+
+                            <li
+                                onClick={() => updatePayment('paid', true)}
+                                className="px-3 py-2 hover:bg-green-100 text-green-700 cursor-pointer"
+                            >
+                                Mark as Paid
+                            </li>
+
+                            <li
+                                onClick={() => updatePayment('expired')}
+                                className="px-3 py-2 hover:bg-yellow-100 text-yellow-700 cursor-pointer"
+                            >
+                                Mark as Expired
+                            </li>
+
+                            <li
+                                onClick={() => updatePayment('failed')}
+                                className="px-3 py-2 hover:bg-red-100 text-red-600 cursor-pointer"
+                            >
+                                Failed
+                            </li>
+
+                            <li
+                                onClick={() => updatePayment('paid', false)}
+                                className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                            >
+                                Unverify
+                            </li>
+
+                        </ul>
+
+                    </div>
+                )}
             </div>
         )
     }
 
     return (
         <>
-            {
-                viewMore ? (
-                    <div className="w-full min-h-screen p-3 md:p-6 rounded-lg border-2 border-green-200 bg-white">
-
-                        {SelectedCompany.length > 0 && (
-                            <>
-                                {/* HEADER */}
-                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
-                                    <div>
-                                        <h2 className="text-2xl font-bold text-gray-800">
-                                            {SelectedCompany[0].name}
-                                        </h2>
-                                        <p className="text-gray-500 text-sm">
-                                            Joined {new Date(SelectedCompany[0].created_at).toLocaleDateString()}
-                                        </p>
-                                    </div>
-
-                                    <button
-                                        onClick={() => setViewMore(false)}
-                                        className="px-4 py-2 rounded-lg border bg-gray-100 hover:bg-gray-200 text-sm"
-                                    >
-                                        Back
-                                    </button>
-                                </div>
-
-                                {/* COMPANY INFO */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                                    {/* BUSINESS INFO */}
-                                    <div className="rounded-xl border p-5 shadow-sm space-y-4">
-                                        <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-                                            Business Information
-                                        </h3>
-
-                                        <InfoRow label="Business Name" value={SelectedCompany[0].name} />
-                                        <InfoRow label="Industry" value={SelectedCompany[0].industry} />
-                                        <InfoRow label="Service Type" value={SelectedCompany[0].service_type} />
-                                        <InfoRow label="Location" value={SelectedCompany[0].location} />
-                                        <InfoRow label="Employees" value={SelectedCompany[0].profiles?.length || 0} />
-
-                                        <InfoRow
-                                            label="Status"
-                                            value={
-                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize
-                                             ${SelectedCompany[0].status === "suspended"
-                                                        ? "bg-red-100 text-red-700"
-                                                        : "bg-green-100 text-green-700"}`}>
-                                                    {SelectedCompany[0].status}
-                                                </span>
-                                            }
-                                        />
-                                    </div>
-
-                                    {/* OWNER INFO */}
-                                    <div className="rounded-xl border p-5 shadow-sm space-y-4">
-                                        <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-                                            Owner Information
-                                        </h3>
-
-                                        <InfoRow label="Email" value={SelectedCompany[0].profiles?.[0]?.email} />
-                                        <InfoRow label="Full Name" value={SelectedCompany[0].profiles?.[0]?.full_name} />
-                                        <InfoRow label="Phone" value={SelectedCompany[0].profiles?.[0]?.phone} />
-                                        <InfoRow label="Account Status" value={SelectedCompany[0].profiles?.[0]?.status} />
-                                        <InfoRow label="Where did they hear about us " value={SelectedCompany[0].profiles?.[0]?.acquisition} />
-                                    </div>
-
-                                </div>
 
 
-                            </>
-                        )}
+            <div className=" w-full minh-screen p-2 md:p-6 rounded-lg border-2 border-green-200">
+                <div className="flex gap-30 mb-6 w-full">
+                    <SummaryCard label="Paid Users" value={stats.PaidUsers.toString()} />
+                    <SummaryCard label="Expired Users" value={stats.ExpiredUsers.toString()} />
 
-                    </div>
-                ) : (
-
-                    <div className=" w-full minh-screen p-2 md:p-6 rounded-lg border-2 border-green-200">
-                        <div className="flex gap-30 mb-6 w-full">
-                            <SummaryCard label="Paid Users" value={stats.totalUsers.toString()} />
-                            <SummaryCard label="Expired Users" value={stats.activeUsers.toString()} />
-
-                        </div>
+                </div>
 
 
-                        {/* -------- SEARCH -------- */}
-                        <div className="flex items-center gap-2 rounded-lg bg-gray-300 w-full p-4 my-8">
-                            <HiSearch size={25} />
-                            <input type="text" placeholder="Search" className="w-full outline-none" />
-                        </div>
-                        <div>
-                            <h1>Users</h1>
-                        </div>
-                        {/* -------- MOBILE CARD -------- */}
-                        <div className="space-y-4 md:hidden">
-                            {companies.slice(0, 4).map((ex) => (
-                                <div
-                                    key={ex.id}
-                                    className="rounded-xl bg-white p-4 shadow-sm border space-y-3"
-                                >
+                {/* -------- SEARCH -------- */}
+                <div className="flex items-center gap-2 rounded-lg bg-gray-300 w-full p-4 my-8">
+                    <HiSearch size={25} />
+                    <input type="text" placeholder="Search" className="w-full outline-none" />
+                </div>
+                <div>
+                    <h1>Users</h1>
+                </div>
+                {/* -------- MOBILE CARD -------- */}
+                <div className="space-y-4 md:hidden">
+                    {companies.slice(0, 4).map((ex) => (
+                        <div
+                            key={ex.id}
+                            className="rounded-xl bg-white p-4 shadow-sm border space-y-3"
+                        >
 
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-md font-semibold text-gray-700 mb-1">
-                                            {formatDate(ex.created_at)}
-                                        </p>
-                                        {ex.status !== "Cancelled" && (
-                                            <ActionMenu company={ex} />
-                                        )}
-                                    </div>
-
-                                    <hr />
-
-                                    <InfoRow label="Business Name" value={ex.name} />
-                                    <InfoRow label="Document Status" value={ex.profiles[0]?.email} />
-                                    <InfoRow label="Status" value={ex.employee_count} />
-                                    <InfoRow label="Plan" value={ex.service_type} />
-                                    <InfoRow label="Status" value={
-
-                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize
-                                             ${ex.status === "suspended"
-                                                ? "bg-red-100 text-red-700"
-                                                : "bg-green-100 text-green-700"}`}>
-                                            {ex.status}
-                                        </span>} />
-
-
-
-                                </div>
-                            ))}
-
-                            {companies.length === 0 && (
-                                <p className="px-4 py-10 text-center text-gray-400">
-                                    No user/company info.
+                            <div className="flex items-center justify-between">
+                                <p className="text-md font-semibold text-gray-700 mb-1">
+                                    {formatDate(ex.created_at)}
                                 </p>
-                            )}
-                        </div>
+                                {ex.status !== "Cancelled" && (
+                                    <ActionMenu company={ex} />
+                                )}
+                            </div>
 
-                        {/* -------- TABLE -------- */}
-                        <div className="hidden md:block overflow-x-auto">
+                            <hr />
 
-                            <table className="hidden md:table w-full text-sm">
-                                <thead className="bg-gray-50 text-gray-700">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left font-medium">Date Joined</th>
-                                        <th className="px-4 py-3 text-left font-medium">Business Name</th>
-                                        <th className="px-4 py-3 text-left font-medium">Document Status</th>
-                                        <th className="px-4 py-3 text-left font-medium">Plan</th>
-                                        <th className="px-4 py-3 text-left font-medium">Status</th>
-                                        <th className="px-4 py-3 text-left font-medium">Action</th>
-                                    </tr>
-                                </thead>
+                            <InfoRow label="Business Name" value={ex.name} />
+                            <InfoRow label="Plan" value={ex.service_type} />
 
-                                <tbody>
-                                    {companies.map((company) => (
-                                        <tr key={company.id} className="border-t hover:bg-gray-50">
+                            <InfoRow label="Document Status" value={ex.profiles[0]?.email} />
+                            <InfoRow label="Status" value={
 
-                                            <td className="px-4 py-1">
-                                                {new Date(company.created_at).toLocaleDateString()}
-                                            </td>
-
-                                            <td className="px-4 py-1">
-                                                {company.name}
-                                            </td>
-                                            <td className="px-4 py-1">
-                                                {company.profiles[0]?.email}
-                                            </td>
-                                         
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize
+                                             ${ex.status === "suspended"
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-green-100 text-green-700"}`}>
+                                    {ex.status}
+                                </span>} />
 
 
-                                            <td className="px-4 py-1">
-                                                {company.service_type}
-                                            </td>
-
-                                            <td className="px-4 py-1">
-                                                {company.status || "active"}
-                                            </td>
-
-                                            <td className="px-4 py-1">
-                                                <ActionMenu company={company} />
-                                            </td>
-
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
 
                         </div>
-                    </div>
-                )
-            }
+                    ))}
+
+                    {companies.length === 0 && (
+                        <p className="px-4 py-10 text-center text-gray-400">
+                            No user/company info.
+                        </p>
+                    )}
+                </div>
+
+                {/* -------- TABLE -------- */}
+                <div className="hidden md:block overflow-x-auto">
+
+                    <table className="hidden md:table w-full text-sm">
+                        <thead className="bg-gray-50 text-gray-700">
+                            <tr>
+                                <th className="px-4 py-3 text-left font-medium">Payment Date</th>
+                                <th className="px-4 py-3 text-left font-medium">Business Name</th>
+                                <th className="px-4 py-3 text-left font-medium">Document Status</th>
+                                <th className="px-4 py-3 text-left font-medium">Plan</th>
+                                <th className="px-4 py-3 text-left font-medium">Status</th>
+                                <th className="px-4 py-3 text-left font-medium">Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {companies.map((company) => (
+                                <tr key={company.id} className="border-t hover:bg-gray-50">
+
+                                    <td className="px-4 py-1">
+                                        {new Date(company.created_at).toLocaleDateString()}
+                                    </td>
+
+                                    <td className="px-4 py-1">
+                                        {company.name}
+                                    </td>
+                                    <td className="px-4 py-1">
+                                        {company.profiles[0]?.email}
+                                    </td>
+
+
+
+                                    <td className="px-4 py-1">
+                                        {company.service_type}
+                                    </td>
+
+                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold
+    ${company.status === 'paid' && 'bg-green-100 text-green-700'}
+    ${company.status === 'pending' && 'bg-yellow-100 text-yellow-700'}
+    ${company.status === 'expired' && 'bg-gray-200 text-gray-600'}
+    ${company.status === 'failed' && 'bg-red-100 text-red-700'}
+`}>
+                                        {company.status}
+                                    </span>
+
+                                    <td className="px-4 py-1">
+                                        <ActionMenu company={company} />
+                                    </td>
+
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+
 
         </>
     )

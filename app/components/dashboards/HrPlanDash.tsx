@@ -104,12 +104,10 @@
 // }
 
 'use client'
-import { createClient } from '@/app/utils/supabase/client'
 import { useEffect, useState } from 'react'
 import { useCompany } from '../../context/CompanyContext'
 
 export default function OfficeLocationPage() {
-  const supabase = createClient()
   const { company, profile, loading } = useCompany()
 
 

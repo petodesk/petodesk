@@ -44,7 +44,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
   const [company, setCompany] = useState<Company | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
-  const[currency, setCurrency] = useState<string>('')
+  const [currency, setCurrency] = useState<string>('')
   const fetchCompanyData = async () => {
     setLoading(true)
     try {

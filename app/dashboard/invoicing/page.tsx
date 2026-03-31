@@ -8,7 +8,7 @@ import { AddInvoiceModal } from '@/app/components/AddInvoiceModal'
 import { ViewInvoiceModal } from '@/app/components/InvoiceModal'
 import { AllInvoiceModal } from '@/app/components/AllInvoiceModal'
 import { toast } from 'react-toastify'
-import { useCompany } from '@/app/components/CompanyContext'
+import { useCompany } from '@/app/context/CompanyContext'
 import { formatDate } from '@/app/utils/dateFormatter'
 
 type Range =

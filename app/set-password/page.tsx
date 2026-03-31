@@ -1,74 +1,98 @@
-"use client"
+'use client'
 
-import { createClient } from "@/app/utils/supabase/client"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import PasswordInput from "../components/PasswordInpup"
+import { useEffect, useState } from 'react'
+import { createClient } from '@/app/utils/supabase/client'
+import { useSearchParams, useRouter } from 'next/navigation'
 
-export default function SetPassword() {
+export default function SetPasswordPage() {
   const supabase = createClient()
+  const params = useSearchParams()
   const router = useRouter()
 
-  const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [showPassword, setShowPassword] = useState(false)
+  const [password, setPassword] = useState('')
+  const [invite, setInvite] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
 
-useEffect(() => {
-  const initSession = async () => {
-    const hash = window.location.hash
+  const token = params.get('token')
 
-    if (hash) {
-      const params = new URLSearchParams(hash.substring(1))
+  // 1. Verify invite
+  useEffect(() => {
+    const loadInvite = async () => {
+      const { data } = await supabase
+        .from('employee_invites')
+        .select('*')
+        .eq('token', token)
+        .eq('used', false)
+        .single()
 
-      const access_token = params.get("access_token")
-      const refresh_token = params.get("refresh_token")
-
-      if (access_token && refresh_token) {
-        await supabase.auth.setSession({
-          access_token,
-          refresh_token,
-        })
+      if (!data) {
+        alert("Invalid or expired link")
+        return
       }
+
+      if (new Date(data.expires_at) < new Date()) {
+        alert("Invite expired")
+        return
+      }
+
+      setInvite(data)
     }
 
-    setLoading(false)
-  }
+    if (token) loadInvite()
+  }, [token])
 
-  initSession()
-}, [])
+  // 2. Create account
+  const handleCreate = async () => {
+    if (!invite) return
 
-  const handleSetPassword = async () => {
-    const { error } = await supabase.auth.updateUser({
+    setLoading(true)
+
+    const { data, error } = await supabase.auth.signUp({
+      email: invite.email,
       password,
     })
 
     if (error) {
       alert(error.message)
+      setLoading(false)
       return
     }
 
-    router.push("/dashboard")
-  }
+    const userId = data.user?.id
 
-  if (loading) return <p>Loading...</p>
+    // 3. Save profile
+    await supabase.from('profiles').insert({
+      id: userId,
+      email: invite.email,
+      role: invite.role,
+      company_id: invite.company_id,
+    })
+
+    // 4. Mark invite used
+    await supabase
+      .from('employee_invites')
+      .update({ used: true })
+      .eq('id', invite.id)
+
+    alert("Account created!")
+
+    router.push('/dashboard')
+    setLoading(false)
+  }
 
   return (
     <div className="max-w-md mx-auto mt-20 space-y-4">
-      <h2 className="text-xl font-bold">Set Your Password</h2>
-      <PasswordInput
-        label="Confirm Password"
-        value={password}
-        disabled={loading}
-        show={showPassword}
-        toggle={() => setShowPassword(!showPassword)}
-        onChange={(e: any) => setPassword(e.target.vaue)}
+      <h2>Create your account</h2>
+
+      <input
+        type="password"
+        placeholder="Password"
+        onChange={(e) => setPassword(e.target.value)}
+        className="w-full border p-2"
       />
 
-      <button
-        onClick={handleSetPassword}
-        className="bg-blue-600 text-white px-4 py-2 rounded"
-      >
-        Save Password
+      <button onClick={handleCreate}>
+        {loading ? "Creating..." : "Create Account"}
       </button>
     </div>
   )
