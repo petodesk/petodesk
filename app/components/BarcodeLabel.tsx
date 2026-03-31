@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import JsBarcode from 'jsbarcode'
-import { useCompany } from './CompanyContext'
+import { useCompany } from '../context/CompanyContext'
 
 
 

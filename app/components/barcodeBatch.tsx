@@ -2,7 +2,7 @@
 
 import JsBarcode from "jsbarcode";
 import { useEffect, useRef } from "react";
-import { useCompany } from "./CompanyContext";
+import { useCompany } from "../context/CompanyContext";
 
 export default function BarcodeBatchPrint({ products, onClose, open }: { products: any[], onClose: () => void, open: boolean }) {
     const containerRef = useRef<HTMLDivElement>(null);

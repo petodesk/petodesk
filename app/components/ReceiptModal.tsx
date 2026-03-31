@@ -1,7 +1,7 @@
 'use client'
 
 import html2pdf from 'html2pdf.js'
-import { useCompany } from './CompanyContext'
+import { useCompany } from '../context/CompanyContext'
 
 type ReceiptModalProps = {
   open: boolean
