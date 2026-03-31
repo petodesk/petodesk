@@ -7,6 +7,7 @@ import { AddExpendeModal } from '@/app/components/AddExpendeModal'
 import { AllExpensesModal } from '@/app/components/AllExpensesModal'
 import { HiSearch } from 'react-icons/hi'
 import { ViewExpensesModal } from '@/app/components/ViewModal'
+import { useCompany } from '@/app/components/CompanyContext'
 
 type Range =
   | 'today'
@@ -52,7 +53,7 @@ export default function ExpensesPage() {
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<Status>('all')
   const [ViewMore, setViewMore] = useState<Expense | null>(null)
-
+  const { company, currency } = useCompany()
 
 
   /* ---------------- DATE RANGE LOGIC ---------------- */
@@ -354,7 +355,7 @@ export default function ExpensesPage() {
       <div className="mb-6">
         <SummaryCard
           label="Total Expenses"
-          value={`₦${totalExpenses.toLocaleString()}`}
+          value={`${currency} ${''}${totalExpenses.toLocaleString()}`}
           show={show}
           onToggle={() => setShow(!show)}
         />
@@ -445,7 +446,7 @@ export default function ExpensesPage() {
               <div className="flex items-center justify-between">
                 <p className="text-md font-semibold text-gray-700 mb-1">Amount</p>
                 <p className="font-medium text-gray-800">
-                  {ex.amount}{' '}
+                  {currency} {ex.amount?.toLocaleString() || '—'}
                 </p>
               </div>
 
@@ -453,7 +454,7 @@ export default function ExpensesPage() {
               <div className="flex items-center justify-between">
                 <p className="text-md font-semibold text-gray-700 mb-1">Added By</p>
                 <p className="font-semibold text-gray-900">
-                  ₦{ex.profiles?.full_name}
+                  {ex.profiles?.full_name}
                 </p>
               </div>
 
@@ -528,7 +529,7 @@ export default function ExpensesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 font-medium">
-                      ₦{expense.amount.toLocaleString()}
+                      {currency} {expense.amount?.toLocaleString() || '—'}
                     </td>
                     <td className="px-4 py-3">
                       {expense.profiles?.full_name ?? '—'}

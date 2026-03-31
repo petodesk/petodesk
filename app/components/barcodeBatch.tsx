@@ -2,10 +2,11 @@
 
 import JsBarcode from "jsbarcode";
 import { useEffect, useRef } from "react";
+import { useCompany } from "./CompanyContext";
 
 export default function BarcodeBatchPrint({ products, onClose, open }: { products: any[], onClose: () => void, open: boolean }) {
     const containerRef = useRef<HTMLDivElement>(null);
-
+const{currency} = useCompany()
     useEffect(() => {
         if (!containerRef.current) return;
 
@@ -62,7 +63,7 @@ export default function BarcodeBatchPrint({ products, onClose, open }: { product
                             <div key={index} className="text-center border p-2">
                                 <p className="text-xs font-semibold">{product.name}</p>
                                 <svg id={`barcode-${index}`}></svg>
-                                <p className="text-xs mt-1">₦{product.product_prices[0]?.selling_price}</p>
+                                <p className="text-xs mt-1">{currency} {product.product_prices[0]?.selling_price}</p>
                             </div>
                         ))}
                     </div>

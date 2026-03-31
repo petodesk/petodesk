@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
 import { HiMinus, HiPlus } from 'react-icons/hi'
 import { toast } from 'react-toastify'
+import { useCompany } from './CompanyContext'
 type ItemType = 'product' | 'service'
 
 type Product = {
@@ -46,8 +47,6 @@ export function AddInvoiceModal({
     const [accountName, setAccountName] = useState(invoices?.invoice_payments?.[0]?.account_name ?? '')
     const [accountNumber, setAccountNumber] = useState(invoices?.invoice_payments?.[0]?.account_number ?? '')
 
-    const [creatorId, setCreatorId] = useState<string | null>(null)
-    const [companyId, setCompanyId] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
 
     /* ---------------- ITEM LOGIC ---------------- */
@@ -59,24 +58,12 @@ export function AddInvoiceModal({
     const [unitPrice, setUnitPrice] = useState(0)
     const [items, setItems] = useState<InvoiceItem[]>([])
     const [productSearch, setProductSearch] = useState('')
+  const { company, currency, profile } = useCompany()
 
     /* ---------------- INIT ---------------- */
     useEffect(() => {
         const init = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
-
-            setCreatorId(user.id)
-
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('company_id')
-                .eq('id', user.id)
-                .single()
-
-            setCompanyId(profile?.company_id ?? null)
-
-            const { data: productData } = await supabase
+  const { data: productData } = await supabase
                 .from('products')
                 .select(`
           id,
@@ -95,7 +82,7 @@ export function AddInvoiceModal({
     const generateInvoiceNumber = async () => {
         const { data, error } = await supabase
             .rpc('generate_invoice_number', {
-                p_company_id: companyId,
+                p_company_id: profile?.company_id ?? '',
             })
 
         if (error) throw error
@@ -228,7 +215,7 @@ export function AddInvoiceModal({
             return
         }
 
-        if (!creatorId || !companyId) return
+        if (!profile || !company) return
         setLoading(true)
 
         try {
@@ -273,8 +260,8 @@ export function AddInvoiceModal({
                     tax_rate: taxRate,
                     tax_amount: taxAmount,
                     total: grandTotal,
-                    created_by: creatorId,
-                    company_id: companyId,
+                    created_by: profile.id,
+                    company_id: profile.company_id,
                 })
                 .select()
                 .single()
@@ -353,7 +340,7 @@ export function AddInvoiceModal({
 
     /* ---------------- UI ---------------- */
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-100 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
             <div className="relative z-50 w-full max-w-4xl bg-white mt-25 rounded-xl max-h-[90vh] flex flex-col">
@@ -491,7 +478,7 @@ export function AddInvoiceModal({
 
                                                         <p className="text-gray-500">Subtotal</p>
                                                         <p className="font-semibold text-green-600 mt-2">
-                                                            ₦{item.total.toLocaleString()}
+                                                            {currency} {item.total.toLocaleString()}
                                                         </p>
                                                     </div>
                                                     <div>
@@ -524,9 +511,9 @@ export function AddInvoiceModal({
 
                 </div>
                 <div className="flex flex-col items-end justify-end gap-1 rounded-lg border bg-gray-50 p-4 w-max">
-                    <h1 className='text-lg text-gray-900'>Subtotal = ₦{subtotal.toLocaleString()}</h1>
-                    <h1 className='text-lg text-gray-900'>Tax ({taxRate}%) = ₦{taxAmount.toLocaleString()}</h1>
-                    <h1 className='text-lg text-gray-900'>Total = ₦{grandTotal.toLocaleString()}</h1>
+                    <h1 className='text-lg text-gray-900'>Subtotal = {currency} {subtotal.toLocaleString()}</h1>
+                    <h1 className='text-lg text-gray-900'>Tax ({taxRate}%) = {currency} {taxAmount.toLocaleString()}</h1>
+                    <h1 className='text-lg text-gray-900'>Total = {currency} {grandTotal.toLocaleString()}</h1>
                 </div>
 
                 <div className="px-6 py-4 mb-4 border-t flex justify-end">

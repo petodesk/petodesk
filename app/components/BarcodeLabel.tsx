@@ -2,13 +2,14 @@
 
 import { useEffect, useRef } from 'react'
 import JsBarcode from 'jsbarcode'
+import { useCompany } from './CompanyContext'
 
 
 
 export default function BarcodeLabel({ product, onclose, open }: { product: any, onclose: () => void, open: boolean }) {
     if (!open) return null
     const barcodeRef = useRef<SVGSVGElement | null>(null)
-
+const{currency} = useCompany()
     useEffect(() => {
         if (barcodeRef.current) {
             JsBarcode(barcodeRef.current, product.barcode, {
@@ -31,7 +32,7 @@ export default function BarcodeLabel({ product, onclose, open }: { product: any,
   printWindow.document.write('<div style="text-align:center">');
   printWindow.document.write(`<p>${product.name}</p>`);
   printWindow.document.write(barcodeRef.current.outerHTML); // embed SVG
-  printWindow.document.write(`<p>₦${product.product_prices[0]?.selling_price}</p>`);
+  printWindow.document.write(`<p>${currency} ${product.product_prices[0]?.selling_price}</p>`);
   printWindow.document.write('</div></body></html>');
 
   printWindow.document.close();
@@ -52,7 +53,7 @@ export default function BarcodeLabel({ product, onclose, open }: { product: any,
                 <svg ref={barcodeRef}></svg>
                     <div className='flex gap-2 items-center justify-center'>
                         <p>Price</p>
-                <p className="text-xs mt-1">₦{product.product_prices[0]?.selling_price}</p>
+                <p className="text-xs mt-1"> {currency} {product.product_prices[0]?.selling_price}</p>
                         
                     </div>
                 <button

@@ -1,5 +1,8 @@
 'use client'
 
+import { formatDate } from "../utils/dateFormatter"
+import { useCompany } from "./CompanyContext"
+
 
 type InvoiceItem = {
   item_name: string
@@ -43,6 +46,7 @@ export function AllInvoiceModal({
   ActionMenu: any
 }) {
   if (!open) return null
+  const { currency } = useCompany()
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -79,7 +83,7 @@ export function AllInvoiceModal({
             >
               <div className="flex items-center justify-between">
                 <p className="text-md font-semibold text-gray-700 mb-1">
-                  {new Date(inv.created_at).toLocaleDateString()}
+                  {formatDate(inv.created_at)}
                 </p>
                 <ActionMenu invoice={inv} />
               </div>
@@ -103,7 +107,7 @@ export function AllInvoiceModal({
               <div className="flex items-center justify-between">
                 <p className="text-md font-semibold text-gray-700 mb-1">Amount</p>
                 <p className="font-medium text-gray-800">
-                  ₦{inv.total.toLocaleString()}
+                  {currency} {inv.total.toLocaleString()}
                 </p>
               </div>
 
@@ -176,7 +180,7 @@ export function AllInvoiceModal({
               className="border-t hover:bg-gray-50"
             >
               <td className="px-4 py-3 w-[15%]">
-                {new Date(invoice.created_at).toLocaleDateString()}
+                {formatDate(invoice.created_at)}
               </td>
               <td className="px-4 py-3 w-[20%]">
                 {invoice.invoice_number}
@@ -187,7 +191,7 @@ export function AllInvoiceModal({
                 </span>
               </td>
               <td className="px-4 py-3 font-medium w-[15%]">
-                ₦{invoice.total.toLocaleString()}
+                {currency} {invoice.total.toLocaleString()}
               </td>
               <td className="px-4 py-3 w-[15%]">
                 <span

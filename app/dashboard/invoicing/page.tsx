@@ -8,6 +8,8 @@ import { AddInvoiceModal } from '@/app/components/AddInvoiceModal'
 import { ViewInvoiceModal } from '@/app/components/InvoiceModal'
 import { AllInvoiceModal } from '@/app/components/AllInvoiceModal'
 import { toast } from 'react-toastify'
+import { useCompany } from '@/app/components/CompanyContext'
+import { formatDate } from '@/app/utils/dateFormatter'
 
 type Range =
   | 'today'
@@ -53,6 +55,7 @@ type Invoices = {
 
 export default function ExpensesPage() {
   const supabase = createClient()
+  const { company, currency, profile } = useCompany()
 
   const [range, setRange] = useState<Range>('this_month')
   const [invoices, setInvoices] = useState<Invoices[]>([])
@@ -65,7 +68,6 @@ export default function ExpensesPage() {
   const [openAllInvoices, setOpenAllInvoices] = useState(false) // Fixed: changed from setOpenAllInvices
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<Status>('all')
-  const [company, setCompany] = useState<{ name: string; location: string } | null>(null)
   const [companyProfile, setCompanyProfile] = useState<{ company_id: string; email: string, phone: string } | null>(null)
   const [ViewMore, setViewMore] = useState<Invoices | null>(null)
 
@@ -193,13 +195,6 @@ export default function ExpensesPage() {
 
       if (!profile?.company_id) return
       setCompanyProfile(profile)
-      const { data: company } = await supabase
-        .from('companies')
-        .select('name, location')
-        .eq('id', profile.company_id)
-        .single()
-
-      setCompany(company)
     }
 
     fetchCompanyProfile()
@@ -405,7 +400,7 @@ export default function ExpensesPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-20 mb-6">
         <SummaryCard
           label="Total Invoices"
-          value={`₦${totalExpenses.toLocaleString()}`}
+          value={`${currency} ${totalExpenses.toLocaleString()}`}
           show={show}
           onToggle={() => setShow(!show)}
         />
@@ -486,7 +481,7 @@ export default function ExpensesPage() {
             >
               <div className="flex items-center justify-between">
                 <p className="text-md font-semibold text-gray-700 mb-1">
-                  {new Date(inv.created_at).toLocaleDateString()}
+                  {formatDate(inv.created_at)}
                 </p>
                 <ActionMenu invoice={inv} />
               </div>
@@ -510,7 +505,7 @@ export default function ExpensesPage() {
               <div className="flex items-center justify-between">
                 <p className="text-md font-semibold text-gray-700 mb-1">Amount</p>
                 <p className="font-medium text-gray-800">
-                  ₦{inv.total.toLocaleString()}
+                  {currency} {inv.total.toLocaleString()}
                 </p>
               </div>
 
@@ -586,7 +581,7 @@ export default function ExpensesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 font-medium">
-                      ₦{invoice.total.toLocaleString()}
+                      {currency} {invoice.total.toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`capitalize px-2 py-1 rounded-full text-xs ${invoice.invoice_payments?.[0]?.payment_status === 'paid'

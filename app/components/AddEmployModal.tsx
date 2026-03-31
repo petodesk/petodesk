@@ -447,6 +447,7 @@ import { createEmployeeAction } from '../actions/employee'
 import warning_icon from '../assets/warning.png'
 import Image from 'next/image'
 import { toast } from 'react-toastify'
+import { useCompany } from './CompanyContext'
 
 export function AddEmployModal({
     onClose,
@@ -473,8 +474,6 @@ export function AddEmployModal({
     const [alternativePhone, setAlternativePhone] = useState<string | null>(employee?.alt_phone ?? null)
     const [homeAddress1, setHomeAddress1] = useState<string | null>(employee?.home_address1 ?? null)
     const [homeAddress2, setHomeAddress2] = useState<string | null>(employee?.home_address2 ?? null)
-    const [userCompanyId, setUserCompanyId] = useState<string | null>(employee?.user_company_id ?? null)
-    const [AddedBy, setAddedBy] = useState<string | null>(employee?.added_by ?? null)
 
     const [joinedDate, setJoinedDate] = useState<string | null>(employee?.employee_info?.joined_date ?? null)
     const [contractType, setContractType] = useState<string | null>(employee?.employee_info?.contract_type ?? null)
@@ -510,26 +509,9 @@ export function AddEmployModal({
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // ✅ New state to hold email of created employee
-    const [createdEmployeeEmail, setCreatedEmployeeEmail] = useState<string | null>(null)
-
-    useEffect(() => {
-        const getUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
-
-            setAddedBy(user.id)
-
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('company_id')
-                .eq('id', user.id)
-                .single()
-
-            setUserCompanyId(profile?.company_id ?? null)
-        }
-
-        getUser()
-    }, [])
+ const [createdEmployeeEmail, setCreatedEmployeeEmail] = useState<string | null>(null)
+const{company, profile,currency} = useCompany()
+    
 
     const validateForm = () => {
         const newErrors: Record<string, string> = {};
@@ -599,7 +581,7 @@ export function AddEmployModal({
             birthDate,
             homeAddress1,
             homeAddress2,
-            userCompanyId,
+            userCompanyId: profile?.company_id ?? null,
             joinedDate,
             contractType,
             contractStartDate,
@@ -654,7 +636,7 @@ export function AddEmployModal({
     }, [employee])
 
   const handleSendSetupLink = async () => {
-  if (!createdEmployeeEmail || !userCompanyId) return
+  if (!createdEmployeeEmail || !company) return
 
   try {
     setLoading(true)
@@ -664,7 +646,7 @@ export function AddEmployModal({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: createdEmployeeEmail,
-        companyId: userCompanyId
+        companyId: company.id,
       })
     })
 
@@ -765,7 +747,7 @@ export function AddEmployModal({
                                     <ul>
                                         {allowanceCart.map((item, i) => (
                                             <li key={i} className='flex justify-between'>
-                                                {item.type}: ${item.amount}
+                                                {item.type}: {currency} {item.amount}
                                                 <button className='size-4 text-red-500 hover:text-red-700 cursor-pointer' onClick={() => removeFromCart(i)}>x</button>
                                             </li>
                                         ))}
