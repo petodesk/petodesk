@@ -8,6 +8,13 @@ import HrPlanDash from '../components/dashboards/HrPlanDash'
 import { Loading } from '../components/Loading'
 import { useRouter } from 'next/navigation'
 import { useCompany } from '../context/CompanyContext'
+type SubscriptionWithPlan = {
+  status: string
+  trial_end: string | null
+  plans: {
+    name: string
+  }
+}
 
 export default function DashboardPage() {
   const supabase = createClient()
@@ -17,7 +24,7 @@ export default function DashboardPage() {
   const [plan, setPlan] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [trialEnd, setTrialEnd] = useState<string | null>(null)
-  const{profile, company}  = useCompany()
+  const { profile, company } = useCompany()
 
   useEffect(() => {
 
@@ -36,9 +43,11 @@ export default function DashboardPage() {
         .single()
 
       // ✅ FIX: correct access
-      const planName = subscription?.plans?.name || null
+      const subscriptionData = subscription as unknown as SubscriptionWithPlan
+      const planName = subscriptionData?.plans?.name || null
 
-      setPlan(planName)   
+      console.log('plan', planName)
+      setPlan(planName)
       setStatus(subscription?.status || null)
       setTrialEnd(subscription?.trial_end || null)
 
@@ -69,14 +78,14 @@ export default function DashboardPage() {
 
     fetchSubscription()
 
-  }, [supabase, router])
+  }, [supabase, router, company?.id])
 
   if (loading) {
-    return <Loading/>
+    return <Loading />
   }
 
   return (
-    <main className="">      
+    <main className="">
       <div className="">
 
         {/* ✅ Trial Banner */}
