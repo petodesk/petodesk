@@ -1,9 +1,10 @@
 'use server'
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendTaskEmail(email: string, taskTitle: string, employeeName: string) {
+const resend = new Resend(process.env.RESEND_API_KEY);
+
     const { data, error } = await resend.emails.send({
         // ✅ Updated to use your verified domain
         from: 'PetoDesk Tasks <notifications@petodesk.com>', 
