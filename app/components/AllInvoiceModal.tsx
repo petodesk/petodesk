@@ -1,7 +1,7 @@
 'use client'
 
 import { formatDate } from "../utils/dateFormatter"
-import { useCompany } from "./CompanyContext"
+import { useCompany } from "../context/CompanyContext"
 
 
 type InvoiceItem = {

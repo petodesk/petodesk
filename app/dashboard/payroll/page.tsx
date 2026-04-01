@@ -1,6 +1,6 @@
 'use client';
 
-import { useCompany } from '@/app/components/CompanyContext';
+import { useCompany } from '@/app/context/CompanyContext';
 import { PaySlipModal } from '@/app/components/PaySlipModal';
 import { formatNumber } from '@/app/utils/numberFormatter';
 import { createClient } from '@/app/utils/supabase/client';

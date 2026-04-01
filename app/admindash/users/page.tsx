@@ -30,7 +30,8 @@ export default function AdminDash() {
 
     const [viewMore, setViewMore] = useState(false)
     const [selectedCompany, setSelectedCompany] = useState<CompanyData | null>(null)
-
+    const[newPlan, setNwPlan] = useState(selectedCompany?.service_type)
+    const [loading, setLoading] = useState(false)
     const [stats, setStats] = useState({
         totalUsers: 0,
         activeUsers: 0
@@ -94,6 +95,40 @@ export default function AdminDash() {
         }
     }
 
+  
+
+
+const updatePlan = async ({
+  companyId,
+  newPlan
+}: {
+  companyId: string
+  newPlan: string
+}) => {
+  if (!companyId || !newPlan) return
+
+  try {
+    setLoading(true)
+
+    const { error } = await supabase.rpc("switch_company_plan", {
+      p_company_id: companyId,
+      p_plan_name: newPlan
+    })
+
+    if (error) {
+      toast.error(error.message || "Failed to update plan")
+      return
+    }
+
+    toast.success("Plan updated successfully ✅")
+    fetchDashboard()
+  } catch (err) {
+    toast.error("Something went wrong")
+  } finally {
+    setLoading(false)
+  }
+}
+
     /* ---------------- ACTION MENU ---------------- */
     function ActionMenu({ company }: { company: CompanyData }) {
         const [open, setOpen] = useState(false)
@@ -132,6 +167,8 @@ export default function AdminDash() {
             setViewMore(true)
         }
 
+
+
         const handleResetPassword = async (email: string | undefined) => {
             if (!email) {
                 toast.error("No email found")
@@ -164,11 +201,11 @@ export default function AdminDash() {
             setOpen(false)
         }
 
-     const deleteCompany = async (companyId: string) => {
+        const deleteCompany = async (companyId: string) => {
             await supabase.from("companies").delete().eq("id", companyId)
 
             fetchDashboard()
-                setIsDeleting(false)
+            setIsDeleting(false)
         }
 
         return (
@@ -188,39 +225,39 @@ export default function AdminDash() {
 
                             <li
                                 className='text-md p-1 cursor-pointer hover:bg-gray-200'
-                                onClick={() => 
-                                    {fetchMoreAboutCompany(company.id)
-                                        setOpen(false)
-                                    }}
+                                onClick={() => {
+                                    fetchMoreAboutCompany(company.id)
+                                    setOpen(false)
+                                }}
                             >
                                 View
                             </li>
 
                             <li
-                                onClick={() => 
-                                    {updateCompanyStatus(isActive ? "suspended" : "active")
-                                        setOpen(false)
-                                    }}
+                                onClick={() => {
+                                    updateCompanyStatus(isActive ? "suspended" : "active")
+                                    setOpen(false)
+                                }}
                                 className="text-md p-1 hover:bg-gray-200 cursor-pointer"
                             >
                                 {isActive ? "Suspend" : "Reactivate"}
                             </li>
 
                             <li
-                                onClick={() => 
-                                    {handleResetPassword(company.profiles?.[0]?.email)
-                                        setOpen(false)
-                                    }}
+                                onClick={() => {
+                                    handleResetPassword(company.profiles?.[0]?.email)
+                                    setOpen(false)
+                                }}
                                 className='text-md p-1 cursor-pointer hover:bg-gray-200'
                             >
                                 Reset Password
                             </li>
 
                             <li
-                                onClick={() => 
-                                    {setIsDeleting(true)
-                                        setOpen(false)
-                                    }}
+                                onClick={() => {
+                                    setIsDeleting(true)
+                                    setOpen(false)
+                                }}
                                 className='text-md p-1 cursor-pointer hover:bg-gray-200 text-red-600'
                             >
                                 Delete
@@ -341,6 +378,31 @@ export default function AdminDash() {
                                         <InfoRow label="Where did they hear about us" value={selectedCompany.profiles?.[0]?.acquisition} />
                                     </div>
 
+                                    <div className="rounded-xl border p-5 shadow-sm space-y-4">
+                                        <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 flex justify-between">
+                                            <span>Switch Plan</span>
+                                            <span className="text-sm text-gray-500">
+                                                Current: {selectedCompany.service_type}
+                                            </span>
+                                        </h3>
+
+                                        <select
+                                            value={selectedCompany.service_type}
+                                            onChange={(e) => {
+                                                updatePlan({
+                                                    companyId: selectedCompany.id,
+                                                    newPlan: e.target.value
+                                                })
+                                            }}
+                                            className="w-full border rounded-lg p-2"
+                                        >
+                                            <option value="hr">HR Only</option>
+                                            <option value="inventory">Inventory Only</option>
+                                            <option value="business_plus">Business Plus</option>
+                                            <option value="premium">Premium</option>
+                                        </select>
+                                    </div>
+
                                 </div>
                             </>
                         )}
@@ -433,11 +495,10 @@ export default function AdminDash() {
                                             </td>
 
                                             <td className="px-4 py-1">
-                                                <span className={`px-2 py-1 rounded-full text-xs ${
-                                                    company.status === "suspended"
-                                                        ? "bg-red-100 text-red-700"
-                                                        : "bg-green-100 text-green-700"
-                                                }`}>
+                                                <span className={`px-2 py-1 rounded-full text-xs ${company.status === "suspended"
+                                                    ? "bg-red-100 text-red-700"
+                                                    : "bg-green-100 text-green-700"
+                                                    }`}>
                                                     {company.status}
                                                 </span>
                                             </td>

@@ -447,7 +447,8 @@ import { createEmployeeAction } from '../actions/employee'
 import warning_icon from '../assets/warning.png'
 import Image from 'next/image'
 import { toast } from 'react-toastify'
-import { useCompany } from './CompanyContext'
+import { useCompany } from '../context/CompanyContext'
+import { on } from 'events'
 
 export function AddEmployModal({
     onClose,
@@ -511,6 +512,7 @@ export function AddEmployModal({
     // ✅ New state to hold email of created employee
  const [createdEmployeeEmail, setCreatedEmployeeEmail] = useState<string | null>(null)
 const{company, profile,currency} = useCompany()
+const[createdEmployeeName, setCreatedEmployeeName] = useState<string | null>(null)
     
 
     const validateForm = () => {
@@ -614,7 +616,8 @@ const{company, profile,currency} = useCompany()
 
         if (result.success) {
             if (!isEdit) {
-                setCreatedEmployeeEmail(email) // 👈 store created employee email
+                setCreatedEmployeeEmail(email) 
+                setCreatedEmployeeName(name)
                 toast.success("Employee added! Now send setup link.")
             } else {
                 toast.success("Employee updated!")
@@ -646,6 +649,7 @@ const{company, profile,currency} = useCompany()
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: createdEmployeeEmail,
+        name: createdEmployeeName,
         companyId: company.id,
       })
     })
@@ -654,11 +658,12 @@ const{company, profile,currency} = useCompany()
 
     if (!res.ok) throw new Error(data.error)
 
-    toast.success("Invite sent 🚀")
+    toast.success("Invite sent")
   } catch (err: any) {
     toast.error(err.message)
   } finally {
     setLoading(false)
+    onClose()
   }
 }
 

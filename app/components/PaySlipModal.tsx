@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react"
-import { useCompany } from "./CompanyContext"
+import { useCompany } from "../context/CompanyContext"
 
 type InvoiceItem = {
     item_name: string

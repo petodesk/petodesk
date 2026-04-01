@@ -9,7 +9,7 @@ import ReceiptModal from '@/app/components/ReceiptModal'
 import AllSalesModal from '@/app/components/AllSalesModal'
 import { HiSearch } from 'react-icons/hi'
 import CameraScanner from '@/app/components/CameraScanner'
-import { useCompany } from '@/app/components/CompanyContext'
+import { useCompany } from '@/app/context/CompanyContext'
 import { formatDate } from '@/app/utils/dateFormatter'
 
 type Range =

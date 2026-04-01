@@ -7,7 +7,7 @@ import { AddExpendeModal } from '@/app/components/AddExpendeModal'
 import { AllExpensesModal } from '@/app/components/AllExpensesModal'
 import { HiSearch } from 'react-icons/hi'
 import { ViewExpensesModal } from '@/app/components/ViewModal'
-import { useCompany } from '@/app/components/CompanyContext'
+import { useCompany } from '@/app/context/CompanyContext'
 
 type Range =
   | 'today'

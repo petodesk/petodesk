@@ -10,7 +10,7 @@ export default function ResetPassword() {
     const [loading, setLoading] = useState(false)
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState("");
-   const [passwordError, setPasswordError] = useState('')
+    const [passwordError, setPasswordError] = useState('')
 
     const supabase = createClient();
     const router = useRouter();

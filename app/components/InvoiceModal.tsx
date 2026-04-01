@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from "react"
+import { useCompany } from "../context/CompanyContext"
 
 type InvoiceItem = {
     item_name: string
@@ -10,7 +11,7 @@ type InvoiceItem = {
 }
 
 type Payment = {
-     id: string
+    id: string
     bank_name: string
     account_name: string
     account_number: number
@@ -57,7 +58,65 @@ export function ViewInvoiceModal({
     companyProfile: CompanyProfile
 }) {
     if (!open || !invoice) return null
+  const { currency } = useCompany()
 
+
+ function numberToWordsWithDecimal(amount: number, currency:string) {
+    const ones = [
+        "", "One", "Two", "Three", "Four", "Five",
+        "Six", "Seven", "Eight", "Nine", "Ten",
+        "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
+        "Sixteen", "Seventeen", "Eighteen", "Nineteen"
+    ];
+
+    const tens = [
+        "", "", "Twenty", "Thirty", "Forty",
+        "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"
+    ];
+
+    const thousands = ["", "Thousand", "Million", "Billion"];
+
+    function convert(n: number): string {
+        if (n === 0) return "Zero";
+
+        function helper(num: number): string {
+            if (num < 20) return ones[num];
+            if (num < 100)
+                return tens[Math.floor(num / 10)] + (num % 10 ? " " + ones[num % 10] : "");
+            if (num < 1000)
+                return (
+                    ones[Math.floor(num / 100)] +
+                    " Hundred" +
+                    (num % 100 ? " " + helper(num % 100) : "")
+                );
+            return "";
+        }
+
+        let word = "";
+        let i = 0;
+
+        while (n > 0) {
+            if (n % 1000 !== 0) {
+                word = helper(n % 1000) + " " + thousands[i] + " " + word;
+            }
+            n = Math.floor(n / 1000);
+            i++;
+        }
+
+        return word.trim();
+    }
+
+    const integerPart = Math.floor(amount);
+    const decimalPart = Math.round((amount - integerPart) * 100);
+
+    let result = `${convert(integerPart)} `;
+
+    if (decimalPart > 0) {
+        result += ` and ${convert(decimalPart)} Cents ${currency}`;
+    }
+
+    return result + " only";
+}
     // Handle undefined arrays
     const invoiceItems = invoice.invoice_items || []
     const invoicePayments = invoice.invoice_payments || []
@@ -69,8 +128,9 @@ export function ViewInvoiceModal({
             0
         )
 
-    const [isExporting, setIsExporting] = useState(false)
 
+    const [isExporting, setIsExporting] = useState(false)
+    const totalInWords = numberToWordsWithDecimal(invoice.total, currency)
     const handleDownloadPDF = async () => {
         const element = document.getElementById('invoice-pdf-content')
         if (!element) return
@@ -238,10 +298,10 @@ export function ViewInvoiceModal({
                                     <td className="p-2">{item.item_name}</td>
                                     <td className="p-2 text-center">{item.quantity}</td>
                                     <td className="p-2 text-right">
-                                        {item.unit_price}
+                                        {currency} {item.unit_price}
                                     </td>
                                     <td className="p-2 text-right">
-                                        {item.amount}
+                                       {currency} {item.amount}
                                     </td>
                                 </tr>
                             ))}
@@ -259,21 +319,26 @@ export function ViewInvoiceModal({
                         </div>
 
                         <div className="text-sm w-44">
-                            <div className="flex justify-between mb-2">
+                            <div className="flex justify-between mb-2 border-b pb-2">
                                 <span className="text-gray-800 md:font-bold">SUBTOTAL</span>
-                                <span className="md:text-md font-semibold">{subtotal.toLocaleString()}</span>
+                                <span className="md:text-md font-semibold">{currency} {subtotal.toLocaleString()}</span>
                             </div>
-                            <div className="flex justify-between mb-2">
+                            <div className="flex justify-between mb-2 border-b pb-2">
                                 <span>TAX ({invoice.tax_rate}%)</span>
-                                <span className="text-md font-semibold">{invoice.tax_amount?.toLocaleString()}</span>
+                                <span className="text-md font-semibold">{currency} {invoice.tax_amount?.toLocaleString()}</span>
                             </div>
-                            <div className="flex justify-between font-bold text-lg">
+                            <div className="flex justify-between font-bold text-lg border-b pb-2">
                                 <span>TOTAL</span>
                                 <span className="md:text-md font-semibold">{invoice.total.toLocaleString()}</span>
                             </div>
-                            
+
                         </div>
+                       
                     </div>
+                     <div className="mt-3 text-sm w-full border-b pb-2">
+                            <span className="font-semibold">Amount in words:</span>
+                            <p className="italic">{totalInWords}</p>
+                        </div>
                 </div>
 
                 {/* Actions - Separate container that won't be in PDF */}

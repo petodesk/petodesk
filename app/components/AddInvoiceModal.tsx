@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
 import { HiMinus, HiPlus } from 'react-icons/hi'
 import { toast } from 'react-toastify'
-import { useCompany } from './CompanyContext'
+import { useCompany } from '../context/CompanyContext'
 type ItemType = 'product' | 'service'
 
 type Product = {

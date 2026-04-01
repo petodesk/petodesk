@@ -2,7 +2,7 @@
 import OwnerSidebar from '../components/sidebars/Sidebar'
 import DashHeader from '../components/DashHeader'
 import { Loading } from '../components/Loading'
-import { useCompany } from '../components/CompanyContext'
+import { useCompany } from '../context/CompanyContext'
 import { useState } from 'react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

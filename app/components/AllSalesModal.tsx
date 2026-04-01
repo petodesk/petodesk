@@ -1,7 +1,7 @@
 'use client'
 
 import { FaTimes } from 'react-icons/fa'
-import { useCompany } from './CompanyContext'
+import { useCompany } from '../context/CompanyContext'
 import { formatDate } from '../utils/dateFormatter'
 
 type Sale = {
