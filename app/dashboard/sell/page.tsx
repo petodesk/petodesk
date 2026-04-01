@@ -1,7 +1,5 @@
-
 'use client'
 export const dynamic = 'force-dynamic'
-
 import { useEffect, useState, useCallback } from 'react'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
 import { createClient } from '@/app/utils/supabase/client'

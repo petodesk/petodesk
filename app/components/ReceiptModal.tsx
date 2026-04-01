@@ -1,6 +1,5 @@
 'use client'
 
-import html2pdf from 'html2pdf.js'
 import { useCompany } from '../context/CompanyContext'
 
 type ReceiptModalProps = {
@@ -26,10 +25,30 @@ export default function ReceiptModal({
     window.print()
   }
 
-  const handleDownload = () => {
+  // const handleDownload = () => {
+  //   const el = document.getElementById('receipt-content')
+  //   if (!el) return
+
+  //   html2pdf()
+  //     .set({
+  //       margin: 10,
+  //       filename: `receipt-${sale.id}.pdf`,
+  //       image: { type: 'jpeg', quality: 0.98 },
+  //       html2canvas: { scale: 2 },
+  //       jsPDF: { unit: 'mm', format: 'a6', orientation: 'portrait' },
+  //     })
+  //     .from(el)
+  //     .save()
+  // }
+
+  const handleDownload = async () => {
     const el = document.getElementById('receipt-content')
     if (!el) return
 
+    // 1. Import the library dynamically only when the button is clicked
+    const html2pdf = (await import('html2pdf.js')).default
+
+    // 2. Use it as normal
     html2pdf()
       .set({
         margin: 10,

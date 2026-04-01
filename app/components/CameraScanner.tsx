@@ -10,7 +10,6 @@ type CameraScannerProps = {
 
 export default function CameraScanner({ onScan, onClose }: CameraScannerProps) {
     const html5QrcodeRef = useRef<Html5Qrcode | null>(null);
-    // Track if we are already in the middle of a "start" request
     const isStarting = useRef(false);
 
     useEffect(() => {
