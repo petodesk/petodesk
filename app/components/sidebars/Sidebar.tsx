@@ -5,7 +5,13 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { HiOutlineCurrencyDollar } from 'react-icons/hi'
-
+type SubscriptionWithPlan = {
+  status: string
+  trial_end: string | null
+  plans: {
+    name: string
+  }
+}
 import {
   HiSquares2X2,
   HiOutlineShoppingCart,
@@ -74,16 +80,17 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         .single()
 
       // ✅ FIX: correct access
-    const planName = subscription?.plans?.name || null
+      const subscriptionData = subscription as unknown as SubscriptionWithPlan
+      const planName = subscriptionData?.plans?.name || null
 
       setPlan(planName)
-      setStatus(subscription?.status || null)
-      setTrialEnd(subscription?.trial_end || null)
+      setStatus(subscriptionData?.status || null)
+      setTrialEnd(subscriptionData?.trial_end || null)
 
       console.log('Fetched Role:', profile?.role)
       console.log('Fetched Plan:', planName)
-      console.log('Fetched Status:', subscription?.status)
-      console.log('Fetched Trial End:', subscription?.trial_end)
+      console.log('Fetched Status:', subscriptionData?.status)
+      console.log('Fetched Trial End:', subscriptionData?.trial_end)
 
       // 🚨 HANDLE EXPIRATION
       const now = new Date()
@@ -120,12 +127,12 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
     router.refresh()
   }
   const role = profile?.role || null
- const filteredLinks = links.filter(link =>
-  role &&
-  plan &&
-  link.roles.includes(role) &&
-  link.plans.includes(plan)
-)
+  const filteredLinks = links.filter(link =>
+    role &&
+    plan &&
+    link.roles.includes(role) &&
+    link.plans.includes(plan)
+  )
 
   return (
     <aside className="flex flex-col h-screen w-64 bg-white shadow-sm max-h-[90vh]">
@@ -160,8 +167,8 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
                   href={link.href}
                   onClick={onClose}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition ${isActive
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-gray-500 hover:bg-gray-50 hover:text-blue-600'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-blue-600'
                     }`}
                 >
                   <link.icon
