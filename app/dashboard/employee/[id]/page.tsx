@@ -6,6 +6,7 @@ import { createClient } from '@/app/utils/supabase/client';
 import { AddEmployModal } from '@/app/components/AddEmployModal';
 import Link from 'next/dist/client/link';
 import { toast } from 'react-toastify';
+import { useCompany } from '@/app/context/CompanyContext';
 
 type Employee = {
     id: string;
@@ -65,7 +66,7 @@ export default function EmployeeDetailsPage() {
     const [employee, setEmployee] = useState<Employee | null>(null);
     const [open, setOpen] = useState(false)
     const[loading, setLoading] = useState(false)
-
+const{company} = useCompany()
     useEffect(() => {
         async function getFullDetails() {
             const { data, error } = await supabase
@@ -204,6 +205,8 @@ const handleSendSetupLink = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: employee.email,
+        name: employee.name,
+        companyName: company?.name || "Your Company",
         companyId: employee.company_id
       })
     })

@@ -3,9 +3,9 @@ import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
   try {
-    const { email, companyId } = await req.json()
+    const { email, companyId, name, companyName } = await req.json()
 
-    const result = await createInvite(email, companyId)
+    const result = await createInvite(email, name, companyName, companyId)
 
     return NextResponse.json(result)
   } catch (err: any) {
