@@ -109,10 +109,10 @@ export function ViewInvoiceModal({
     const integerPart = Math.floor(amount);
     const decimalPart = Math.round((amount - integerPart) * 100);
 
-    let result = `${convert(integerPart)} `;
+    let result = `${convert(integerPart)} ${currency}`;
 
     if (decimalPart > 0) {
-        result += ` and ${convert(decimalPart)} Cents ${currency}`;
+        result += ` and ${convert(decimalPart)} Cents`;
     }
 
     return result + " only";
