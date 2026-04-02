@@ -6,6 +6,7 @@ import { createClient } from "@/app/utils/supabase/client"
 import { FaEllipsisV } from "react-icons/fa"
 import { formatDate } from "@/app/utils/dateFormatter"
 import { toast } from "react-toastify"
+import { error } from "console"
 
 interface CompanyData {
     id: string,
@@ -202,10 +203,13 @@ const updatePlan = async ({
         }
 
         const deleteCompany = async (companyId: string) => {
-            await supabase.from("companies").delete().eq("id", companyId)
-
+           const { error } = await supabase.from("companies").delete().eq("id", companyId)
+            await supabase.from("profiles").delete().eq("company_id", companyId)
             fetchDashboard()
             setIsDeleting(false)
+            if(error){
+                toast.error("Failed to delete company")
+            }
         }
 
         return (

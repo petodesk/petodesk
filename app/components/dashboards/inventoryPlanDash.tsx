@@ -271,7 +271,7 @@ const profitTrend = netProfit - previousMonthProfit
 
   return (
 
-    <div className="p-6 rounded-lg font-poppins bg-gray-50">
+    <div className="p-6 rounded-lg font-poppins bg-gray-50 max-h-[90vh] overflow-y-auto no-scrollbar">
 
       <div className="flex flex-col gap-6">
 
