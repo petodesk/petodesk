@@ -3,16 +3,16 @@ import OwnerSidebar from '../components/sidebars/Sidebar'
 import DashHeader from '../components/DashHeader'
 import { Loading } from '../components/Loading'
 import { useCompany } from '../context/CompanyContext'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const [loading, setLoading] = useState(false)
-  const { profile } = useCompany()
+  const { profile,refresh } = useCompany()
   // ✅ SIDEBAR STATE
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
-
+console.log('profile in layout', profile)
 
   if (loading) {
     return (
@@ -20,11 +20,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     )
   }
 
+useEffect(() => {
+  if (!profile && !loading) {
+    refresh()
+  }
+}, [profile, loading])
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       {/* HEADER */}
       <DashHeader
-        userName={profile?.full_name || 'Owner'}
+        userName={profile?.full_name || '-'}
         onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
       />
 
