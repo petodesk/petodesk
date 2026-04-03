@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 import { Loading } from "@/app/components/Loading";
+import { getDashboardRoute } from "@/app/utils/routeredirect";
 
 export default function Home() {
     const router = useRouter()
@@ -23,7 +24,7 @@ export default function Home() {
     useEffect(() => {
         const checkUser = async () => {
             const { data } = await supabase.auth.getSession()
-                const user = data.session?.user
+            const user = data.session?.user
             if (!user) {
                 setCheckingSession(false)
                 return
@@ -31,14 +32,14 @@ export default function Home() {
 
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('id')
+                .select('id, role')
                 .eq('id', data.session?.user.id)
                 .maybeSingle()
 
             if (!profile) {
                 router.replace('/company')
             } else {
-                router.replace('/dashboard')
+                router.push(getDashboardRoute(profile.role))
             }
 
             setCheckingSession(false)
@@ -46,43 +47,44 @@ export default function Home() {
 
         checkUser()
     }, [router])
-const handleSignIn = async (e: React.FormEvent) => {
-  e.preventDefault()
-  setLoading(true)
+    const handleSignIn = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        })
 
-  setLoading(false)
+        setLoading(false)
 
-  if (error) {
-    if (error.message.toLowerCase().includes('invalid login')) {
-      toast.error('Invalid email or password')
-    } else if (error.message.toLowerCase().includes('email not confirmed')) {
-      toast.error('Please verify your email first')
-    } else {
-      toast.error(error.message)
+        if (error) {
+            if (error.message.toLowerCase().includes('invalid login')) {
+                toast.error('Invalid email or password')
+            } else if (error.message.toLowerCase().includes('email not confirmed')) {
+                toast.error('Please verify your email first')
+            } else {
+                toast.error(error.message)
+            }
+            return
+        }
+
+        const user = data.user
+
+        // ✅ same redirect logic you already use
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, role')
+            .eq('id', user.id)
+            .maybeSingle()
+
+        if (!profile) {
+            router.replace('/company')
+        } else {
+                router.push(getDashboardRoute(profile.role))
+            
+        }
     }
-    return
-  }
-
-  const user = data.user
-
-  // ✅ same redirect logic you already use
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (!profile) {
-    router.replace('/company')
-  } else {
-    router.replace('/dashboard')
-  }
-}
 
     const handleForgotPassword = async (e: React.MouseEvent) => {
         e.preventDefault();

@@ -10,34 +10,75 @@ import { HiOutlineArrowRightOnRectangle } from 'react-icons/hi2'
 /* Sidebar Links Configuration      */
 /* -------------------------------- */
 
-const links = [
-  { label: 'Dashboard', href: '/admindash'},
+const sidebarLinks: Record<string, { label: string; href: string }[]> = {
+  peto_owner : [
+    { label: 'Dashboard', href: '/admindash' },
+    { label: 'Users', href: '/admindash/users' },
+    { label: 'Verification Center', href: '/admindash/verification-center' },
+    { label: 'Transactions', href: '/admindash/transactions' },
+    { label: 'Notifications', href: '/admindash/notifications' },
+    { label: 'Settings', href: '/admindash/settings' },
+  ],
 
-  { label: 'Users', href: '/admindash/users'},
+  peto_admin: [
+   { label: 'Dashboard', href: '/admindash' },
+    { label: 'Users', href: '/admindash/users' },
+    { label: 'Verification Center', href: '/admindash/verification-center' },
+    { label: 'Transactions', href: '/admindash/transactions' },
+    { label: 'Notifications', href: '/admindash/notifications' },
+    { label: 'Settings', href: '/admindash/settings' },
+  ],
 
-  { label: 'Verification Center', href: '/admindash/verification-center'},
+  peto_verifier: [
+    { label: 'Dashboard', href: '/admindash' },
+    { label: 'Verification Center', href: '/admindash/verification-center' },
+    { label: 'Users', href: '/admindash/users' },
 
-  { label: 'Transactions', href: '/admindash/transactions' },
+  ],
 
-  { label: 'Notifications', href: '/admindash/notifications'},
-
-  { label: 'Settings', href: '/admindash/settings'}
-
- 
-]
-
+  peto_analyst: [
+    { label: 'Dashboard', href: '/admindash' },
+    { label: 'Transactions', href: '/admindash/transactions' },
+  ],
+}
 
 export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
-
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
 
   const [role, setRole] = useState<string | null>(null)
-  const [plan, setPlan] = useState<string | null>(null)
 
- 
+  /* -------------------------------- */
+  /* Fetch User Role                  */
+  /* -------------------------------- */
 
+  useEffect(() => {
+    const loadProfile = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) return
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (error) {
+        console.error('Failed to load profile:', error)
+        return
+      }
+
+      if (data?.role) {
+        setRole(data.role)
+      }
+    }
+
+    loadProfile()
+  }, [supabase])
 
   /* -------------------------------- */
   /* Logout                           */
@@ -49,7 +90,19 @@ export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
     router.refresh()
   }
 
+  /* -------------------------------- */
+  /* Loading State                    */
+  /* -------------------------------- */
 
+  if (!role) {
+    return (
+      <aside className="flex flex-col h-screen w-64 bg-white shadow-sm">
+        <div className="p-4 text-center">Loading...</div>
+      </aside>
+    )
+  }
+
+  const currentLinks = sidebarLinks[role] || []
 
   /* -------------------------------- */
   /* Render                           */
@@ -59,20 +112,14 @@ export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
     <aside className="flex flex-col h-screen w-64 bg-white shadow-sm">
 
       {/* HEADER */}
-
       <div className="bg-blue-600 text-white p-4 font-bold text-center rounded-t-lg my-2">
         My Petodesk Account
       </div>
 
-
       {/* NAVIGATION */}
-
       <nav className="flex-1 overflow-y-auto px-3 py-4 no-scrollbar">
-
         <ul className="space-y-1">
-
-          {links.map((link) => {
-
+          {currentLinks.map((link) => {
             const isActive = pathname === link.href
 
             return (
@@ -86,24 +133,16 @@ export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
                       : 'text-gray-500 hover:bg-gray-50 hover:text-blue-600'
                   }`}
                 >
-                 
                   {link.label}
                 </Link>
               </li>
             )
           })}
-
         </ul>
 
-
         {/* ACCOUNT SECTION */}
-
         <div className="border-t mt-4">
-
           <div className="px-3 py-3 space-y-1">
-
-           
-
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50"
@@ -111,13 +150,9 @@ export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
               <HiOutlineArrowRightOnRectangle size={18} />
               Logout
             </button>
-
           </div>
-
         </div>
-
       </nav>
-
     </aside>
   )
 }
