@@ -5,6 +5,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import { useEffect, useState } from 'react'
 import { FaEllipsisV } from 'react-icons/fa'
 import { randomUUID } from 'crypto'
+import { profile } from 'console'
 
 export default function Setting() {
   const supabase = createClient()
@@ -216,7 +217,12 @@ export default function Setting() {
                   onChange={(e) => handleRoleChange(e.target.value)}
                   disabled={updating}
                 >
+                  {
+                    member.role === 'peto_owner' && (
                   <option value="peto_owner">Owner</option>
+                    )
+
+                  }
                   <option value="peto_admin">Admin</option>
                   <option value="peto_verifier">Verifier</option>
                   <option value="peto_analyst">Analyst</option>

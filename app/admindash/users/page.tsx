@@ -7,6 +7,7 @@ import { FaEllipsisV } from "react-icons/fa"
 import { formatDate } from "@/app/utils/dateFormatter"
 import { toast } from "react-toastify"
 import { error } from "console"
+import { useCompany } from "@/app/context/CompanyContext"
 
 interface CompanyData {
     id: string,
@@ -33,10 +34,12 @@ export default function AdminDash() {
     const [selectedCompany, setSelectedCompany] = useState<CompanyData | null>(null)
     const[newPlan, setNwPlan] = useState(selectedCompany?.service_type)
     const [loading, setLoading] = useState(false)
+    const{profile}  = useCompany()
     const [stats, setStats] = useState({
         totalUsers: 0,
         activeUsers: 0
     })
+    console.log('profile in users page', profile)
 
     const [companies, setCompanies] = useState<CompanyData[]>([])
 
@@ -264,7 +267,11 @@ const updatePlan = async ({
                                 }}
                                 className='text-md p-1 cursor-pointer hover:bg-gray-200 text-red-600'
                             >
-                                Delete
+                                {
+                                    profile?.role === 'peto_owner' &&(
+                                        <span className="text-red-600">Delete Company</span>
+                                    )
+                                }
                             </li>
 
                         </ul>
