@@ -19,78 +19,105 @@ function SetPasswordContent() {
 
   useEffect(() => {
     const loadInvite = async () => {
-      if (!token) {
-        setLoading(false)
-        return
-      }
+  if (!token) {
+    setLoading(false)
+    return
+  }
 
-      const { data, error } = await supabase
-        .from('employee_invites')
-        .select('*')
-        .eq('token', token)
-        .eq('used', false)
-        .single()
+  // 🔍 Check employee invites first
+  const { data: employeeInvite } = await supabase
+    .from('employee_invites')
+    .select('*')
+    .eq('token', token)
+    .eq('used', false)
+    .maybeSingle()
 
-      if (error || !data) {
-        alert("Invalid or already used link.")
-        router.push('/login')
-        return
-      }
-
-      if (new Date(data.expires_at) < new Date()) {
-        alert("Invite has expired.")
-        router.push('/login')
-        return
-      }
-
-      setInvite(data)
-      setLoading(false)
+  if (employeeInvite) {
+    if (new Date(employeeInvite.expires_at) < new Date()) {
+      alert("Invite has expired.")
+      router.push('/login')
+      return
     }
 
+    setInvite({ ...employeeInvite, type: 'employee' })
+    setLoading(false)
+    return
+  }
+
+  // 🔍 Check peto teams
+  const { data: teamInvite } = await supabase
+    .from('peto_teams')
+    .select('*')
+    .eq('invite_token', token)
+    .maybeSingle()
+
+  if (teamInvite) {
+    if (new Date(teamInvite.token_expires_at) < new Date()) {
+      alert("Invite has expired.")
+      router.push('/login')
+      return
+    }
+
+    setInvite({ ...teamInvite, type: 'team' })
+    setLoading(false)
+    return
+  }
+
+  // ❌ Nothing found
+  alert("Invalid or already used link.")
+  router.push('/login')
+}
     loadInvite()
   }, [token, router, supabase])
 
-  const handleCreate = async () => {
-    if (!invite || password.length < 6) {
-      alert("Password must be at least 6 characters.")
-      return
-    }
 
-    setIsSubmitting(true)
+  
+ const handleCreate = async () => {
+  if (!invite || password.length < 6) {
+    alert("Password must be at least 6 characters.")
+    return
+  }
 
-    // 1. Update the existing user's password & confirm them via Admin API
-    const result = await adminSetUserPassword(invite.email, password)
+  setIsSubmitting(true)
 
-    if (result.error || !result.user) {
-      alert(result.error || "Failed to set password")
-      setIsSubmitting(false)
-      return
-    }
+  // 1️⃣ Set password
+  const result = await adminSetUserPassword(invite.email, password)
 
-    const userId = result.user.id
+  if (result.error || !result.user) {
+    alert(result.error || "Failed to set password")
+    setIsSubmitting(false)
+    return
+  }
 
-    // 2. Upsert Profile & Mark Invite Used
-    // We use .upsert() so it works whether the profile exists or not
-    const [profileRes, inviteRes] = await Promise.all([
-      supabase.from('profiles').upsert({
-        id: userId,
-        email: invite.email,
-        role: invite.role || 'employee',
-        company_id: invite.company_id,
-      }),
-      supabase.from('employee_invites')
+  const userId = result.user.id
+
+  // 2️⃣ Handle based on type
+  if (invite.type === 'employee') {
+  
+
+     await supabase
+        .from('employee_invites')
         .update({ used: true })
         .eq('id', invite.id)
-    ])
-
-    if (profileRes.error) {
-       console.error("Profile sync error:", profileRes.error)
-    }
-
-    alert("Account ready! You can now log in.")
-    router.push('/login')
-    setIsSubmitting(false)
+   
   }
+
+  if (invite.type === 'team') {
+  
+      await supabase
+        .from('peto_teams')
+        .update({
+          is_active: true,
+          invite_token: null
+        })
+        .eq('id', invite.id)
+    
+  }
+
+  alert("Account ready! You can now log in.")
+  router.push('/login')
+  setIsSubmitting(false)
+}
 
   if (loading) return <div className="text-center mt-20">Verifying your invite...</div>
   if (!invite) return <div className="text-center mt-20">Link is no longer valid.</div>
