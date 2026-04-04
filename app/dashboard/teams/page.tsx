@@ -1,0 +1,260 @@
+'use client'
+
+import { addTeamMember } from '@/app/actions/petoteams'
+import { createClient } from '@/app/utils/supabase/client'
+import { useEffect, useState } from 'react'
+import { FaEllipsisV } from 'react-icons/fa'
+import { useCompany } from '@/app/context/CompanyContext'
+import { toast } from 'react-toastify'
+
+export default function Setting() {
+    const supabase = createClient()
+    const [email, setEmail] = useState('')
+    const [role, setRole] = useState('peto_admin')
+    const [loading, setLoading] = useState(false)
+    const [message, setMessage] = useState<string | null>(null)
+    const [members, setMembers] = useState<any[]>([])
+    const [loadingMembers, setLoadingMembers] = useState(true)
+    const { profile } = useCompany()
+    const [openRoleModal, setOpenRoleModal] = useState(false)
+    const handleInvite = async () => {
+        if (loading) return
+
+        const isValidEmail = /\S+@\S+\.\S+/.test(email)
+
+        if (!isValidEmail) {
+            toast.error('Please enter a valid email address')
+            return
+        }
+
+        try {
+            setLoading(true)
+            setMessage(null)
+
+            await addTeamMember(email, role)
+
+            toast.success('Invite sent successfully')
+            setEmail('')
+            setRole('peto_admin')
+
+        } catch (err: any) {
+            toast.error(err.message || 'Something went wrong')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+
+    useEffect(() => {
+        fetchMembers()
+    }, [])
+    const isAdminOrOwner = profile?.role === "peto_owner" || profile?.role === "peto_admin"
+
+    const isOwner = profile?.role === "peto_owner"
+
+    const fetchMembers = async () => {
+        setLoadingMembers(true)
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, full_name, email, role')
+            .eq('company_id', profile?.company_id)
+            .eq('role', 'admin || owner')
+            .order('created_at', { ascending: true })
+
+        if (error) {
+            console.error('Failed to fetch members:', error)
+        } else {
+            setMembers(data || [])
+        }
+
+        setLoadingMembers(false)
+    }
+
+
+ 
+
+  
+    
+
+ 
+    function ActionMenu({ member, refresh }: any) {
+        const [open, setOpen] = useState(false)
+        const [updating, setUpdating] = useState(false)
+
+        const handleRoleChange = async (newRole: string) => {
+            setUpdating(true)
+            try {
+                await updateTeamRole(member.id, newRole)
+                await refresh()
+            } catch (err) {
+                alert('Failed to update role')
+            } finally {
+                setUpdating(false)
+            }
+        }
+
+
+      
+        
+
+        return (
+            <div className="relative">
+                <button onClick={() => {
+                    setOpen(!open)
+                    setOpenRoleModal(false)
+                }} className="text-sm text-gray-600 cursor-pointer p-1 rounded hover:bg-gray-100">
+                    <FaEllipsisV />
+                </button>
+
+                {open && isAdminOrOwner && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-md p-2 z-10 space-y-2">
+
+                        <div className='flex flex-col gap-2'>
+
+
+                            <button
+                                className="w-full text-left text-sm text-blue-600 hover:bg-gray-100 p-1 rounded"
+
+                                onClick={() => setOpenRoleModal(true)}
+                            >
+                                Change Role
+                            </button>
+
+                        </div>
+                    </div>
+                )}
+                {
+                    openRoleModal && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-md p-2 z-10 space-y-2">
+                            <div className='flex flex-col gap-2'>
+                                <select
+                                    value={member.role}
+                                    onChange={(e) => handleRoleChange(e.target.value)}
+                                    disabled={updating}
+                                >
+                
+                                    <option value="admin">Admin</option>
+                                    <option value="employee">Employee</option>
+                                 
+                                </select>
+                                <button
+                                    onClick={() => setOpenRoleModal(false)}
+                                    className="w-full text-left text-sm text-gray-600 hover:bg-gray-100 p-1 rounded cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+
+
+                        </div>
+                    )}
+
+
+            </div>
+        )
+    }
+
+    return (
+        <div>
+            <h1 className="text-lg font-semibold mb-4">Member</h1>
+
+            <div className="flex gap-10 rounded-lg bg-gray-50 p-4">
+
+                <div className="flex flex-1 gap-4">
+
+                    <input
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Enter email address"
+                        className="p-2 bg-gray-100 border border-gray-300 rounded-md flex-1"
+                        type="email"
+                    />
+                    <select
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        className="p-2 bg-gray-100 border border-gray-300 rounded-md"
+                    >
+                        <option value="admin">Admin</option>
+                        <option value="employee">Employee</option>
+
+                    </select>
+
+
+                </div>
+
+                <button
+                    onClick={handleInvite}
+                    disabled={loading}
+                    className="p-2 rounded-lg bg-blue-600 text-white disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                >
+                    {loading ? 'Inviting...' : 'Invite Member'}
+                </button>
+
+            </div>
+
+            <div>
+                <h2 className="text-md font-semibold mt-8 mb-4">{members.length} Members</h2>
+                <div>
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {loadingMembers ? (
+                                <tr>
+                                    <td colSpan={4} className="text-center py-4 text-gray-500">
+                                        Loading members...
+                                    </td>
+                                </tr>
+                            ) : members.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="text-center py-4 text-gray-500">
+                                        No members found
+                                    </td>
+                                </tr>
+                            ) : (
+                                members.map((member) => (
+                                    <tr key={member.id}>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {member.full_name || '—'}
+                                        </td>
+
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {member.email}
+                                        </td>
+
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {member.role === 'peto_owner' ? 'Owner' :
+                                                member.role === 'peto_admin' ? 'Admin' :
+                                                    member.role === 'peto_verifier' ? 'Verifier' :
+                                                        member.role === 'peto_analyst' ? 'Analyst' : member.role}
+                                        </td>
+
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                            {
+                                                member.role === 'peto_owner' ? (
+                                                    <span className="text-gray-400"></span>
+                                                ) : (
+                                                    <ActionMenu member={member} refresh={fetchMembers} />
+                                                )
+                                            }
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+                
+            </div>
+
+
+        </div>
+    )
+}
