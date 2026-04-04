@@ -47,7 +47,6 @@ const links = [
   { label: 'Leave', href: '/dashboard/leave', icon: HiOutlineCalendarDays, roles: ['employee'], plans: ['business_plus', 'hr'] },
   { label: 'issues & Compliants', href: '/dashboard/issue-complaints', icon: HiOutlineExclamationTriangle, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr'] },
   { label: 'Company Feed', href: '/dashboard/companyfeed', icon: HiOutlineSpeakerWave, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr'] },
-  { label: 'Billing', href: '/dashboard/billing', icon: HiOutlineCurrencyDollar, roles: ['admin', 'owner'], plans: ['business_plus', 'hr', 'inventory'] },
 
 ]
 

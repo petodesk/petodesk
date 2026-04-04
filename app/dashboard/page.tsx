@@ -24,8 +24,12 @@ export default function DashboardPage() {
   const [plan, setPlan] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [trialEnd, setTrialEnd] = useState<string | null>(null)
-  const { profile, company } = useCompany()
-
+  const { profile, company, refresh } = useCompany()
+useEffect(() => {
+  if (!profile && !loading) {
+    refresh()
+  }
+}, [profile, loading])
   useEffect(() => {
 
     const fetchSubscription = async () => {
@@ -83,6 +87,8 @@ export default function DashboardPage() {
   if (loading) {
     return <Loading />
   }
+
+  
 
   return (
     <main className="">
