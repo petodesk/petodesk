@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react'
 import { FaEllipsisV } from 'react-icons/fa'
 import { randomUUID } from 'crypto'
 import { profile } from 'console'
+import { useCompany } from '@/app/context/CompanyContext'
+import { toast } from 'react-toastify'
 
 export default function Setting() {
   const supabase = createClient()
@@ -15,7 +17,7 @@ export default function Setting() {
   const [message, setMessage] = useState<string | null>(null)
   const [members, setMembers] = useState<any[]>([])
   const [loadingMembers, setLoadingMembers] = useState(true)
-
+const{profile} = useCompany()
   const [openRoleModal, setOpenRoleModal] = useState(false)
   const handleInvite = async () => {
     if (loading) return
@@ -23,7 +25,7 @@ export default function Setting() {
     const isValidEmail = /\S+@\S+\.\S+/.test(email)
 
     if (!isValidEmail) {
-      setMessage('Please enter a valid email')
+      toast.error('Please enter a valid email address')
       return
     }
 
@@ -33,12 +35,12 @@ export default function Setting() {
 
       await addTeamMember(email, role)
 
-      setMessage('✅ Invite sent successfully')
+      toast.success('Invite sent successfully')
       setEmail('')
       setRole('peto_admin')
 
     } catch (err: any) {
-      setMessage(err.message || 'Something went wrong')
+      toast.error(err.message || 'Something went wrong')
     } finally {
       setLoading(false)
     }
@@ -48,6 +50,9 @@ export default function Setting() {
   useEffect(() => {
     fetchMembers()
   }, [])
+  const isAdminOrOwner = profile?.role === "peto_owner" || profile?.role === "peto_admin"
+
+  const isOwner = profile?.role === "peto_owner"
 
   const fetchMembers = async () => {
     setLoadingMembers(true)
@@ -55,7 +60,7 @@ export default function Setting() {
     const { data, error } = await supabase
       .from('peto_teams')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: true })
 
     if (error) {
       console.error('Failed to fetch members:', error)
@@ -174,7 +179,7 @@ export default function Setting() {
           <FaEllipsisV />
         </button>
 
-        {open && (
+        {open && isAdminOrOwner && (
           <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-md p-2 z-10 space-y-2">
 
             <div className='flex flex-col gap-2'>
@@ -284,7 +289,7 @@ export default function Setting() {
       </div>
 
       <div>
-        <h2 className="text-md font-semibold mt-8 mb-4">Current Members</h2>
+        <h2 className="text-md font-semibold mt-8 mb-4">{members.length} Members</h2>
         <div>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -343,9 +348,7 @@ export default function Setting() {
         </div>
       </div>
 
-      {message && (
-        <p className="mt-3 text-sm text-gray-700">{message}</p>
-      )}
+     
     </div>
   )
 }

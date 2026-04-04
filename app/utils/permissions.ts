@@ -61,5 +61,38 @@ export const routePermissions: Record<
   "/dashboard/billing": {
     roles: ["admin", "owner"],
     plans: ["hr", "business_plus",'inventory']
-  }
+  },
+
+  /* ---------------- ADMIN DASHBOARD ---------------- */
+
+"/admindash": {
+  roles: ["peto_owner", "peto_admin", "peto_analyst", 'peto_verifier'],
+  plans: ["*"],
+},
+
+"/admindash/users": {
+  roles: ["peto_owner", "peto_admin", "peto_verifier", "peto_analyst"],
+  plans: ["*"],
+},
+
+"/admindash/verification-center": {
+  roles: ["peto_owner", "peto_admin", "peto_verifier"],
+  plans: ["*"],
+},
+
+"/admindash/transactions": {
+  roles: ["peto_owner", "peto_admin", "peto_analyst"],
+  plans: ["*"],
+},
+
+"/admindash/notifications": {
+  roles: ["peto_owner", "peto_admin", "peto_analyst"],
+  plans: ["*"],
+},
+
+"/admindash/settings": {
+  roles: ["peto_owner", "peto_admin"],
+  plans: ["*"],
+},
+
 }

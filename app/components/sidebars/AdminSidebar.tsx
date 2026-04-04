@@ -30,16 +30,20 @@ const sidebarLinks: Record<string, { label: string; href: string }[]> = {
   ],
 
   peto_verifier: [
-    { label: 'Dashboard', href: '/admindash' },
-    { label: 'Verification Center', href: '/admindash/verification-center' },
     { label: 'Users', href: '/admindash/users' },
+    { label: 'Verification Center', href: '/admindash/verification-center' },
 
   ],
 
   peto_analyst: [
-    { label: 'Dashboard', href: '/admindash' },
+     { label: 'Dashboard', href: '/admindash' },
+    { label: 'Users', href: '/admindash/users' },
+    { label: 'Verification Center', href: '/admindash/verification-center' },
     { label: 'Transactions', href: '/admindash/transactions' },
+    { label: 'Notifications', href: '/admindash/notifications' },
+    { label: 'Settings', href: '/admindash/settings' },
   ],
+  
 }
 
 export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
