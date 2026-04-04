@@ -36,7 +36,7 @@ export default function DashHeader({ userName, onToggleSidebar }: DashHeaderProp
   })
 
   return (
-    <header className="sticky top-0 z-[100] bg-white border-b px-4 md:px-8 h-20 flex items-center justify-between shadow-sm">
+    <header className="sticky top-0 z-[100] bg-white border-b px-4 md:px-8 h-15 flex items-center justify-between shadow-sm">
       
       {/* LEFT: Logo & User Welcome */}
       <div className="flex items-center gap-6">
