@@ -32,9 +32,9 @@ export default function AdminDash() {
 
     const [viewMore, setViewMore] = useState(false)
     const [selectedCompany, setSelectedCompany] = useState<CompanyData | null>(null)
-    const[newPlan, setNwPlan] = useState(selectedCompany?.service_type)
+    const [newPlan, setNwPlan] = useState(selectedCompany?.service_type)
     const [loading, setLoading] = useState(false)
-    const{profile}  = useCompany()
+    const { profile } = useCompany()
     const [stats, setStats] = useState({
         totalUsers: 0,
         activeUsers: 0
@@ -99,49 +99,71 @@ export default function AdminDash() {
         }
     }
 
-  
 
 
-const updatePlan = async ({
-  companyId,
-  newPlan
-}: {
-  companyId: string
-  newPlan: string
-}) => {
-  if (!companyId || !newPlan) return
 
-  try {
-    setLoading(true)
+    const updatePlan = async ({
+        companyId,
+        newPlan
+    }: {
+        companyId: string
+        newPlan: string
+    }) => {
+        if (!companyId || !newPlan) return
 
-    const { error } = await supabase.rpc("switch_company_plan", {
-      p_company_id: companyId,
-      p_plan_name: newPlan
-    })
+        try {
+            setLoading(true)
 
-    if (error) {
-      toast.error(error.message || "Failed to update plan")
-      return
+            const { error } = await supabase.rpc("switch_company_plan", {
+                p_company_id: companyId,
+                p_plan_name: newPlan
+            })
+
+            if (error) {
+                toast.error(error.message || "Failed to update plan")
+                return
+            }
+
+            toast.success("Plan updated successfully ✅")
+            fetchDashboard()
+        } catch (err) {
+            toast.error("Something went wrong")
+        } finally {
+            setLoading(false)
+        }
     }
-
-    toast.success("Plan updated successfully ✅")
-    fetchDashboard()
-  } catch (err) {
-    toast.error("Something went wrong")
-  } finally {
-    setLoading(false)
-  }
-}
-
-    /* ---------------- ACTION MENU ---------------- */
+    const isAdminOrOwner =
+        profile?.role === "peto_owner" || profile?.role === "peto_admin"
+    const isOwner = profile?.role === "peto_owner"
     function ActionMenu({ company }: { company: CompanyData }) {
         const [open, setOpen] = useState(false)
         const [isDeleting, setIsDeleting] = useState(false)
 
         const isActive = company.status === "active"
 
+        // ✅ Role helpers (FIXED)
+        const isAdminOrOwner =
+            profile?.role === "peto_owner" || profile?.role === "peto_admin"
+
+        const isOwner = profile?.role === "peto_owner"
+
+        // ✅ Close on outside click
+        useEffect(() => {
+            const handleClickOutside = () => setOpen(false)
+
+            if (open) {
+                document.addEventListener("click", handleClickOutside)
+            }
+
+            return () => {
+                document.removeEventListener("click", handleClickOutside)
+            }
+        }, [open])
+
         const fetchMoreAboutCompany = async (companyId: string) => {
-            const { data, error } = await supabase.from('companies').select(`
+            const { data, error } = await supabase
+                .from("companies")
+                .select(`
                 id,
                 created_at,
                 name,
@@ -150,7 +172,8 @@ const updatePlan = async ({
                 location,
                 profiles(email, full_name, phone, status, acquisition),
                 status
-            `).eq('id', companyId)
+            `)
+                .eq("id", companyId)
 
             if (error) {
                 console.error(error)
@@ -158,20 +181,21 @@ const updatePlan = async ({
                 return
             }
 
-            // Calculate employee_count from profiles array
-            const company = data?.[0];
+            const company = data?.[0]
+
             if (company) {
                 setSelectedCompany({
                     ...company,
-                    employee_count: Array.isArray(company.profiles) ? company.profiles.length : 0
-                });
+                    employee_count: Array.isArray(company.profiles)
+                        ? company.profiles.length
+                        : 0,
+                })
             } else {
-                setSelectedCompany(null);
+                setSelectedCompany(null)
             }
+
             setViewMore(true)
         }
-
-
 
         const handleResetPassword = async (email: string | undefined) => {
             if (!email) {
@@ -206,32 +230,53 @@ const updatePlan = async ({
         }
 
         const deleteCompany = async (companyId: string) => {
-           const { error } = await supabase.from("companies").delete().eq("id", companyId)
-            await supabase.from("profiles").delete().eq("company_id", companyId)
-            fetchDashboard()
-            setIsDeleting(false)
-            if(error){
-                toast.error("Failed to delete company")
+            try {
+                // better order (avoid FK issues)
+                await supabase.from("profiles").delete().eq("company_id", companyId)
+
+                const { error } = await supabase
+                    .from("companies")
+                    .delete()
+                    .eq("id", companyId)
+
+                if (error) {
+                    toast.error("Failed to delete company")
+                    return
+                }
+
+                toast.success("Company deleted")
+                fetchDashboard()
+            } catch (err) {
+                toast.error("Something went wrong")
+            } finally {
+                setIsDeleting(false)
             }
         }
 
         return (
             <div className="relative">
+                {/* BUTTON */}
                 <button
-                    onClick={() => setOpen(!open)}
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        setOpen(!open)
+                    }}
                     className="px-2 py-1 text-gray-600 hover:text-gray-900 cursor-pointer"
                 >
-                    <p className="p-4 text-gray-400">
-                        <FaEllipsisV />
-                    </p>
+                    <FaEllipsisV className="text-gray-400" />
                 </button>
 
+                {/* DROPDOWN */}
                 {open && (
-                    <div className="absolute right-0 z-20 w-40 rounded-lg border bg-white shadow-lg">
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute right-0 z-20 w-40 rounded-lg border bg-white shadow-lg"
+                    >
                         <ul className="p-3 flex flex-col gap-2">
 
+                            {/* VIEW */}
                             <li
-                                className='text-md p-1 cursor-pointer hover:bg-gray-200'
+                                className="text-md p-1 cursor-pointer hover:bg-gray-200"
                                 onClick={() => {
                                     fetchMoreAboutCompany(company.id)
                                     setOpen(false)
@@ -240,45 +285,52 @@ const updatePlan = async ({
                                 View
                             </li>
 
-                            <li
-                                onClick={() => {
-                                    updateCompanyStatus(isActive ? "suspended" : "active")
-                                    setOpen(false)
-                                }}
-                                className="text-md p-1 hover:bg-gray-200 cursor-pointer"
-                            >
-                                {isActive ? "Suspend" : "Reactivate"}
-                            </li>
+                            {/* ADMIN / OWNER */}
+                            {isAdminOrOwner && (
+                                <>
+                                    <li
+                                        onClick={() => {
+                                            updateCompanyStatus(
+                                                isActive ? "suspended" : "active"
+                                            )
+                                            setOpen(false)
+                                        }}
+                                        className="text-md p-1 hover:bg-gray-200 cursor-pointer"
+                                    >
+                                        {isActive ? "Suspend" : "Reactivate"}
+                                    </li>
 
-                            <li
-                                onClick={() => {
-                                    handleResetPassword(company.profiles?.[0]?.email)
-                                    setOpen(false)
-                                }}
-                                className='text-md p-1 cursor-pointer hover:bg-gray-200'
-                            >
-                                Reset Password
-                            </li>
+                                    <li
+                                        onClick={() => {
+                                            handleResetPassword(
+                                                company.profiles?.[0]?.email
+                                            )
+                                            setOpen(false)
+                                        }}
+                                        className="text-md p-1 cursor-pointer hover:bg-gray-200"
+                                    >
+                                        Reset Password
+                                    </li>
+                                </>
+                            )}
 
-                            <li
-                                onClick={() => {
-                                    setIsDeleting(true)
-                                    setOpen(false)
-                                }}
-                                className='text-md p-1 cursor-pointer hover:bg-gray-200 text-red-600'
-                            >
-                                {
-                                    profile?.role === 'peto_owner' &&(
-                                        <span className="text-red-600">Delete Company</span>
-                                    )
-                                }
-                            </li>
-
+                            {/* OWNER ONLY  */}
+                            {isOwner && (
+                                <li
+                                    onClick={() => {
+                                        setIsDeleting(true)
+                                        setOpen(false)
+                                    }}
+                                    className="text-md p-1 cursor-pointer hover:bg-gray-200 text-red-600"
+                                >
+                                    Delete Company
+                                </li>
+                            )}
                         </ul>
                     </div>
                 )}
 
-                {/* DELETE CONFIRMATION MODAL */}
+                {/* DELETE MODAL */}
                 {isDeleting && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center">
 
@@ -295,14 +347,16 @@ const updatePlan = async ({
 
                             <p className="mt-2 text-sm text-gray-600">
                                 Are you sure you want to delete{" "}
-                                <span className="font-semibold">{company.name}</span> company?
+                                <span className="font-semibold">
+                                    {company.name}
+                                </span>{" "}
+                                company?
                                 <span className="block mt-1 text-red-500 font-medium">
                                     This action cannot be undone.
                                 </span>
                             </p>
 
                             <div className="mt-6 flex justify-end gap-3">
-
                                 <button
                                     onClick={() => setIsDeleting(false)}
                                     className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-100 transition"
@@ -316,15 +370,14 @@ const updatePlan = async ({
                                 >
                                     Delete
                                 </button>
-
                             </div>
                         </div>
                     </div>
                 )}
-
             </div>
         )
     }
+
 
     return (
         <>
@@ -389,30 +442,34 @@ const updatePlan = async ({
                                         <InfoRow label="Where did they hear about us" value={selectedCompany.profiles?.[0]?.acquisition} />
                                     </div>
 
-                                    <div className="rounded-xl border p-5 shadow-sm space-y-4">
-                                        <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 flex justify-between">
-                                            <span>Switch Plan</span>
-                                            <span className="text-sm text-gray-500">
-                                                Current: {selectedCompany.service_type}
-                                            </span>
-                                        </h3>
+                                    {
+                                        isAdminOrOwner && (
+                                            <div className="rounded-xl border p-5 shadow-sm space-y-4">
+                                                <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 flex justify-between">
+                                                    <span>Switch Plan</span>
+                                                    <span className="text-sm text-gray-500">
+                                                        Current: {selectedCompany.service_type}
+                                                    </span>
+                                                </h3>
 
-                                        <select
-                                            value={selectedCompany.service_type}
-                                            onChange={(e) => {
-                                                updatePlan({
-                                                    companyId: selectedCompany.id,
-                                                    newPlan: e.target.value
-                                                })
-                                            }}
-                                            className="w-full border rounded-lg p-2"
-                                        >
-                                            <option value="hr">HR Only</option>
-                                            <option value="inventory">Inventory Only</option>
-                                            <option value="business_plus">Business Plus</option>
-                                            <option value="premium">Premium</option>
-                                        </select>
-                                    </div>
+                                                <select
+                                                    value={selectedCompany.service_type}
+                                                    onChange={(e) => {
+                                                        updatePlan({
+                                                            companyId: selectedCompany.id,
+                                                            newPlan: e.target.value
+                                                        })
+                                                    }}
+                                                    className="w-full border rounded-lg p-2"
+                                                >
+                                                    <option value="hr">HR Only</option>
+                                                    <option value="inventory">Inventory Only</option>
+                                                    <option value="business_plus">Business Plus</option>
+                                                    <option value="premium">Premium</option>
+                                                </select>
+                                            </div>)
+                                    }
+
 
                                 </div>
                             </>

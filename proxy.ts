@@ -6,7 +6,14 @@ import { routePermissions } from "./app/utils/permissions"
 export async function proxy(req: NextRequest) {
   const res = NextResponse.next()
 
-  // 1. Initialize Supabase Client
+  const pathname = req.nextUrl.pathname
+
+  /* -------------------------------- */
+  /* Public Routes                    */
+  /* -------------------------------- */
+  const publicRoutes = ["/login", "/signup"]
+
+  // 1. Initialize Supabase
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -25,30 +32,31 @@ export async function proxy(req: NextRequest) {
     }
   )
 
-  // 2. Check Authentication
+  // 2. Get user
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) {
+  /* -------------------------------- */
+  /* Not logged in                    */
+  /* -------------------------------- */
+  if (!user && !publicRoutes.includes(pathname)) {
     return NextResponse.redirect(new URL("/login", req.url))
   }
 
-  // 3. Find the most specific matching route
-  const pathname = req.nextUrl.pathname
-  const publicRoutes = ["/login", "/signup"] 
-
-  // if(user && publicRoutes.includes(pathname)) {
+  /* -------------------------------- */
+  /* Already logged in → block auth pages */
+  // /* -------------------------------- */
+  // if (user && publicRoutes.includes(pathname)) {
   //   return NextResponse.redirect(new URL("/dashboard", req.url))
   // }
-  // Sorting by length ensures /dashboard/inventory matches before /dashboard
-  const sortedRoutes = Object.keys(routePermissions).sort((a, b) => b.length - a.length)
-  const matchedRoute = sortedRoutes.find((route) => pathname.startsWith(route))
 
-  // If the route isn't in your permission list, allow it or redirect as a fallback
-  if (!matchedRoute) return res
+  // If still no user (public route), allow
+  if (!user) return res
 
-  // 4. Fetch Profile and Company Data
+  /* -------------------------------- */
+  /* Get Profile                      */
+  /* -------------------------------- */
   const { data: profile } = await supabase
     .from("profiles")
     .select("role, company_id")
@@ -59,29 +67,85 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url))
   }
 
-  const { data: company } = await supabase
-    .from("companies")
-    .select("service_type")
-    .eq("id", profile.company_id)
-    .single()
-
   const role = profile.role
-  const plan = company?.service_type
-  const permission = routePermissions[matchedRoute]
 
-  // 5. Permission Check
-  const roleAllowed = permission.roles.includes(role)
-  const planAllowed = permission.plans.includes(plan)
+  /* -------------------------------- */
+  /* Get Company Plan (only for users)*/
+  /* -------------------------------- */
+  let plan: string | null = null
 
-  if (!roleAllowed || !planAllowed) {
-    console.log(`Access Denied: Role(${role}) or Plan(${plan}) invalid for ${pathname}`)
+  if (!role.startsWith("peto_")) {
+    const { data: company } = await supabase
+      .from("companies")
+      .select("service_type")
+      .eq("id", profile.company_id)
+      .single()
+
+    plan = company?.service_type || null
+  }
+
+  /* -------------------------------- */
+  /* Block wrong dashboard access     */
+  /* -------------------------------- */
+  if (pathname.startsWith("/admindash") && !role.startsWith("peto_")) {
     return NextResponse.redirect(new URL("/dashboard", req.url))
   }
 
+  if (pathname.startsWith("/dashboard") && role.startsWith("peto_")) {
+    return NextResponse.redirect(new URL("/admindash", req.url))
+  }
+
+  /* -------------------------------- */
+  /* Match Route                      */
+  /* -------------------------------- */
+  const sortedRoutes = Object.keys(routePermissions).sort(
+    (a, b) => b.length - a.length
+  )
+
+  const matchedRoute = sortedRoutes.find((route) =>
+    pathname.startsWith(route)
+  )
+
+  // If route not protected → allow
+  if (!matchedRoute) return res
+
+  const permission = routePermissions[matchedRoute]
+
+  /* -------------------------------- */
+  /* Permission Check                 */
+  /* -------------------------------- */
+  const roleAllowed = permission.roles.includes(role)
+
+  const planAllowed =
+    permission.plans.includes("*") ||
+    (plan ? permission.plans.includes(plan) : false)
+
+  if (!roleAllowed || !planAllowed) {
+    console.log(
+      `❌ Access Denied: Role(${role}) Plan(${plan}) → ${pathname}`
+    )
+
+    const redirectPath = pathname.startsWith("/admindash")
+      ? "/admindash"
+      : "/dashboard"
+
+    return NextResponse.redirect(new URL(redirectPath, req.url))
+  }
+
+  /* -------------------------------- */
+  /* ✅ Access Allowed                 */
+  /* -------------------------------- */
   return res
 }
 
-// Ensure the matcher covers the base dashboard and all sub-paths
+/* -------------------------------- */
+/* Apply to routes                  */
+/* -------------------------------- */
 export const config = {
-  matcher: ["/dashboard", "/dashboard/:path*"],
+  matcher: [
+    "/dashboard",
+    "/dashboard/:path*",
+    "/admindash",
+    "/admindash/:path*",
+  ],
 }
