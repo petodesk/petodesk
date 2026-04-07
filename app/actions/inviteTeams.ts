@@ -1,11 +1,14 @@
-import { createClient } from '@supabase/supabase-js';
+'use server'
+
 import { Resend } from 'resend';
+import { createClient } from '@supabase/supabase-js'
 
 export async function inviteTeams(
   email: string,
   role: string,
-  companyName: string
+  company: any
 ) {
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -18,6 +21,7 @@ export async function inviteTeams(
     .from('profiles')
     .select('role')
     .eq('email', email)
+    .eq('company_id', company.id)
     .single();
 
   if (fetchError || !existingUser) {
@@ -31,7 +35,9 @@ export async function inviteTeams(
     .from('profiles')
     .update({ role })
     .eq('email', email)
+    .eq('company_id', company.id)
     .select();
+  await supabase.from('employees').update({ role }).eq('email', email).eq('company_id', company.id)
 
   if (error) {
     console.error("Update Error:", error);
@@ -44,12 +50,12 @@ export async function inviteTeams(
   if (isPromotedToAdmin) {
     try {
       await resend.emails.send({
-        from: `${companyName} <teams@petodesk.com>`,
+        from: `${company.name} <teams@petodesk.com>`,
         to: [email],
-        subject: `🎉 You're now an Admin at ${companyName}`,
+        subject: `🎉 You're now an Admin at ${company.name}`,
         html: `
           <h2>Congratulations 🎉</h2>
-          <p>You have been promoted to <strong>ADMIN</strong> at <strong>${companyName}</strong>.</p>
+          <p>You have been promoted to <strong>ADMIN</strong> at <strong>${company.name}</strong>.</p>
           
           <p>You now have access to admin features and controls.</p>
 
@@ -62,7 +68,7 @@ export async function inviteTeams(
           </a>
 
           <br/><br/>
-          <p>— ${companyName} Team</p>
+          <p>— ${company.name} Team</p>
         `,
       });
     } catch (emailError) {

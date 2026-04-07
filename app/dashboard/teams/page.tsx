@@ -6,17 +6,21 @@ import { useEffect, useState } from 'react'
 import { FaEllipsisV } from 'react-icons/fa'
 import { useCompany } from '@/app/context/CompanyContext'
 import { toast } from 'react-toastify'
+import { inviteTeams } from '@/app/actions/inviteTeams'
 
 export default function Setting() {
     const supabase = createClient()
     const [email, setEmail] = useState('')
-    const [role, setRole] = useState('peto_admin')
+    const [role, setRole] = useState('admin')
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState<string | null>(null)
     const [members, setMembers] = useState<any[]>([])
     const [loadingMembers, setLoadingMembers] = useState(true)
-    const { profile } = useCompany()
+    const { profile, company } = useCompany()
     const [openRoleModal, setOpenRoleModal] = useState(false)
+    console.log('company in setting', company)
+    console.log('role in setting', role)
+    console.log('email in setting', email)
     const handleInvite = async () => {
         if (loading) return
 
@@ -31,11 +35,9 @@ export default function Setting() {
             setLoading(true)
             setMessage(null)
 
-            await addTeamMember(email, role)
-
+            await inviteTeams(email, role, company)
+            
             toast.success('Invite sent successfully')
-            setEmail('')
-            setRole('peto_admin')
 
         } catch (err: any) {
             toast.error(err.message || 'Something went wrong')
@@ -48,9 +50,8 @@ export default function Setting() {
     useEffect(() => {
         fetchMembers()
     }, [])
-    const isAdminOrOwner = profile?.role === "peto_owner" || profile?.role === "peto_admin"
+    const isOwner = profile?.role === "owner" 
 
-    const isOwner = profile?.role === "peto_owner"
 
     const fetchMembers = async () => {
         setLoadingMembers(true)
@@ -58,7 +59,7 @@ export default function Setting() {
         const { data, error } = await supabase
             .from('profiles')
             .select('id, full_name, email, role')
-            .eq('company_id', profile?.company_id)
+            .eq('company_id', company?.id)
             .eq('role', 'admin || owner')
             .order('created_at', { ascending: true })
 
@@ -70,6 +71,8 @@ export default function Setting() {
 
         setLoadingMembers(false)
     }
+
+    console.log('members', members)
 
 
  
@@ -107,7 +110,7 @@ export default function Setting() {
                     <FaEllipsisV />
                 </button>
 
-                {open && isAdminOrOwner && (
+                {open && isOwner && (
                     <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-md p-2 z-10 space-y-2">
 
                         <div className='flex flex-col gap-2'>
@@ -230,15 +233,12 @@ export default function Setting() {
                                         </td>
 
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {member.role === 'peto_owner' ? 'Owner' :
-                                                member.role === 'peto_admin' ? 'Admin' :
-                                                    member.role === 'peto_verifier' ? 'Verifier' :
-                                                        member.role === 'peto_analyst' ? 'Analyst' : member.role}
+                                            {member.role === 'owner' ? 'Owner' : member.role === 'admin' ? 'Admin' : member.role === 'employee' ? 'Employee' : member.role}
                                         </td>
 
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             {
-                                                member.role === 'peto_owner' ? (
+                                                member.role === 'owner' ? (
                                                     <span className="text-gray-400"></span>
                                                 ) : (
                                                     <ActionMenu member={member} refresh={fetchMembers} />
