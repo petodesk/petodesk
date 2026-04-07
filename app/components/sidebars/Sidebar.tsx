@@ -37,6 +37,7 @@ const links = [
   { label: 'Expenses', href: '/dashboard/expenses', icon: HiOutlineWallet, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'inventory', 'hr'] },
   { label: 'Inventory', href: '/dashboard/inventory', icon: HiOutlineCube, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'inventory'] },
   { label: 'Tasks', href: '/dashboard/tasks', icon: HiOutlineClipboardDocumentList, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr'] },
+  { label: 'Daily Reports', href: '/dashboard/daily-reports', icon: HiOutlineChartBar, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr'] },
   { label: 'Payroll', href: '/dashboard/payroll', icon: HiOutlineCurrencyDollar, roles: ['admin', 'owner'], plans: ['business_plus', 'hr'] },
   { label: 'Invoicing', href: '/dashboard/invoicing', icon: HiOutlineDocumentText, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr', 'inventory'] },
   { label: 'Reports', href: '/dashboard/reports', icon: HiOutlineChartBar, roles: ['admin', 'owner'], plans: ['business_plus', 'hr'] },
@@ -87,10 +88,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       setStatus(subscriptionData?.status || null)
       setTrialEnd(subscriptionData?.trial_end || null)
 
-      console.log('Fetched Role:', profile?.role)
-      console.log('Fetched Plan:', planName)
-      console.log('Fetched Status:', subscriptionData?.status)
-      console.log('Fetched Trial End:', subscriptionData?.trial_end)
+    
 
       // 🚨 HANDLE EXPIRATION
       const now = new Date()
