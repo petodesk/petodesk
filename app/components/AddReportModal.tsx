@@ -4,15 +4,14 @@ import { useState, useEffect } from "react"
 import { createClient } from "@/app/utils/supabase/client"
 import { toast } from "react-toastify"
 import { ClipLoader } from "react-spinners"
+import { useCompany } from "../context/CompanyContext"
 
 export default function AddReportModal({
     open,
     onClose,
-    taskId
 }: {
     open: boolean
     onClose: () => void
-    taskId: string
 }) {
     const supabase = createClient()
     const [loading, setLoading] = useState(false)
@@ -22,16 +21,20 @@ export default function AddReportModal({
         challenges: "",
         time_spent: ""
     })
+    const { profile, company, refresh } = useCompany()
     const [employeeId, setEmployeeId] = useState<string>("")
 
-    // Get current employee id
+    console.log("Profile:", profile)
+    console.log("Company:", company)
+
+
     useEffect(() => {
-        const getUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (user) setEmployeeId(user.id)
+        if (profile) {
+            setEmployeeId(profile.id)
         }
-        getUser()
-    }, [])
+        refresh()
+    }, [profile])
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -40,10 +43,10 @@ export default function AddReportModal({
         if (!employeeId) return;
 
         const { error } = await supabase
-            .from('task_reports')
+            .from('daily_reports')
             .insert([{
-                task_id: taskId,
                 employee_id: employeeId,
+                company_id: company?.id,
                 title: formData.title,
                 summary: formData.work_summary,
                 challenges: formData.challenges,
@@ -79,8 +82,7 @@ export default function AddReportModal({
                 onSubmit={handleSubmit}
                 className="relative bg-white p-6 rounded-lg w-full max-w-lg shadow-lg"
             >
-                <h2 className="text-lg font-semibold mb-4">Report This Task</h2>
-
+                <h1 className="text-xl font-bold mb-4">Submit Daily Report</h1>
                 <div className="mb-3">
                     <label className="block text-sm font-medium mb-1">Title</label>
                     <input

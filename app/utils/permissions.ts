@@ -29,7 +29,11 @@ export const routePermissions: Record<
     roles: ["admin", "owner",'employee'],
     plans: ["hr", "business_plus"]
   },
-   "/dashboard/leave-management": {
+   "/dashboard/daily-reports": {
+    roles: ["admin", "owner",'employee'],
+    plans: ["hr", "business_plus"]
+  },
+     "/dashboard/leave-management": {
     roles: ["admin", "owner"],
     plans: ["hr", "business_plus"]
   },
