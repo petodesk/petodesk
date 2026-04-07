@@ -7,6 +7,7 @@ import { FaEllipsisV } from 'react-icons/fa'
 import { useCompany } from '@/app/context/CompanyContext'
 import { toast } from 'react-toastify'
 import { inviteTeams } from '@/app/actions/inviteTeams'
+import { formatDate } from '@/app/utils/dateFormatter'
 
 export default function Setting() {
     const supabase = createClient()
@@ -36,7 +37,7 @@ export default function Setting() {
             setMessage(null)
 
             await inviteTeams(email, role, company)
-            
+
             toast.success('Invite sent successfully')
 
         } catch (err: any) {
@@ -48,9 +49,11 @@ export default function Setting() {
 
 
     useEffect(() => {
-        fetchMembers()
-    }, [])
-    const isOwner = profile?.role === "owner" 
+        if (company?.id) {
+            fetchMembers()
+        }
+    }, [company?.id])
+    const isOwner = profile?.role === "owner"
 
 
     const fetchMembers = async () => {
@@ -58,9 +61,9 @@ export default function Setting() {
 
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, full_name, email, role')
+            .select('id, full_name, email, role, created_at')
             .eq('company_id', company?.id)
-            .eq('role', 'admin || owner')
+            .in('role', ['admin', 'owner'])
             .order('created_at', { ascending: true })
 
         if (error) {
@@ -71,25 +74,25 @@ export default function Setting() {
 
         setLoadingMembers(false)
     }
-
     console.log('members', members)
 
 
- 
 
-  
-    
 
- 
-    function ActionMenu({ member, refresh }: any) {
+
+
+
+
+    function ActionMenu({ member }: any) {
         const [open, setOpen] = useState(false)
         const [updating, setUpdating] = useState(false)
 
-        const handleRoleChange = async (newRole: string) => {
+        const handleRoleChange = async (newRole: string, email: string) => {
             setUpdating(true)
             try {
-                await updateTeamRole(member.id, newRole)
-                await refresh()
+                await inviteTeams(email, newRole, company)
+                toast.success('Role updated successfully')
+                fetchMembers()
             } catch (err) {
                 alert('Failed to update role')
             } finally {
@@ -98,8 +101,8 @@ export default function Setting() {
         }
 
 
-      
-        
+
+
 
         return (
             <div className="relative">
@@ -133,13 +136,13 @@ export default function Setting() {
                             <div className='flex flex-col gap-2'>
                                 <select
                                     value={member.role}
-                                    onChange={(e) => handleRoleChange(e.target.value)}
+                                    onChange={(e) => handleRoleChange(e.target.value, member.email)}
                                     disabled={updating}
                                 >
-                
+
                                     <option value="admin">Admin</option>
                                     <option value="employee">Employee</option>
-                                 
+
                                 </select>
                                 <button
                                     onClick={() => setOpenRoleModal(false)}
@@ -159,12 +162,12 @@ export default function Setting() {
     }
 
     return (
-        <div>
+        <div className='my-6'>
             <h1 className="text-lg font-semibold mb-4">Member</h1>
 
-            <div className="flex gap-10 rounded-lg bg-gray-50 p-4">
+            <div className="flex flex-col md:flex-row gap-10 rounded-lg bg-gray-50 p-4">
 
-                <div className="flex flex-1 gap-4">
+                <div className="flex flex-col md:flex-row gap-4 flex-1">
 
                     <input
                         value={email}
@@ -199,62 +202,104 @@ export default function Setting() {
             <div>
                 <h2 className="text-md font-semibold mt-8 mb-4">{members.length} Members</h2>
                 <div>
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {loadingMembers ? (
+
+                    {/* MOBILE CARD */}
+                    <div className="space-y-4 md:hidden">
+                        {members.slice(0, 4).map((member) => (
+                            <div key={member.id} className="rounded-xl bg-white p-4 shadow-sm border space-y-3">
+
+                                <div className="flex items-center justify-between">
+                                    <p className="text-md font-semibold text-gray-700 mb-1">
+                                        {formatDate(member.created_at)}
+                                    </p>
+                                    {
+                                        member.role == 'owner' ? (
+                                            <span className="text-gray-400"></span>
+                                        ) : (
+                                            <ActionMenu member={member} refresh={fetchMembers} />
+                                        )
+                                    }
+                                </div>
+
+                                <hr />
+
+                                <InfoRow label="Name" value={member.full_name || '—'} />
+                                <InfoRow label="Email" value={member.email} />
+                                <InfoRow label="Role" value={member.role} />
+
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="hidden md:block overflow-x-auto">
+
+                        <table className="hidden md:table w-full text-sm">
+                            <thead className="bg-gray-50">
                                 <tr>
-                                    <td colSpan={4} className="text-center py-4 text-gray-500">
-                                        Loading members...
-                                    </td>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
-                            ) : members.length === 0 ? (
-                                <tr>
-                                    <td colSpan={4} className="text-center py-4 text-gray-500">
-                                        No members found
-                                    </td>
-                                </tr>
-                            ) : (
-                                members.map((member) => (
-                                    <tr key={member.id}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {member.full_name || '—'}
-                                        </td>
-
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {member.email}
-                                        </td>
-
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {member.role === 'owner' ? 'Owner' : member.role === 'admin' ? 'Admin' : member.role === 'employee' ? 'Employee' : member.role}
-                                        </td>
-
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                            {
-                                                member.role === 'owner' ? (
-                                                    <span className="text-gray-400"></span>
-                                                ) : (
-                                                    <ActionMenu member={member} refresh={fetchMembers} />
-                                                )
-                                            }
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {loadingMembers ? (
+                                    <tr>
+                                        <td colSpan={4} className="text-center py-4 text-gray-500">
+                                            Loading members...
                                         </td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                ) : members.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="text-center py-4 text-gray-500">
+                                            No members found
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    members.map((member) => (
+                                        <tr key={member.id}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                {member.full_name || '—'}
+                                            </td>
+
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {member.email}
+                                            </td>
+
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {member.role === 'owner' ? 'Owner' : member.role === 'admin' ? 'Admin' : member.role === 'employee' ? 'Employee' : member.role}
+                                            </td>
+
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                {
+                                                    member.role === 'owner' ? (
+                                                        <span className="text-gray-400"></span>
+                                                    ) : (
+                                                        <ActionMenu member={member} refresh={fetchMembers} />
+                                                    )
+                                                }
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                
+
             </div>
 
 
+        </div>
+    )
+}/* INFO ROW */
+function InfoRow({ label, value }: { label: string, value: any }) {
+    return (
+        <div className="flex justify-between items-center border-b pb-2">
+            <span className="text-gray-600 text-sm">{label}</span>
+            <span className="text-gray-900 text-sm font-medium capitalize">
+                {value || "-"}
+            </span>
         </div>
     )
 }

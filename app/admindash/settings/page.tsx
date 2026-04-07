@@ -8,6 +8,7 @@ import { randomUUID } from 'crypto'
 import { profile } from 'console'
 import { useCompany } from '@/app/context/CompanyContext'
 import { toast } from 'react-toastify'
+import { formatDate } from '@/app/utils/dateFormatter'
 
 export default function Setting() {
   const supabase = createClient()
@@ -17,7 +18,7 @@ export default function Setting() {
   const [message, setMessage] = useState<string | null>(null)
   const [members, setMembers] = useState<any[]>([])
   const [loadingMembers, setLoadingMembers] = useState(true)
-const{profile} = useCompany()
+  const { profile } = useCompany()
   const [openRoleModal, setOpenRoleModal] = useState(false)
   const handleInvite = async () => {
     if (loading) return
@@ -83,38 +84,38 @@ const{profile} = useCompany()
     if (error) throw new Error(error.message)
   }
 
- async function updateTeamRole(id: string, role: string) {
-  const supabase = createClient()
+  async function updateTeamRole(id: string, role: string) {
+    const supabase = createClient()
 
-  // 1️⃣ Get user_id from peto_teams
-  const { data: team, error: fetchError } = await supabase
-    .from('peto_teams')
-    .select('user_id')
-    .eq('id', id)
-    .single()
-
-  if (fetchError || !team?.user_id) {
-    throw new Error('User not linked to team')
-  }
-
-  const userId = team.user_id
-
-  // 2️⃣ Update both tables
-  const [teamRes, profileRes] = await Promise.all([
-    supabase
+    // 1️⃣ Get user_id from peto_teams
+    const { data: team, error: fetchError } = await supabase
       .from('peto_teams')
-      .update({ role })
-      .eq('id', id),
+      .select('user_id')
+      .eq('id', id)
+      .single()
 
-    supabase
-      .from('profiles')
-      .update({ role })
-      .eq('id', userId),
-  ])
+    if (fetchError || !team?.user_id) {
+      throw new Error('User not linked to team')
+    }
 
-  if (teamRes.error) throw new Error(teamRes.error.message)
-  if (profileRes.error) throw new Error(profileRes.error.message)
-}
+    const userId = team.user_id
+
+    // 2️⃣ Update both tables
+    const [teamRes, profileRes] = await Promise.all([
+      supabase
+        .from('peto_teams')
+        .update({ role })
+        .eq('id', id),
+
+      supabase
+        .from('profiles')
+        .update({ role })
+        .eq('id', userId),
+    ])
+
+    if (teamRes.error) throw new Error(teamRes.error.message)
+    if (profileRes.error) throw new Error(profileRes.error.message)
+  }
 
   async function resendInvite(id: string, email: string) {
     const supabase = createClient()
@@ -131,7 +132,6 @@ const{profile} = useCompany()
 
     if (error) throw new Error(error.message)
 
-    // 👉 here you send email again (Resend)
   }
   function ActionMenu({ member, refresh }: any) {
     const [open, setOpen] = useState(false)
@@ -173,7 +173,8 @@ const{profile} = useCompany()
 
     return (
       <div className="relative">
-        <button onClick={() => {setOpen(!open)
+        <button onClick={() => {
+          setOpen(!open)
           setOpenRoleModal(false)
         }} className="text-sm text-gray-600 cursor-pointer p-1 rounded hover:bg-gray-100">
           <FaEllipsisV />
@@ -224,7 +225,7 @@ const{profile} = useCompany()
                 >
                   {
                     member.role === 'peto_owner' && (
-                  <option value="peto_owner">Owner</option>
+                      <option value="peto_owner">Owner</option>
                     )
 
                   }
@@ -251,11 +252,11 @@ const{profile} = useCompany()
 
   return (
     <div>
-      <h1 className="text-lg font-semibold mb-4">Member</h1>
+      <h1 className="text-lg font-semibold mb-4">Members</h1>
 
-      <div className="flex gap-10 rounded-lg bg-gray-50 p-4">
+      <div className=" flex flex-col md:flex-row gap-8 rounded-lg bg-gray-50 p-4">
 
-        <div className="flex flex-1 gap-4">
+        <div className=" flex flex-col md:flex-row gap-4 flex-1">
 
           <input
             value={email}
@@ -288,67 +289,116 @@ const{profile} = useCompany()
 
       </div>
 
-      <div>
+      <div className="mt-8" >
         <h2 className="text-md font-semibold mt-8 mb-4">{members.length} Members</h2>
         <div>
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loadingMembers ? (
+
+          {/* MOBILE CARD */}
+          <div className="space-y-4 md:hidden">
+            {members.slice(0, 4).map((member) => (
+              <div key={member.id} className="rounded-xl bg-white p-4 shadow-sm border space-y-3">
+
+                <div className="flex items-center justify-between">
+                  <p className="text-md font-semibold text-gray-700 mb-1">
+                    {formatDate(member.created_at)}
+                  </p>
+                  {
+                    member.role == 'peto_owner' ? (
+                      <span className="text-gray-400"></span>
+                    ) : (
+                      <ActionMenu member={member} refresh={fetchMembers} />
+                    )
+                  }
+                </div>
+
+                <hr />
+
+                <InfoRow label="Name" value={member.email.split('@')[0] || '—'} />
+                <InfoRow label="Email" value={member.email} />
+                <InfoRow label="Role" value=
+                  {member.role === 'peto_owner' ? 'Owner' :
+                    member.role === 'peto_admin' ? 'Admin' :
+                      member.role === 'peto_verifier' ? 'Verifier' :
+                        member.role === 'peto_analyst' ? 'Analyst' : member.role}
+                />
+
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
+
+            <table className="hidden md:table w-full text-sm">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={4} className="text-center py-4 text-gray-500">
-                    Loading members...
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
-              ) : members.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="text-center py-4 text-gray-500">
-                    No members found
-                  </td>
-                </tr>
-              ) : (
-                members.map((member) => (
-                  <tr key={member.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {member.email.split('@')[0] || '—'}
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {member.email}
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {member.role === 'peto_owner' ? 'Owner' :
-                        member.role === 'peto_admin' ? 'Admin' :
-                          member.role === 'peto_verifier' ? 'Verifier' :
-                            member.role === 'peto_analyst' ? 'Analyst' : member.role}
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {
-                        member.role === 'peto_owner' ? (
-                          <span className="text-gray-400"></span>
-                        ) : (
-                          <ActionMenu member={member} refresh={fetchMembers} />
-                        )
-                      }
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {loadingMembers ? (
+                  <tr>
+                    <td colSpan={4} className="text-center py-4 text-gray-500">
+                      Loading members...
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : members.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center py-4 text-gray-500">
+                      No members found
+                    </td>
+                  </tr>
+                ) : (
+                  members.map((member) => (
+                    <tr key={member.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {member.email.split('@')[0] || '—'}
+                      </td>
+
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {member.email}
+                      </td>
+
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {member.role === 'peto_owner' ? 'Owner' :
+                          member.role === 'peto_admin' ? 'Admin' :
+                            member.role === 'peto_verifier' ? 'Verifier' :
+                              member.role === 'peto_analyst' ? 'Analyst' : member.role}
+                      </td>
+
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {
+                          member.role === 'peto_owner' ? (
+                            <span className="text-gray-400"></span>
+                          ) : (
+                            <ActionMenu member={member} refresh={fetchMembers} />
+                          )
+                        }
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-     
+
+    </div>
+  )
+}
+
+/* INFO ROW */
+function InfoRow({ label, value }: { label: string, value: any }) {
+  return (
+    <div className="flex justify-between items-center border-b pb-2">
+      <span className="text-gray-600 text-sm">{label}</span>
+      <span className="text-gray-900 text-sm font-medium">
+        {value || "-"}
+      </span>
     </div>
   )
 }

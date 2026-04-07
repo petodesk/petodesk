@@ -52,9 +52,9 @@ export async function inviteTeams(
       await resend.emails.send({
         from: `${company.name} <teams@petodesk.com>`,
         to: [email],
-        subject: `🎉 You're now an Admin at ${company.name}`,
+        subject: `You're now an Admin at ${company.name}`,
         html: `
-          <h2>Congratulations 🎉</h2>
+          <h2>Congratulations </h2>
           <p>You have been promoted to <strong>ADMIN</strong> at <strong>${company.name}</strong>.</p>
           
           <p>You now have access to admin features and controls.</p>
