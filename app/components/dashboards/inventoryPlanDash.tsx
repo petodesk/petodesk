@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react"
 import RevenueSummaryChart from "../RevenueSummary"
 import { ClipLoader } from "react-spinners"
 import { Line, LineChart, ResponsiveContainer } from "recharts"
+import { useCompany } from "@/app/context/CompanyContext"
 
 type Range =
   | 'today'
@@ -30,7 +31,7 @@ export default function InventoryPlanDash() {
   const [recentlyUpdated, setRecentlyUpdated] = useState(0)
   const [loading, setLoading] = useState(true)
   const [range, setRange] = useState<Range>('this_month')
-
+const{currency} = useCompany()
   /* ---------------- DATE RANGE LOGIC ---------------- */
 
   const getRangeDates = (range: Range) => {
@@ -308,7 +309,7 @@ const profitTrend = netProfit - previousMonthProfit
 
             <div>
               <p className={`text-4xl font-bold tracking-tight ${isUp ? "text-green-600" : "text-red-600"}`}>
-                N{netProfit.toLocaleString()}
+                {currency} {netProfit.toLocaleString()}
               </p>
               <p className="text-sm text-gray-500">
                 Net Profit for {range.replace('_', ' ')}
@@ -333,7 +334,7 @@ const profitTrend = netProfit - previousMonthProfit
                 <div className="flex flex-col text-right min-w-[90px]">
                   <span className="text-sm text-gray-500">Sales</span>
                   <span className="text-sm font-semibold">
-                    N{salesTotal.toLocaleString()}
+                    {currency} {salesTotal.toLocaleString()}
                   </span>
                 </div>
 
@@ -355,7 +356,7 @@ const profitTrend = netProfit - previousMonthProfit
                 <div className="flex flex-col text-right min-w-[90px]">
                   <span className="text-sm text-gray-500">Expenses</span>
                   <span className="text-sm font-semibold">
-                    N{expenseTotal.toLocaleString()}
+                    {currency} {expenseTotal.toLocaleString()}
                   </span>
                 </div>
 
@@ -429,7 +430,7 @@ const profitTrend = netProfit - previousMonthProfit
 
               <div className="flex gap-2">
                 <p className="font-semibold">Stock Value:</p>
-                <span>N{stockValue.toLocaleString()}</span>
+                <span>{currency} {stockValue.toLocaleString()}</span>
               </div>
 
               <div className="flex gap-2">
