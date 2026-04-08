@@ -6,6 +6,7 @@ import { createClient } from '@supabase/supabase-js'
 export async function inviteTeams(
   email: string,
   role: string,
+  name: string,
   company: any
 ) {
 
@@ -54,8 +55,11 @@ export async function inviteTeams(
         to: [email],
         subject: `You're now an Admin at ${company.name}`,
         html: `
-          <h2>Congratulations </h2>
-          <p>You have been promoted to <strong>ADMIN</strong> at <strong>${company.name}</strong>.</p>
+          <h2>Hello ${name}  </h2>
+          <p>
+          You have been assigned as an ADMIN at ${company.name}.  
+
+           You have been promoted to <strong>ADMIN</strong> at <strong>${company.name}</strong>.</p>
           
           <p>You now have access to admin features and controls.</p>
 
@@ -68,7 +72,8 @@ export async function inviteTeams(
           </a>
 
           <br/><br/>
-          <p>— ${company.name} Team</p>
+          <p>Best,</p>
+          <p>${company.name} Team</p>
         `,
       });
     } catch (emailError) {

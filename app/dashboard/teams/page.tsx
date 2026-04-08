@@ -1,6 +1,5 @@
 'use client'
 
-import { addTeamMember } from '@/app/actions/petoteams'
 import { createClient } from '@/app/utils/supabase/client'
 import { useEffect, useState } from 'react'
 import { FaEllipsisV } from 'react-icons/fa'
@@ -18,6 +17,7 @@ export default function Setting() {
     const [members, setMembers] = useState<any[]>([])
     const [loadingMembers, setLoadingMembers] = useState(true)
     const { profile, company } = useCompany()
+    const[name, setName] = useState(profile?.full_name || '')
     const [openRoleModal, setOpenRoleModal] = useState(false)
     console.log('company in setting', company)
     console.log('role in setting', role)
@@ -36,7 +36,7 @@ export default function Setting() {
             setLoading(true)
             setMessage(null)
 
-            await inviteTeams(email, role, company)
+            await inviteTeams(email, role, name, company)
 
             toast.success('Invite sent successfully')
 
@@ -90,7 +90,7 @@ export default function Setting() {
         const handleRoleChange = async (newRole: string, email: string) => {
             setUpdating(true)
             try {
-                await inviteTeams(email, newRole, company)
+                await inviteTeams(email, newRole, name, company)
                 toast.success('Role updated successfully')
                 fetchMembers()
             } catch (err) {
