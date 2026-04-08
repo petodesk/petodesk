@@ -206,21 +206,10 @@ export default function Tasks() {
                                 Set In Progress
                             </li>
                             {
-                                role === 'owner' ? (
+                                role === 'owner' && (
                                     <li onClick={editTaskHandler}
                                         className="px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-800">
                                         Edit Task
-                                    </li>
-                                ) : (
-                                    <li
-                                        onClick={() => {
-                                            setSelectedTask(task.id)
-                                            setOpenAddReport(true)
-                                        }}
-                                        className="px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-800">
-
-                                        Report this Task
-
                                     </li>
                                 )
                             }
