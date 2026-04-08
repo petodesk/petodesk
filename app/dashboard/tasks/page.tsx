@@ -5,7 +5,6 @@ import { HiSearch } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
 import AddTaskModal from "@/app/components/AddTaskModal"
 import AddCommentModal from "@/app/components/AddCommentModal"
-import AddReportModal from "@/app/components/AddReportModal"
 import Reports from "@/app/components/Reports"
 
 export default function Tasks() {
@@ -18,7 +17,6 @@ export default function Tasks() {
     const [task, setTask] = useState()
     const [openComment, setOpenComment] = useState<boolean>(false)
     const [role, setRole] = useState()
-    const [openAddReport, setOpenAddReport] = useState<boolean>(false)
     const [openReports, setOpenReports] = useState<boolean>(false)
     // Updated stats for Tasks
     const [stats, setStats] = useState({
@@ -249,13 +247,7 @@ export default function Tasks() {
                         />
                     )
                 }
-                {openAddReport && (
-                    <AddReportModal
-                        open={openAddReport}
-                        onClose={() => setOpenAddReport(false)}
-                        taskId={selectedTask}
-                    />
-                )}
+           
 
                 {editTask && <AddTaskModal task={task} open={editTask} onClose={() => { setEditTask(false), fetchTasks() }} />}
             </div>
