@@ -72,7 +72,8 @@ export async function inviteTeams(
           </a>
 
           <br/><br/>
-          <p>— ${company.name} Team</p>
+          <p>Best,</p>
+          <p>${company.name} Team</p>
         `,
       });
     } catch (emailError) {
