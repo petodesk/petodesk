@@ -259,7 +259,7 @@ export default function Reports({ onClose }: { onClose: () => void }) {
                     <div className="flex flex-col gap-5">
 
                         <div className="gap-2">
-                            <h1 className="text-md md:text-xl font-semibold">Tasks & Daily Activities</h1>
+                            <h1 className="text-md md:text-xl font-semibold">Daily Reports</h1>
                             <p className="text-gray-600">Assign tasks, track progress, and submit daily work reports</p>
                         </div>
 
