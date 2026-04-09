@@ -49,6 +49,7 @@ const links = [
   { label: 'Leave', href: '/dashboard/leave', icon: HiOutlineCalendarDays, roles: ['employee'], plans: ['business_plus', 'hr'] },
   { label: 'issues & Compliants', href: '/dashboard/issue-complaints', icon: HiOutlineExclamationTriangle, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr'] },
   { label: 'Company Feed', href: '/dashboard/companyfeed', icon: HiOutlineSpeakerWave, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr'] },
+   { label: 'Profile', href: '/dashboard/profile', icon: HiOutlineSpeakerWave, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr', 'inventory'] },
 
 ]
 
@@ -133,7 +134,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
   )
 
   return (
-    <aside className="flex flex-col h-screen w-64 bg-white shadow-sm max-h-[90vh]">
+    <aside className="flex flex-col h-screen w-64 bg-white shadow-sm max-h-[90vh] font-poppins">
 
       <div className="bg-blue-600 text-white p-4 font-bold text-center rounded-t-lg my-2 ">
         My Petodesk Account
@@ -182,15 +183,6 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
           <div className="border-t mt-1">
 
             <div className="px-3 py-3 space-y-1">
-
-              <Link
-                href="/dashboard/profile"
-                onClick={onClose}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
-              >
-                <HiOutlineUserCircle size={18} />
-                Profile
-              </Link>
 
               <button
                 onClick={handleLogout}
