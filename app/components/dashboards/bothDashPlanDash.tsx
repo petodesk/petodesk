@@ -6,6 +6,8 @@ import { useCompany } from "@/app/context/CompanyContext"
 import { Loading } from "../Loading"
 import RevenueSummary from "../DashChart"
 import RevenueSummaryChart from "../RevenueSummary"
+import { FaEye, FaEyeSlash } from "react-icons/fa"
+import { formatNumber } from "@/app/utils/numberFormatter"
 
 type Range =
     | 'today'
@@ -28,6 +30,7 @@ export default function Dashboard() {
     const [categories, setCategories] = useState(0)
     const [chartData, setChartData] = useState<any[]>([])
     const [range, setRange] = useState<Range>('this_month')
+    const [show, setShow] = useState(true)
     const [stats, setStats] = useState({
         profit: 0,
         salesTotal: 0,
@@ -40,9 +43,7 @@ export default function Dashboard() {
 
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        fetchDashboardData()
-    }, [])
+
 
     const getRangeDates = (range: Range) => {
 
@@ -103,266 +104,213 @@ export default function Dashboard() {
         return { from, to }
     }
 
-    // async function fetchDashboardData() {
+    // const fetchDashboardData = useCallback(async () => {
+
     //     setLoading(true)
-    //     try {
-    //         // 1. Fetch Sales and Expenses for Profit & Loss
-    //         // const { data: sales } = await supabase.from('sale_items').select('subtotal')
+
+    //     const { from, to } = getRangeDates(range)
 
 
-    //         const { data: sales } = await supabase
-    //             .from('sales')
-    //             .select('total_amount, created_at, sale_items (quantity, selling_price, cost_price, discount, subtotal, status)')
-    //             .eq('company_id', company?.id)
-    //             .gte('created_at', from.toISOString())
-    //             .lte('created_at', to.toISOString())
 
-    //         let salesTotal = 0
-    //         let profitTotal = 0
+    //     /* SALES */
 
-    //         sales?.forEach((sale) => {
-    //             const activeItems = sale.sale_items.filter(
-    //                 item => item.status !== 'Cancelled'
-    //             )
+    //     const { data: sales } = await supabase
+    //         .from('sales')
+    //         .select('total_amount, created_at, sale_items (quantity, selling_price, cost_price, discount, subtotal, status)')
+    //         .eq('company_id', company?.id)
+    //         .gte('created_at', from.toISOString())
+    //         .lte('created_at', to.toISOString())
 
-    //             activeItems.forEach(item => {
-    //                 salesTotal += item.subtotal
-    //                 profitTotal +=
-    //                     (item.selling_price - item.cost_price) *
-    //                     item.quantity -
-    //                     item.discount
-    //             })
+    //     let salesTotal = 0
+    //     let profitTotal = 0
+
+    //     sales?.forEach((sale) => {
+    //         const activeItems = sale.sale_items.filter(
+    //             item => item.status !== 'Cancelled'
+    //         )
+
+    //         activeItems.forEach(item => {
+    //             salesTotal += item.subtotal
+    //             profitTotal +=
+    //                 (item.selling_price - item.cost_price) *
+    //                 item.quantity -
+    //                 item.discount
     //         })
+    //     })
 
 
 
-    //         setSalesTotal(salesTotal)
-    //         setProfitTotal(profitTotal)
+    //     setSalesTotal(salesTotal)
+    //     setProfitTotal(profitTotal)
 
+    //     /* EXPENSES */
 
+    //     const { data: expenses } = await supabase
+    //         .from('expenses')
+    //         .select('amount, created_at')
+    //         .eq('company_id', company?.id)
+    //         .gte('created_at', from.toISOString())
+    //         .lte('created_at', to.toISOString())
 
+    //     const totalExpenses =
+    //         expenses?.reduce((sum, e) => sum + Number(e.amount || 0), 0) || 0
 
-    //         const { data: expenses } = await supabase.from('expenses').select('amount')
+    //     setExpenseTotal(totalExpenses)
 
-    //         const totalSales = sales?.reduce((acc, curr) => acc + (curr.subtotal || 0), 0) || 0
-    //         const totalExpenses = expenses?.reduce((acc, curr) => acc + (curr.amount || 0), 0) || 0
+    //     /* PROFIT */
 
-    //         // 2. Fetch Employee counts by status
-    //         const { data: employees } = await supabase.from('profiles').select('status, role').eq('company_id', company?.id)
-    //         const activeEmps = employees?.filter(e => e.status === 'active').length || 0
-    //         const inactiveEmps = employees?.filter(e => e.status === 'inactive').length || 0
-    //         const admins = employees?.filter(e => e.role === 'admin').length || 0
-    //         const users = employees?.filter(e => e.role === 'employee').length || 0
-    //         console.log("Employee Data:", employees)
-    //         // 3. Fetch Task counts by status
-    //         const { data: tasks } = await supabase.from('tasks').select('status')
-    //         const completedTasks = tasks?.filter(t => t.status === 'completed').length || 0
-    //         const pendingTasks = tasks?.filter(t => t.status === 'pending').length || 0
-    //         // 4. Fetch Inventory Stats
-    //         const { data: inventory } = await supabase.from('products').select('*, product_stock(quantity), product_prices(cost_price)').eq('company_id', company?.id)
-    //         const totalProducts = inventory?.length || 0
-    //         const outOfStock = inventory?.filter(i => i.product_stock[0].quantity <= 0).length || 0
-    //         const uniqueCategories = new Set(inventory?.map(i => i.category)).size
-    //         const stockValue = inventory?.reduce((acc, curr) => acc + (curr.product_stock[0].quantity * curr.product_prices[0].cost_price), 0) || 0
-    //         console.log("Inventory Data:", inventory)
-    //         setStats({
-    //             profit: totalSales - totalExpenses,
-    //             salesTotal: totalSales,
-    //             expenseTotal: totalExpenses,
-    //             employees: { active: activeEmps, inactive: 4, admin: admins, users: users },
-    //             tasks: { completed: 3, pending: pendingTasks },
-    //             inventory: {
-    //                 total: totalProducts,
-    //                 outOfStock: outOfStock,
-    //                 categories: uniqueCategories,
-    //                 lowStock: inventory?.filter(i => i.product_stock[0].quantity > 0 && i.product_stock[0].quantity < 5).length || 0,
-    //                 value: stockValue
-    //             },
-    //             hr: { ...stats.hr } // Placeholder for HR specific logic
-    //         })
-    //     } catch (error) {
-    //         console.error("Error fetching dashboard data:", error)
-    //     } finally {
-    //         setLoading(false)
+    //     setNetProfit(profitTotal - totalExpenses)
+
+    //     /* INVENTORY */
+
+    //     const { data: productsData } = await supabase
+    //         .from('products')
+    //         .select(`
+    //         id,
+    //         category,
+    //         product_stock (
+    //           quantity,
+    //           status
+    //         ),
+    //         product_prices (
+    //           selling_price
+    //         )
+    //       `)
+    //         .eq('company_id', company?.id)
+
+    //     if (productsData) {
+
+    //         setProducts(productsData)
+
+    //         const uniqueCategories = new Set(
+    //             productsData.map((p) => p.category)
+    //         )
+
+    //         setCategories(uniqueCategories.size)
     //     }
-    // }
+    //     // employee//
+    //     const { data: profiles } = await supabase.from('profiles').select('status, role').eq('company_id', company?.id)
+    //     const activeEmps = profiles?.filter(e => e.status === 'active').length || 0
+    //     const inactiveEmps = profiles?.filter(e => e.status === 'inactive').length || 0
+    //     const admins = profiles?.filter(e => e.role === 'admin').length || 0
+    //     const employees = profiles?.filter(e => e.role === 'employee').length || 0
+    //     setStats((prev) => ({
+    //         ...prev,
+    //         employees: { active: activeEmps, inactive: inactiveEmps, admin: admins, users: employees }
+    //     }))
+    //     const { data: tasks } = await supabase.from('tasks').select('status').eq('company_id', company?.id)
+    //     .eq('created_at', from.toISOString()).lte('created_at', to.toISOString())
+
+    //     const completedTasks = tasks?.filter(t => t.status === 'completed').length || 0
+    //     const pendingTasks = tasks?.filter(t => t.status === 'pending').length || 0
+    //     setStats((prev) => ({
+    //         ...prev,
+    //         tasks: { completed: completedTasks, pending: pendingTasks }
+    //     }))
+    //     console.log("Fetched Tasks:", tasks)
+    //     /* REVENUE CHART */
+    //     const months = [
+    //         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    //         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    //     ]
+
+    //     const monthly = months.map((m) => ({
+    //         month: m,
+    //         sales: 0,
+    //         expenses: 0
+    //     }))
+
+    //     sales?.forEach((s) => {
+    //         const month = new Date(s.created_at).getMonth()
+    //         monthly[month].sales += Number(s.total_amount || 0)
+    //     })
+
+    //     expenses?.forEach((e) => {
+    //         const month = new Date(e.created_at).getMonth()
+    //         monthly[month].expenses += Number(e.amount || 0)
+    //     })
+
+    //     setChartData(monthly)
+
+    //     setLoading(false)
+
+    // }, [supabase, range])
+
     const fetchDashboardData = useCallback(async () => {
+        if (!company?.id) return
 
         setLoading(true)
 
-        const { from, to } = getRangeDates(range)
+        try {
+            const { from, to } = getRangeDates(range)
 
-
-
-        /* SALES */
-
-        const { data: sales } = await supabase
-            .from('sales')
-            .select('total_amount, created_at, sale_items (quantity, selling_price, cost_price, discount, subtotal, status)')
-            .eq('company_id', company?.id)
-            .gte('created_at', from.toISOString())
-            .lte('created_at', to.toISOString())
-
-        let salesTotal = 0
-        let profitTotal = 0
-
-        sales?.forEach((sale) => {
-            const activeItems = sale.sale_items.filter(
-                item => item.status !== 'Cancelled'
-            )
-
-            activeItems.forEach(item => {
-                salesTotal += item.subtotal
-                profitTotal +=
-                    (item.selling_price - item.cost_price) *
-                    item.quantity -
-                    item.discount
+            const { data, error } = await supabase.rpc('get_dashboard_full', {
+                p_company_id: company.id,
+                p_from: from.toISOString(),
+                p_to: to.toISOString()
             })
-        })
 
+            if (error) throw error
+            console.log('Dashboard RPC data:', data.inventory)
+            // ✅ CORE METRICS
+            setSalesTotal(data.salesTotal || 0)
+            setProfitTotal(data.profitTotal || 0)
+            setExpenseTotal(data.expenseTotal || 0)
+            setNetProfit(data.profitTotal - data.expenseTotal || 0)
 
+            // ✅ STATS
+            setStats(prev => ({
+                ...prev,
+                tasks: data.tasks || { completed: 0, pending: 0 },
+                employees: data.employees || { active: 0, inactive: 0, admin: 0, users: 0 },
+                inventory: data.inventory || {
+                    total: 0,
+                    outOfStock: 0,
+                    categories: 0,
+                    lowStock: 0,
+                    value: 0
+                }
+            }))
 
-        setSalesTotal(salesTotal)
-        setProfitTotal(profitTotal)
+            // ✅ CHART
+            setChartData(data.monthly || [])
 
-        /* EXPENSES */
-
-        const { data: expenses } = await supabase
-            .from('expenses')
-            .select('amount, created_at')
-            .eq('company_id', company?.id)
-            .gte('created_at', from.toISOString())
-            .lte('created_at', to.toISOString())
-
-        const totalExpenses =
-            expenses?.reduce((sum, e) => sum + Number(e.amount || 0), 0) || 0
-
-        setExpenseTotal(totalExpenses)
-
-        /* PROFIT */
-
-        setNetProfit(profitTotal - totalExpenses)
-
-        /* INVENTORY */
-
-        const { data: productsData } = await supabase
-            .from('products')
-            .select(`
-            id,
-            category,
-            product_stock (
-              quantity,
-              status
-            ),
-            product_prices (
-              selling_price
-            )
-          `)
-            .eq('company_id', company?.id)
-
-        if (productsData) {
-
-            setProducts(productsData)
-
-            const uniqueCategories = new Set(
-                productsData.map((p) => p.category)
-            )
-
-            setCategories(uniqueCategories.size)
+        } catch (err) {
+            console.error('Dashboard RPC error:', err)
+        } finally {
+            setLoading(false)
         }
-        // employee//
-        const { data: profiles } = await supabase.from('profiles').select('status, role').eq('company_id', company?.id)
-        const activeEmps = profiles?.filter(e => e.status === 'active').length || 0
-        const inactiveEmps = profiles?.filter(e => e.status === 'inactive').length || 0
-        const admins = profiles?.filter(e => e.role === 'admin').length || 0
-        const employees = profiles?.filter(e => e.role === 'employee').length || 0
-        setStats((prev) => ({
-            ...prev,
-            employees: { active: activeEmps, inactive: inactiveEmps, admin: admins, users: employees }
-        }))
-        const { data: tasks } = await supabase.from('tasks').select('status').eq('company_id', company?.id)
-        // .eq('created_at', from.toISOString()).lte('created_at', to.toISOString())
 
-        const completedTasks = tasks?.filter(t => t.status === 'completed').length || 0
-        const pendingTasks = tasks?.filter(t => t.status === 'pending').length || 0
-        setStats((prev) => ({
-            ...prev,
-            tasks: { completed: completedTasks, pending: pendingTasks }
-        }))
-        console.log("Fetched Tasks:", tasks)
-        /* REVENUE CHART */
-        const months = [
-            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-        ]
+    }, [range, company?.id])
 
-        const monthly = months.map((m) => ({
-            month: m,
-            sales: 0,
-            expenses: 0
-        }))
-
-        sales?.forEach((s) => {
-            const month = new Date(s.created_at).getMonth()
-            monthly[month].sales += Number(s.total_amount || 0)
-        })
-
-        expenses?.forEach((e) => {
-            const month = new Date(e.created_at).getMonth()
-            monthly[month].expenses += Number(e.amount || 0)
-        })
-
-        setChartData(monthly)
-
-        setLoading(false)
-
-    }, [supabase, range])
-
+    const total = salesTotal + expenseTotal || 1
     useEffect(() => {
         fetchDashboardData()
     }, [fetchDashboardData])
 
-    const totalItems = products.length
-
-    const lowStockCount = products.filter(p =>
-        p.product_stock?.[0]?.status === 'low_stock'
-    ).length
-
-    const outOfStockCount = products.filter(p =>
-        p.product_stock?.[0]?.status === 'out_of_stock'
-    ).length
-
-    const stockValue = products.reduce((sum, p) => {
-
-        const quantity = p.product_stock?.[0]?.quantity || 0
-        const price = p.product_prices?.[0]?.selling_price || 0
-
-        return sum + quantity * price
-
-    }, 0)
-    const total = salesTotal + expenseTotal || 1
-
-
-
     if (loading) return <div className="p-8 text-center"><Loading /></div>
 
     return (
-        <div className="py-2  md:p-2 bg-gray-50 max-h-screen overflow-auto space-y-6 text-gray-800 ">
+        <div className="py-2  md:p-2 bg-gray-50 max-h-[95vh] overflow-auto space-y-6 text-gray-800 ">
             {/* TOP ROW */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <MetricCard
                     onClick={(value: Range) => setRange(value)}
-                    title="Profit & Loss" subtitle={`NET FOR ${new Date().toLocaleString('default', { month: 'long' })}`} value={`${currency} ${netProfit.toLocaleString()}`}>
+                    option
+                    show
+                    range={range}
+                    title="Profit & Loss" subtitle={`NET FOR ${range}`} value={`${currency} ${formatNumber(netProfit)}`}>
                     <div className="mt-4 space-y-2">
 
-                        <ProgressBar label="Sales" value={`${salesTotal}`} total={total} color="bg-blue-600" />
-                        <ProgressBar label="Expense" value={`${expenseTotal}`} total={total} color="bg-green-400" />
+                        <ProgressBar
+                            label="Sales" value={`${salesTotal}`} total={total} color="bg-blue-600" currency={currency} />
+                        <ProgressBar label="Expense" value={`${expenseTotal}`} total={total} color="bg-green-400" currency={currency} />
                     </div>
                 </MetricCard>
 
                 <MetricCard
-                onClick={(value: Range) => setRange(value)}
-                title="Number of Employees">
+                    onClick={(value: Range) => setRange(value)}
+                    title="Number of Employees">
                     <div className="flex flex-col  items-center ">
                         <div className="flex gap-2">
                             <div className="flex flex-col  gap-1 items-center">
@@ -378,7 +326,7 @@ export default function Dashboard() {
                         </div>
 
                         {/* Status Circle */}
-                        <div className="flex gap-4 ">
+                        <div className="flex gap-4 items-center mt-4">
 
                             <StatusCircle percentage={stats.employees.active > 0 ? (stats.employees.active / (stats.employees.active + stats.employees.inactive)) * 100 : 0} color="text-blue-600" />
                             <div className="flex flex-col items-center justify-center text-[10px]">
@@ -393,8 +341,10 @@ export default function Dashboard() {
                 </MetricCard>
 
                 <MetricCard
-                onClick={(value: Range) => setRange(value)}
-                title="Tasks">
+                    onClick={(value: Range) => setRange(value)}
+                    option
+                    range={range}
+                    title="Tasks">
                     <div className="grid grid-cols-2 gap-4 text-center">
                         <div>
                             <p className="text-xs text-gray-400 uppercase font-bold">Completed</p>
@@ -419,11 +369,11 @@ export default function Dashboard() {
                     <select className="text-xs font-bold text-gray-400 bg-transparent border-none outline-none"><option>This Month</option></select>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-12">
-                    <StatLine label="Total Products" value={`${totalItems} items`} />
-                    <StatLine label="Out of Stock" value={`${outOfStockCount} items`} />
+                    <StatLine label="Total Products" value={`${stats.inventory.total} items`} />
+                    <StatLine label="Out of Stock" value={`${stats.inventory.outOfStock} items`} />
                     <StatLine label="Categories" value={stats.inventory.categories} />
-                    <StatLine label="Low Stock Items" value={`${lowStockCount} items`} />
-                    <StatLine label="Stock Value" value={`${currency} ${stockValue.toLocaleString()}`} />
+                    <StatLine label="Low Stock Items" value={`${stats.inventory.lowStock} items`} />
+                    <StatLine label="Stock Value" value={`${currency} ${stats.inventory.value.toLocaleString()}`} />
                     <StatLine label="Recently Updated" value="Dynamic Soon" />
                 </div>
             </div>
@@ -448,7 +398,7 @@ export default function Dashboard() {
                     </div>
                     {/* Visual Chart Placeholder */}
                     <div className="h-64 w-full bg-gray-50 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-200">
-                        <RevenueSummaryChart data={chartData}/>
+                        <RevenueSummaryChart data={chartData} />
                     </div>
                 </div>
             </div>
@@ -456,9 +406,10 @@ export default function Dashboard() {
     )
 }
 
-/* --- REUSABLE COMPONENTS (Updated for dynamic usage) --- */
+/* --- REUSABLE COMPONENTs --- */
 
-function MetricCard({ title, subtitle, value, children, onClick }: any) {
+function MetricCard({ title, subtitle, value, children, onClick, range, option, show }: any) {
+    const [showValue, setShowValue] = useState<boolean>(true)
     return (
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start">
@@ -466,20 +417,48 @@ function MetricCard({ title, subtitle, value, children, onClick }: any) {
                     <h3 className="font-bold text-gray-600">{title}</h3>
                     {subtitle && <p className="text-[9px] text-blue-500 font-extrabold tracking-widest mt-1 uppercase">{subtitle}</p>}
                 </div>
-                <select
-                    onChange={(e) => onClick && onClick(e.target.value)}
-                    className="text-[10px] font-bold text-gray-400 bg-transparent outline-none">
-                    <option value="today">Today</option>
-                    <option value="yesterday">Yesterday</option>
-                    <option value="this_week">This Week</option>
-                    <option value="last_week">Last Week</option>
-                    <option value="this_month">This Month</option>
-                    <option value="last_month">Last Month</option>
-                    <option value="this_year">This Year</option>
-                    <option value="last_year">Last Year</option>
-                </select>
+                {
+                    option &&
+                    <select
+                        onChange={(e) => onClick && onClick(e.target.value)}
+                        className="text-[10px] font-bold text-gray-400 bg-transparent outline-none">
+
+                        <option value="today">{range || 'Today'}</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="this_week">This Week</option>
+                        <option value="last_week">Last Week</option>
+                        <option value="this_month">This Month</option>
+                        <option value="last_month">Last Month</option>
+                        <option value="this_year">This Year</option>
+                        <option value="last_year">Last Year</option>
+                    </select>
+                }
+
             </div>
-            {value && <p className="text-3xl font-black mt-3 text-gray-800">{value}</p>}
+            {
+                show ? (
+                    <div className="flex items-center justify-between">
+
+                        {showValue ? (
+                            <p className="text-3xl font-black mt-3 text-gray-800">{value}</p>
+                        ) : (
+                            <p className="text-3xl font-black mt-3 text-gray-800">...</p>
+                        )}
+                        <span>
+                            {showValue ? (
+                                <FaEye onClick={() => setShowValue(false)} className="text-gray-400 cursor-pointer" size={14} />
+                            ) : (
+                                <FaEyeSlash onClick={() => setShowValue(true)} className="text-gray-400 cursor-pointer" size={14} />
+                            )}
+                        </span>
+                    </div>
+                ) : (
+                    <p className="text-3xl font-black mt-3 text-gray-800">{value}</p>
+
+                )
+            }
+
+
             {children}
         </div>
     )
@@ -497,13 +476,29 @@ function StatLine({ label, value, subValue }: any) {
     )
 }
 
-function ProgressBar({ label, value, total, color }: any) {
+function ProgressBar({ label, value, total, color, currency, show }: { label: string, value: any, total: number, color: string, currency?: any, show?: boolean }) {
+    const [showValue, setShowValue] = useState<boolean>(true)
     const width = total > 0 ? (value / total) * 100 : 0
     return (
         <div className="space-y-1.5">
             <div className="flex justify-between text-[10px] font-black text-gray-500">
                 <span>{label.toUpperCase()}</span>
-                <span> {value.toLocaleString()}</span>
+                {
+                    showValue ? (
+                        <span>
+                            {currency ? `${currency} ${formatNumber(value)}` : `${formatNumber(value)}`}
+                        </span>
+                    ) : (
+                        <span>...</span>
+                    )
+                }
+                {
+                    showValue ? (
+                        <FaEye onClick={() => setShowValue(false)} className="text-gray-400 cursor-pointer" size={12} />
+                    ) : (
+                        <FaEyeSlash onClick={() => setShowValue(true)} className="text-gray-400 cursor-pointer" size={12} />
+                    )
+                }
             </div>
             <div className="w-full bg-gray-100 h-3.5 rounded-full overflow-hidden shadow-inner">
                 <div className={`${color} h-full transition-all duration-500`} style={{ width: `${width}%` }}></div>
