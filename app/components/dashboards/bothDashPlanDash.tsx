@@ -127,8 +127,8 @@ export default function Dashboard() {
             setSalesTotal(data.salesTotal || 0)
             setProfitTotal(data.profitTotal || 0)
             setExpenseTotal(data.expenseTotal || 0)
-            setNetProfit(100000000000)
-
+            setNetProfit(data.profitTotal)
+console.log("data",data)
             // ✅ STATS
             setStats(prev => ({
                 ...prev,
@@ -206,8 +206,8 @@ export default function Dashboard() {
 
                             <StatusCircle percentage={stats.employees.active > 0 ? (stats.employees.active / (stats.employees.active + stats.employees.inactive)) * 100 : 0} color="text-blue-600" />
                             <div className="flex flex-col items-center justify-center text-[10px]">
-                                <span className="text-gray-400">Admin: {stats.employees.admin}</span>
-                                <span className="text-gray-400">Employee's: {stats.employees.users}</span>
+                                <span className="text-gray-700">Admin: {stats.employees.admin}</span>
+                                <span className="text-gray-700">Employee's: {stats.employees.users}</span>
                             </div>
 
                         </div>
@@ -242,7 +242,6 @@ export default function Dashboard() {
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                 <div className="flex justify-between mb-6">
                     <h3 className="font-bold text-lg text-gray-700">Inventory Stats</h3>
-                    <select className="text-xs font-bold text-gray-400 bg-transparent border-none outline-none"><option>This Month</option></select>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-12">
                     <StatLine 
@@ -272,7 +271,17 @@ export default function Dashboard() {
                 <div className="md:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                     <div className="flex justify-between mb-8">
                         <h3 className="font-bold text-lg text-gray-700">Revenue Summary</h3>
-                        <select className="text-xs font-bold text-gray-400 bg-transparent outline-none"><option>This Year</option></select>
+                        <select 
+                        onChange={(e)=>setRange(e.target.value as any)}
+                        
+                        className="text-xs font-bold text-gray-400 bg-transparent outline-none"> <option value="today">{range || 'Today'}</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="this_week">This Week</option>
+                        <option value="last_week">Last Week</option>
+                        <option value="this_month">This Month</option>
+                        <option value="last_month">Last Month</option>
+                        <option value="this_year">This Year</option>
+                        <option value="last_year">Last Year</option></select>
                     </div>
                     {/* Visual Chart Placeholder */}
                     <div className="h-64 w-full bg-gray-50 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-200">
@@ -290,7 +299,7 @@ function MetricCard({ title, subtitle, value, children, onClick, range, option, 
     const [showValue, setShowValue] = useState<boolean>(true)
     return (
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start">
+            <div className="flex justify-between md:items-start">
                 <div>
                     <h3 className="font-bold text-gray-600">{title}</h3>
                     {subtitle && <p className="text-[9px] text-blue-500 font-extrabold tracking-widest mt-1 uppercase">{subtitle}</p>}
@@ -299,7 +308,7 @@ function MetricCard({ title, subtitle, value, children, onClick, range, option, 
                     option &&
                     <select
                         onChange={(e) => onClick && onClick(e.target.value)}
-                        className="text-xs font-bold text-gray-400 bg-transparent outline-none">
+                        className="text-xs font-bold text-gray-400 bg-gray-100 rounded-lg p-1 outline-none">
 
                         <option value="today">{range || 'Today'}</option>
                         <option value="yesterday">Yesterday</option>
