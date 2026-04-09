@@ -127,8 +127,8 @@ export default function Dashboard() {
             setSalesTotal(data.salesTotal || 0)
             setProfitTotal(data.profitTotal || 0)
             setExpenseTotal(data.expenseTotal || 0)
-            setNetProfit(100000000000)
-
+            setNetProfit(data.profitTotal)
+console.log("data",data)
             // ✅ STATS
             setStats(prev => ({
                 ...prev,
