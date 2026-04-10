@@ -9,10 +9,6 @@ import { Loading } from "@/app/components/Loading"
 import * as XLSX from "xlsx"
 import { saveAs } from "file-saver"
 type Range =
-    | 'today'
-    | 'yesterday'
-    | 'this_week'
-    | 'last_week'
     | 'this_month'
     | 'last_month'
     | 'this_year'
