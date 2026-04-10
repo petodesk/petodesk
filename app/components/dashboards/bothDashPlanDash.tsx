@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react"
 import { createClient } from "@/app/utils/supabase/client"
 import { useCompany } from "@/app/context/CompanyContext"
 import { Loading } from "../Loading"
-import RevenueSummary from "../DashChart"
 import RevenueSummaryChart from "../RevenueSummary"
 import { FaEye, FaEyeSlash } from "react-icons/fa"
 import { formatNumber } from "@/app/utils/numberFormatter"
@@ -39,7 +38,7 @@ export default function Dashboard() {
         employees: { active: 0, inactive: 0, admin: 0, users: 0 },
         tasks: { completed: 0, pending: 0 },
         inventory: { total: 0, outOfStock: 0, categories: 0, lowStock: 0, value: 0 },
-        hr: { attendance: 0, birthdays: 0, hires: 0, leave: 0, reviews: 0, absent:0 }
+        hr: { attendance: 0, birthdays: 0, hires: 0, leave: 0, reviews: 0, absent: 0 }
     })
 
     const [loading, setLoading] = useState(true)
@@ -128,7 +127,7 @@ export default function Dashboard() {
             setProfitTotal(data.profitTotal || 0)
             setExpenseTotal(data.expenseTotal || 0)
             setNetProfit(data.profitTotal)
-console.log("data",data)
+            console.log("data", data)
             // ✅ STATS
             setStats(prev => ({
                 ...prev,
@@ -141,7 +140,7 @@ console.log("data",data)
                     lowStock: 0,
                     value: 0
                 },
-                hr:data.hr
+                hr: data.hr
             }))
             console.log('hr', stats.hr)
 
@@ -167,7 +166,7 @@ console.log("data",data)
         <div className="py-2  md:p-2 bg-gray-50 max-h-[95vh] overflow-auto space-y-6 text-gray-800 ">
             {/* TOP ROW */}
             <div className="flex justify-content-end">
-                <OfficeLocationPage/>
+                <OfficeLocationPage />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <MetricCard
@@ -175,7 +174,7 @@ console.log("data",data)
                     option
                     show
                     range={range}
-                    title="Profit & Loss" subtitle={`NET FOR ${range}`} value={`${currency} ${(netProfit.toLocaleString())}`}>
+                    title="Profit & Loss" subtitle={`NET FOR ${range}`} value={`${currency} ${netProfit.toLocaleString()}`}>
                     <div className="mt-4 space-y-6">
 
                         <ProgressBar
@@ -244,9 +243,9 @@ console.log("data",data)
                     <h3 className="font-bold text-lg text-gray-700">Inventory Stats</h3>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-12">
-                    <StatLine 
-                    col
-                     label="Total Products" value={`${stats.inventory.total} items`} />
+                    <StatLine
+                        col
+                        label="Total Products" value={`${stats.inventory.total} items`} />
                     <StatLine col label="Out of Stock" value={`${stats.inventory.outOfStock} items`} />
                     <StatLine col label="Categories" value={stats.inventory.categories} />
                     <StatLine col label="Low Stock Items" value={`${stats.inventory.lowStock} items`} />
@@ -271,17 +270,17 @@ console.log("data",data)
                 <div className="md:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                     <div className="flex justify-between mb-8">
                         <h3 className="font-bold text-lg text-gray-700">Revenue Summary</h3>
-                        <select 
-                        onChange={(e)=>setRange(e.target.value as any)}
-                        
-                        className="text-xs font-bold text-gray-400 bg-transparent outline-none"> <option value="today">{range || 'Today'}</option>
-                        <option value="yesterday">Yesterday</option>
-                        <option value="this_week">This Week</option>
-                        <option value="last_week">Last Week</option>
-                        <option value="this_month">This Month</option>
-                        <option value="last_month">Last Month</option>
-                        <option value="this_year">This Year</option>
-                        <option value="last_year">Last Year</option></select>
+                        <select
+                            onChange={(e) => setRange(e.target.value as any)}
+
+                            className="text-xs font-bold text-gray-400 bg-transparent outline-none"> <option value="today">{range || 'Today'}</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="this_week">This Week</option>
+                            <option value="last_week">Last Week</option>
+                            <option value="this_month">This Month</option>
+                            <option value="last_month">Last Month</option>
+                            <option value="this_year">This Year</option>
+                            <option value="last_year">Last Year</option></select>
                     </div>
                     {/* Visual Chart Placeholder */}
                     <div className="h-64 w-full bg-gray-50 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-200">
@@ -353,7 +352,7 @@ function MetricCard({ title, subtitle, value, children, onClick, range, option, 
 
 function StatLine({ label, value, subValue, col }: any) {
     return (
-        <div className={`${col?'flex-col gap-2 md:flex-row':""} flex justify-between md:items-end border-b border-gray-50 pb-2`}>
+        <div className={`${col ? 'flex-col gap-2 md:flex-row' : ""} flex justify-between md:items-end border-b border-gray-50 pb-2`}>
             <span className="text-sm text-gray-400 font-medium">{label}:</span>
             <div className="md:text-right">
                 <span className="text-sm font-bold text-gray-700">{value}</span>
