@@ -4,7 +4,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { HiOutlineCurrencyDollar } from 'react-icons/hi'
+import { HiOutlineCurrencyDollar, HiOutlineUser } from 'react-icons/hi'
 type SubscriptionWithPlan = {
   status: string
   trial_end: string | null
@@ -49,7 +49,7 @@ const links = [
   { label: 'Leave', href: '/dashboard/leave', icon: HiOutlineCalendarDays, roles: ['employee'], plans: ['business_plus', 'hr'] },
   { label: 'issues & Compliants', href: '/dashboard/issue-complaints', icon: HiOutlineExclamationTriangle, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr'] },
   { label: 'Company Feed', href: '/dashboard/companyfeed', icon: HiOutlineSpeakerWave, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr'] },
-   { label: 'Profile', href: '/dashboard/profile', icon: HiOutlineSpeakerWave, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr', 'inventory'] },
+   { label: 'Profile', href: '/dashboard/profile', icon:HiOutlineUser , roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr', 'inventory'] },
 
 ]
 
