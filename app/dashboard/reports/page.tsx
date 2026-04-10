@@ -26,6 +26,11 @@ export default function Reports() {
     const [chartData, setChartData] = useState<any[]>([])
     const [range, setRange] = useState<Range>('this_month')
     const [show, setShow] = useState(true)
+    const [trends, setTrends] = useState<any>()
+    const [currentSales, setCurrentSales] = useState(0)
+    const [previousSale, setPreviousSale] = useState(0)
+    const [currentExpenses, setCurrentExpenses] = useState(0)
+    const [previousExpenses, setPreviousExpenses] = useState(0)
 
     const [stats, setStats] = useState({
         profit: 0,
@@ -145,6 +150,7 @@ export default function Reports() {
                 p_to: to.toISOString()
             })
 
+
             if (error) throw error
             console.log('Dashboard RPC data:', data)
             // ✅ CORE METRICS
@@ -152,6 +158,10 @@ export default function Reports() {
             setProfitTotal(data.profitTotal || 0)
             setExpenseTotal(data.expenseTotal || 0)
             setNetProfit(data.profitTotal)
+            setCurrentSales(data.current_sales)
+            setCurrentExpenses(data.current_expenses)
+            setPreviousSale(data.previous_sales)
+            setPreviousExpenses(data.previous_expenses)
             console.log("data", data)
             // ✅ STATS
             setStats(prev => ({
@@ -219,18 +229,28 @@ export default function Reports() {
     }
 
     const getTrend = (current: number, previous: number) => {
-        if (!previous) return { percent: 0, trend: 'neutral' }
+        if (!previous && !current) {
+            return { percent: 0, trend: 'neutral' }
+        }
+
+        if (!previous) {
+            return { percent: 0, trend: 'up' }
+        }
 
         const change = ((current - previous) / previous) * 100
 
+        if (change === 0) {
+            return { percent: 0, trend: 'neutral' }
+        }
+
         return {
             percent: Math.abs(change).toFixed(1),
-            trend: change > 0 ? 'up' : change < 0 ? 'down' : 'neutral'
+            trend: change > 0 ? 'up' : 'down'
         }
     }
-    const salesTrend = getTrend(600, 400)
-    const expenseTrend = getTrend(6000, 800)
 
+    const salesTrend = getTrend(currentSales, previousSale)
+    const expenseTrend = getTrend(currentExpenses, previousExpenses)
 
     return (
         <div className="py-2  md:p-2 bg-gray-50 max-h-[95vh] overflow-auto space-y-6 text-gray-800 font-poppins ">
@@ -293,10 +313,25 @@ export default function Reports() {
                         <div className="flex flex-col gap-1 flex-1">
                             <h3 className="text-lg font-medium text-gray-500">Sales</h3>
                             <p className="text-md font-bold text-gray-900">{currency} {salesTotal}</p>
-                            <p className={`text-sm flex items-center gap-1 ${salesTrend.trend === 'up' ? 'text-green-600' : 'text-red-600'
-                                }`}>
-                                <span>{salesTrend.trend === 'up' ? '↑' : '↓'}</span>
-                                {salesTrend.percent}% vs last month
+                            <p
+                                className={`text-sm flex items-center gap-1 ${salesTrend.trend === 'up'
+                                    ? 'text-green-600'
+                                    : salesTrend.trend === 'down'
+                                        ? 'text-red-600'
+                                        : 'text-gray-500'
+                                    }`}
+                            >
+                                <span>
+                                    {salesTrend.trend === 'up'
+                                        ? '↑'
+                                        : salesTrend.trend === 'down'
+                                            ? '↓'
+                                            : '→'}
+                                </span>
+
+                                {salesTrend.trend === 'neutral'
+                                    ? 'No change'
+                                    : `${salesTrend.percent}% vs last month`}
                             </p>
                         </div>
 
@@ -304,8 +339,25 @@ export default function Reports() {
                         <div className="flex flex-col gap-1 flex-1">
                             <h3 className="text-sm font-medium text-gray-500">Expenses</h3>
                             <p className="text-md font-bold text-gray-900">{currency} {expenseTotal}</p>
-                            <p className="text-sm text-red-600 flex items-center gap-1">
-                                <span>-</span> 1% vs last period
+                            <p
+                                className={`text-sm flex items-center gap-1 ${expenseTrend.trend === 'up'
+                                        ? 'text-green-600'
+                                        : expenseTrend.trend === 'down'
+                                            ? 'text-red-600'
+                                            : 'text-gray-500'
+                                    }`}
+                            >
+                                <span>
+                                    {expenseTrend.trend === 'up'
+                                        ? '↑'
+                                        : expenseTrend.trend === 'down'
+                                            ? '↓'
+                                            : '→'}
+                                </span>
+
+                                {expenseTrend.trend === 'neutral'
+                                    ? 'No change'
+                                    : `${expenseTrend.percent}% vs last month`}
                             </p>
                         </div>
                     </div>
