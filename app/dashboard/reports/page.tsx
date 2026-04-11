@@ -26,7 +26,7 @@ export default function Reports() {
 
     const [chartData, setChartData] = useState<any[]>([])
     const [range, setRange] = useState<Range>('this_month')
-    const [label, setLabel] = useState()
+    const [label, setLabel] = useState<string>('')
 
     const [currentSales, setCurrentSales] = useState(0)
     const [previousSale, setPreviousSale] = useState(0)
@@ -145,14 +145,14 @@ export default function Reports() {
         setLoading(true)
 
         try {
-            const { from, to } = getRangeDates(range)
+            const { from, to,label } = getRangeDates(range)
 
             const { data, error } = await supabase.rpc('get_reports_full', {
                 p_company_id: company.id,
                 p_from: from.toISOString(),
                 p_to: to.toISOString()
             })
-
+        setLabel(label)
 
             if (error) throw error
             console.log('Dashboard RPC data:', data)
@@ -211,6 +211,7 @@ export default function Reports() {
 
     const exportToExcel = () => {
         const { label } = getRangeDates(range)
+        setLabel(label)
         const reportData = [
             {
                 Month: `${label}`,
@@ -392,7 +393,7 @@ const exportToPDF = () => {
                     option
                     show
                     range={range}
-                    title="Profit & Loss" subtitle={`NET FOR ${range}`} value={`${currency} ${(netProfit.toLocaleString())}`}>
+                    title="Profit & Loss" subtitle={`NET FOR ${label}`} value={`${currency} ${(netProfit.toLocaleString())}`}>
                     <div className="mt-4 space-y-6">
 
                         <ProgressBar
