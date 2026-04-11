@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { FadeLoader } from 'react-spinners'
 import { AllEmployeeModal } from '@/app/components/AllEmployeeModal'
 import { formatDate } from '@/app/utils/dateFormatter'
+import EmployeeDetailsModal from '@/app/components/EmployeeDetailsModal'
 
 type Range = 'today' | 'this_week' | 'this_month' | 'this_year' | 'all'
 
@@ -16,15 +17,38 @@ type LeaveRequest = {
 }
 
 type Employee = {
-  id: string
-  employee_id_slug?: string
-  name: string
-  role: string
-  created_at: string
-  email: string
-  phone: string
-  alt_phone?: string
-  image?: string
+  id: string;
+  employee_id_slug?: string;
+  company_id: string;
+  name: string;
+  role: string;
+  created_at: string;
+  department: string;
+  birthday: string;
+  email: string;
+  home_address1: string;
+  home_address2: string;
+  phone: string;
+  image?: string;
+   salary?: {
+        salary_type: string
+        base_salary: number
+        allowances: {
+            type: string
+            amount: number
+        }[]
+        pension_amount: number
+        tax_amount: number
+        deductions: number
+        net_salary: number
+    } | null
+     assessment?: {
+        test: string;
+        stage: string;
+        interview_score: number;
+        interviewer_name: string;
+        hiring_note: string;
+    } | null;
   // Changed to handle both object or array returns from Supabase
   employee_info?: {
     employee_status: string
@@ -55,6 +79,8 @@ export default function EmployeesPage() {
   const [openRecentHires, setOpenRecentHires] = useState(false)
   const [openProbationEmployees, setOpenProbationEmployees] = useState(false)
   const [probationEmployee, setProbationEmployees] = useState<Employee[]>([])
+  const [selectedEmployee, setSelectedEmployee] = useState<any>()
+  const [opendDetails, setOpenDetails] = useState(false)
   // Helper to get nested status safely
   const getStatus = (emp: Employee) => {
     if (Array.isArray(emp.employee_info)) {
@@ -62,7 +88,7 @@ export default function EmployeesPage() {
     }
     return emp.employee_info?.employee_status || 'N/A';
   }
-
+  console.log('selectedEmployee', selectedEmployee)
   const getRangeDates = (range: Range) => {
     const now = new Date()
     let from = new Date()
@@ -97,9 +123,13 @@ export default function EmployeesPage() {
     const { data, error } = await supabase
       .from('employees')
       .select(`
-        *,
-        employee_info (employee_status, probation_end_date, next_promotion_date)
-      `)
+                    *,
+                    employee_info (*),
+                    salary (*),
+                    assessment (*),
+                    employee_reference (*),
+                    leaves(id, leave_type, start_date, end_date, status)
+                `)
       .gte('created_at', from.toISOString())
       .lte('created_at', to.toISOString())
       .order('created_at', { ascending: false })
@@ -180,7 +210,11 @@ export default function EmployeesPage() {
     return emp.name.toLowerCase().includes(query) || emp.role?.toLowerCase().includes(query)
   })
 
-  return (
+  return opendDetails ? (
+    <EmployeeDetailsModal open={opendDetails} employee={selectedEmployee} onClose={() => {setOpenDetails(false)
+      fetchEmployees()
+    }} />
+  ) : (
     <section className="w-full px-6 py-6 bg-gray-50 min-h-screen">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
@@ -279,8 +313,11 @@ export default function EmployeesPage() {
                   <td className="px-4 py-3 capitalize">
                     <StatusBadge status={getStatus(emp)} />
                   </td>
-                  <td className="px-4 py-3">
-                    <Link href={`/dashboard/employee/${emp.id}`} className="text-blue-600 hover:underline">View</Link>
+                  <td onClick={() => {
+                    setOpenDetails(true)
+                    setSelectedEmployee(emp)
+                  }} className="px-4 py-3 text-md text-blue-600 cursor-pointer">
+                    View
                   </td>
                 </tr>
               ))}

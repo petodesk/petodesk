@@ -4,14 +4,13 @@ import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
 import { AddEmployModal } from '@/app/components/AddEmployModal';
-import Link from 'next/dist/client/link';
 import { toast } from 'react-toastify';
 import { useCompany } from '@/app/context/CompanyContext';
 
 type Employee = {
     id: string;
     employee_id_slug?: string;
-    company_id:string;
+    company_id: string;
     name: string;
     role: string;
     created_at: string;
@@ -58,15 +57,22 @@ type Employee = {
         company: string;
         address: string;
     } | null;
+    leaves?: {
+        id: string
+        leave_type: string
+        start_date: string
+        end_date: Date
+        status: string
+    }[] | null
 };
 
-export default function EmployeeDetailsPage() {
+export default function EmployeeDetailsModal({ open, onClose, employee }: { open: boolean, onClose: () => void, employee: Employee }) {
     const { id } = useParams();
     const supabase = createClient();
-    const [employee, setEmployee] = useState<Employee | null>(null);
-    const [open, setOpen] = useState(false)
-    const[loading, setLoading] = useState(false)
-const{company} = useCompany()
+    const [openEdit, setOpenEdit] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [employeeD, setEmployeeD] = useState(employee)
+    const { company } = useCompany()
     useEffect(() => {
         async function getFullDetails() {
             const { data, error } = await supabase
@@ -87,7 +93,7 @@ const{company} = useCompany()
             }
 
             // Robust check: if join returns array, take index 0, otherwise take data as is
-            setEmployee({
+            setEmployeeD({
                 ...data,
                 employee_info: Array.isArray(data.employee_info) ? data.employee_info[0] : data.employee_info ?? null,
                 salary: Array.isArray(data.salary) ? data.salary[0] : data.salary ?? null,
@@ -98,34 +104,7 @@ const{company} = useCompany()
         getFullDetails();
     }, [id]);
 
-    const handleModalClose = () => {
-        setOpen(false);
-        // Refetch employee details after closing the modal to get updated data
-        supabase
-            .from('employees')
-            .select(`
-                *,
-                employee_info (*),
-                salary (*),
-                assessment (*),
-                employee_reference (*)
-            `)
-            .eq('id', id)
-            .single()
-            .then(({ data, error }) => {
-                if (error) {
-                    console.error(error);
-                    return;
-                }
-                setEmployee({
-                    ...data,
-                    employee_info: Array.isArray(data.employee_info) ? data.employee_info[0] : data.employee_info ?? null,
-                    salary: Array.isArray(data.salary) ? data.salary[0] : data.salary ?? null,
-                    assessment: Array.isArray(data.assessment) ? data.assessment[0] : data.assessment ?? null,
-                    employee_reference: Array.isArray(data.employee_reference) ? data.employee_reference[0] : data.employee_reference ?? null,
-                });
-            });
-    };
+ 
 
     if (!employee) return <div className="p-10 text-center text-gray-500">Loading profile...</div>;
 
@@ -140,7 +119,9 @@ const{company} = useCompany()
     const baseSalary = Number(salaryData?.base_salary) || 0;
     const netSalary = Number(salaryData?.net_salary) || 0;
     const totalDeductions = taxAmount + pensionAmount;
-
+const approvedLeaves = employee.leaves?.filter((l)=>l.status == 'approved').length
+const pendingdLeaves = employee.leaves?.filter((l)=>l.status == 'pending').length
+const RejectedLeaves = employee.leaves?.filter((l)=>l.status == 'rejected').length
     // 1. Logic to calculate dynamic values
     const statusData = [
         { label: "Employee Status", value: employee.employee_info?.employee_status },
@@ -160,9 +141,9 @@ const{company} = useCompany()
 
     const leaveData = [
         { label: "Leaves Status", value: "Active" },
-        { label: "Approved", value: "0" },
-        { label: "Pending", value: "0" },
-        { label: "Rejected", value: "0" },
+        { label: "Approved", value:approvedLeaves },
+        { label: "Pending", value: pendingdLeaves },
+        { label: "Rejected", value: RejectedLeaves },
     ];
 
     const desciplineRecords = [
@@ -194,55 +175,55 @@ const{company} = useCompany()
         { label: "  Policy Compliance ", value: "Good" },
         { label: "Manager Feedback", value: "Positive" },
     ];
-const handleSendSetupLink = async () => {
-  if (!employee || !employee.company_id) return
+    const handleSendSetupLink = async () => {
+        if (!employee || !employee.company_id) return
 
-  try {
-    setLoading(true)
+        try {
+            setLoading(true)
 
-    const res = await fetch('/api/invite', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: employee.email,
-        name: employee.name,
-        companyName: company?.name || "Your Company",
-        companyId: employee.company_id
-      })
-    })
+            const res = await fetch('/api/invite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: employee.email,
+                    name: employee.name,
+                    companyName: company?.name || "Your Company",
+                    companyId: employee.company_id
+                })
+            })
 
-    const data = await res.json()
-    console.log(data)
+            const data = await res.json()
+            console.log(data)
 
-    if (!res.ok) throw new Error(data.error)
+            if (!res.ok) throw new Error(data.error)
 
-    toast.success("Invite sent 🚀")
-  } catch (err: any) {
-    toast.error(err.message)
-  } finally {
-    setLoading(false)
-  }
-}
+            toast.success("Invite sent 🚀")
+        } catch (err: any) {
+            toast.error(err.message)
+        } finally {
+            setLoading(false)
+        }
+    }
     return (
         <section className="w-full px-6 py-6 bg-gray-50 max-h-screen overflow-y-auto scrollbar-none">
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-20">
                 <button className='btn-secondary rounded-lg p-2'>
-                    <Link href="/dashboard/employee" className="text-gray-600 hover:text-gray-800 text-white text-sm">
+                    <button onClick={onClose} className="text-gray-600 hover:text-gray-800 text-white text-sm">
                         &larr; Back to Employees
-                    </Link>
+                    </button>
                 </button>
                 <button
-                    onClick={() => setOpen(true)}
+                    onClick={() => setOpenEdit(true)}
                     className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
                 >
                     + Edit Employee
                 </button>
                 <button
-                disabled={loading}
+                    disabled={loading}
                     onClick={handleSendSetupLink}
                     className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700"
                 >
-                   {loading ?"sending":"Send Setup Link"} 
+                    Add Performance
                 </button>
             </div>
 
@@ -384,7 +365,7 @@ const handleSendSetupLink = async () => {
                 </div>
             </div>
 
-            {open && <AddEmployModal onClose={handleModalClose} employee={employee} />}
+            {openEdit && <AddEmployModal onClose={() => setOpenEdit(false)} employee={employee} />}
         </section>
     )
 }
