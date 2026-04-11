@@ -8,6 +8,8 @@ import { formatNumber } from "@/app/utils/numberFormatter"
 import { Loading } from "@/app/components/Loading"
 import * as XLSX from "xlsx"
 import { saveAs } from "file-saver"
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 type Range =
     | 'this_month'
     | 'last_month'
@@ -21,12 +23,11 @@ export default function Reports() {
     const [expenseTotal, setExpenseTotal] = useState(0)
     const [netProfit, setNetProfit] = useState(0)
     const [profitTotal, setProfitTotal] = useState(0)
-    const [products, setProducts] = useState<any[]>([])
-    const [categories, setCategories] = useState(0)
+
     const [chartData, setChartData] = useState<any[]>([])
     const [range, setRange] = useState<Range>('this_month')
-    const [show, setShow] = useState(true)
-    const [trends, setTrends] = useState<any>()
+    const [label, setLabel] = useState()
+
     const [currentSales, setCurrentSales] = useState(0)
     const [previousSale, setPreviousSale] = useState(0)
     const [currentExpenses, setCurrentExpenses] = useState(0)
@@ -36,10 +37,7 @@ export default function Reports() {
         profit: 0,
         salesTotal: 0,
         expenseTotal: 0,
-        employees: { active: 0, inactive: 0, admin: 0, users: 0 },
-        tasks: { completed: 0, pending: 0 },
         inventory: { total_items: 0, out_of_stock: 0, categories: 0, low_stock: 0, total_value: 0 },
-        hr: { attendance: 0, birthdays: 0, hires: 0, leave: 0, reviews: 0, absent: 0 },
         employee_report: {
             active: 0,
             inactive: 0,
@@ -98,40 +96,45 @@ export default function Reports() {
     const [loading, setLoading] = useState(true)
 
 
-
     const getRangeDates = (range: Range) => {
-
         const now = new Date()
         let from = new Date()
         let to = new Date()
+        let label = ""
+
+        const getMonthName = (date: Date) =>
+            date.toLocaleString('default', { month: 'long' })
 
         switch (range) {
             case 'this_month':
                 from = new Date(now.getFullYear(), now.getMonth(), 1)
                 to = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-                to.setHours(23, 59, 59, 999)
+                label = `${getMonthName(now)} ${now.getFullYear()}`
                 break
 
             case 'last_month':
-                from = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+                const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+                from = lastMonth
                 to = new Date(now.getFullYear(), now.getMonth(), 0)
-                to.setHours(23, 59, 59, 999)
+                label = `${getMonthName(lastMonth)} ${lastMonth.getFullYear()}`
                 break
 
             case 'this_year':
                 from = new Date(now.getFullYear(), 0, 1)
                 to = new Date(now.getFullYear(), 11, 31)
-                to.setHours(23, 59, 59, 999)
+                label = `Full Year ${now.getFullYear()}`
                 break
 
             case 'last_year':
                 from = new Date(now.getFullYear() - 1, 0, 1)
                 to = new Date(now.getFullYear() - 1, 11, 31)
-                to.setHours(23, 59, 59, 999)
+                label = `Full Year ${now.getFullYear() - 1}`
                 break
         }
 
-        return { from, to }
+        to.setHours(23, 59, 59, 999)
+
+        return { from, to, label }
     }
 
 
@@ -207,14 +210,27 @@ export default function Reports() {
 
 
     const exportToExcel = () => {
+        const { label } = getRangeDates(range)
         const reportData = [
             {
-                Month: `${range}`,
-                Sales: salesTotal,
-                Expenses: expenseTotal,
-                Profit: netProfit,
-                Employees: stats.employee_report.active,
-                TasksCompleted: stats.tasks_report.completed
+                Month: `${label}`,
+                company: company?.name || "Company",
+                TotalSales: salesTotal,
+                TotalExpenses: expenseTotal,
+                TotalProfit: netProfit,
+                ActiveEmployees: stats.employee_report.active,
+                InactiveEmployees: stats.employee_report.inactive,
+                RecentHires: stats.employee_report.recent_hires,
+                TopPerformancers: stats.employee_report.top_performers,
+                TasksCompleted: stats.tasks_report.completed,
+                pendingTasks: stats.tasks_report.pending,
+                OverDueTasks: stats.tasks_report.overdue,
+                TotalPayroll: stats.payroll.total_salary,
+                TotalDeductions: stats.payroll.total_deductions,
+                TotalPaid: stats.payroll.net_pay,
+                LeavesApproved: stats.leave_report.approved,
+                PendingLeaves: stats.leave_report.pending,
+                RejectedLeavs: stats.leave_report.rejected,
             }
         ]
 
@@ -225,9 +241,89 @@ export default function Reports() {
         const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" })
         const fileData = new Blob([excelBuffer], { type: "application/octet-stream" })
 
-        saveAs(fileData, `Report_${range}.xlsx`)
+        saveAs(fileData, `Report_${label}.xlsx`)
     }
 
+
+const exportToPDF = () => {
+    const { label } = getRangeDates(range);
+    const doc = new jsPDF();
+
+    // --- PDF Header ---
+    doc.setFontSize(18);
+    doc.text(`${company?.name || "Company"} - Business Report`, 14, 20);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Reporting Period: ${label}`, 14, 28);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 34);
+
+    // --- Prepare Data into Sections ---
+    // Instead of one long row, we create logical groups for readability
+    const sections = [
+        {
+            title: "Financial Overview",
+            data: [
+                ["Total Sales", `$${salesTotal.toLocaleString()}`],
+                ["Total Expenses", `$${expenseTotal.toLocaleString()}`],
+                ["Net Profit", `$${netProfit.toLocaleString()}`],
+            ]
+        },
+        {
+            title: "Employee Statistics",
+            data: [
+                ["Active Employees", stats.employee_report.active],
+                ["Inactive Employees", stats.employee_report.inactive],
+                ["Recent Hires", stats.employee_report.recent_hires],
+                ["Top Performers", stats.employee_report.top_performers],
+            ]
+        },
+        {
+            title: "Task Management",
+            data: [
+                ["Tasks Completed", stats.tasks_report.completed],
+                ["Pending Tasks", stats.tasks_report.pending],
+                ["Overdue Tasks", stats.tasks_report.overdue],
+            ]
+        },
+        {
+            title: "Payroll & Leave",
+            data: [
+                ["Total Payroll", `$${stats.payroll.total_salary.toLocaleString()}`],
+                ["Total Paid (Net)", `$${stats.payroll.net_pay.toLocaleString()}`],
+                ["Leaves Approved", stats.leave_report.approved],
+                ["Leaves Pending", stats.leave_report.pending],
+            ]
+        }
+    ];
+
+    // --- Generate Tables ---
+    let finalY = 40; // Starting vertical position
+
+    sections.forEach((section) => {
+        autoTable(doc, {
+            startY: finalY + 10,
+            head: [[section.title, "Details"]],
+            body: section.data,
+            theme: 'striped',
+            headStyles: { fillColor: [41, 128, 185], textColor: 255 }, // Professional Blue
+            styles: { fontSize: 10, cellPadding: 3 },
+            columnStyles: { 0: { fontStyle: 'bold' } },
+            margin: { left: 14, right: 14 }
+        });
+        // Use doc.lastAutoTable.finalY to get the updated Y position
+        finalY = (doc as any).lastAutoTable?.finalY || finalY;
+    });
+
+    // --- Footer ---
+            const pageCount = doc.getNumberOfPages();
+    for(let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 10);
+    }
+
+    doc.save(`Report_${label}.pdf`);
+};
     const getTrend = (current: number, previous: number) => {
         if (!previous && !current) {
             return { percent: 0, trend: 'neutral' }
@@ -285,7 +381,7 @@ export default function Reports() {
                     <button
                         className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500  md:w-40 cursor-pointer"
 
-                        onClick={exportToExcel}>Export PDF</button>
+                        onClick={exportToPDF}>Export PDF</button>
                     {/* </div> */}
                 </div>
             </div>
@@ -308,63 +404,76 @@ export default function Reports() {
                 <div className="bg-white rounded-lg shadow-sm p-4 flex flex-col gap-4 flex-1">
                     <h2 className="text-lg font-semibold text-gray-800">Sales & Expenses</h2>
 
-                    <div className="flex flex-col md:flex-row gap-4 justify-center gap-2">
+                    <div className="flex flex-col md:flex-row items-center gap-4 justify-center gap-2">
                         {/* Sales Section */}
-                        <div className="flex flex-col gap-1 flex-1">
-                            <h3 className="text-lg font-medium text-gray-500">Sales</h3>
+                        <div className="flex flex-col gap-8 flex-1">
+                            <div className="gap-2">
+                             <h3 className="text-lg font-medium text-gray-500">Sales</h3>
                             <p className="text-md font-bold text-gray-900">{currency} {salesTotal}</p>
-                            <p
-                                className={`text-sm flex items-center gap-1 ${salesTrend.trend === 'up'
-                                    ? 'text-green-600'
-                                    : salesTrend.trend === 'down'
-                                        ? 'text-red-600'
-                                        : 'text-gray-500'
-                                    }`}
-                            >
-                                <span>
-                                    {salesTrend.trend === 'up'
-                                        ? '↑'
+                            </div>
+                           
+                            <div>
+                                <p
+                                    className={`text-sm flex items-center gap-1 ${salesTrend.trend === 'up'
+                                        ? 'text-green-600'
                                         : salesTrend.trend === 'down'
-                                            ? '↓'
-                                            : '→'}
-                                </span>
+                                            ? 'text-red-600'
+                                            : 'text-gray-500'
+                                        }`}
+                                >
+                                    <span>
+                                        {salesTrend.trend === 'up'
+                                            ? '↑'
+                                            : salesTrend.trend === 'down'
+                                                ? '↓'
+                                                : '→'}
+                                    </span>
 
-                                {salesTrend.trend === 'neutral'
-                                    ? 'No change'
-                                    : `${salesTrend.percent}% vs last month`}
-                            </p>
+                                    {salesTrend.trend === 'neutral'
+                                        ? 'No change'
+                                        : `${salesTrend.percent}% vs last month`}
+                                </p>
+                            </div>
+
                         </div>
 
                         {/* Expenses Section */}
-                        <div className="flex flex-col gap-1 flex-1">
-                            <h3 className="text-sm font-medium text-gray-500">Expenses</h3>
-                            <p className="text-md font-bold text-gray-900">{currency} {expenseTotal}</p>
-                            <p
-                                className={`text-sm flex items-center gap-1 ${expenseTrend.trend === 'up'
+                        <div className="flex flex-col gap-8 flex-1">
+                            <div className="gap-2">
+                                <h3 className="text-sm font-medium text-gray-500">Expenses</h3>
+
+                                <p className="text-md font-bold text-gray-900">{currency} {expenseTotal}</p>
+                            </div>
+
+                            <div>
+                                <p
+                                    className={`text-sm flex items-center gap-1 ${expenseTrend.trend === 'up'
                                         ? 'text-green-600'
                                         : expenseTrend.trend === 'down'
                                             ? 'text-red-600'
                                             : 'text-gray-500'
-                                    }`}
-                            >
-                                <span>
-                                    {expenseTrend.trend === 'up'
-                                        ? '↑'
-                                        : expenseTrend.trend === 'down'
-                                            ? '↓'
-                                            : '→'}
-                                </span>
+                                        }`}
+                                >
+                                    <span>
+                                        {expenseTrend.trend === 'up'
+                                            ? '↑'
+                                            : expenseTrend.trend === 'down'
+                                                ? '↓'
+                                                : '→'}
+                                    </span>
 
-                                {expenseTrend.trend === 'neutral'
-                                    ? 'No change'
-                                    : `${expenseTrend.percent}% vs last month`}
-                            </p>
+                                    {expenseTrend.trend === 'neutral'
+                                        ? 'No change'
+                                        : `${expenseTrend.percent}% vs last month`}
+                                </p>
+                            </div>
+
                         </div>
                     </div>
                 </div>
 
 
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm ">
+                <div className="bg-white px-6 py-4 rounded-2xl border border-gray-100 shadow-sm ">
                     <div className="flex justify-between mb-6">
                         <h3 className="font-bold text-lg text-gray-700">Inventory</h3>
                     </div>
