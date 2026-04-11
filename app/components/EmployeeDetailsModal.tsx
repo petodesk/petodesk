@@ -104,34 +104,7 @@ export default function EmployeeDetailsModal({ open, onClose, employee }: { open
         getFullDetails();
     }, [id]);
 
-    // const handleModalClose = () => {
-    //     setOpenEdit(false);
-    //     // Refetch employee details after closing the modal to get updated data
-    //     supabase
-    //         .from('employees')
-    //         .select(`
-    //             *,
-    //             employee_info (*),
-    //             salary (*),
-    //             assessment (*),
-    //             employee_reference (*)
-    //         `)
-    //         .eq('id', id)
-    //         .single()
-    //         .then(({ data, error }) => {
-    //             if (error) {
-    //                 console.error(error);
-    //                 return;
-    //             }
-    //             setEmployeeD({
-    //                 ...data,
-    //                 employee_info: Array.isArray(data.employee_info) ? data.employee_info[0] : data.employee_info ?? null,
-    //                 salary: Array.isArray(data.salary) ? data.salary[0] : data.salary ?? null,
-    //                 assessment: Array.isArray(data.assessment) ? data.assessment[0] : data.assessment ?? null,
-    //                 employee_reference: Array.isArray(data.employee_reference) ? data.employee_reference[0] : data.employee_reference ?? null,
-    //             });
-    //         });
-    // };
+ 
 
     if (!employee) return <div className="p-10 text-center text-gray-500">Loading profile...</div>;
 
