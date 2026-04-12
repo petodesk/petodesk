@@ -274,7 +274,7 @@ export default function MessagesPage() {
             <div className="h-[80vh] flex">
 
                 {/* Sidebar */}
-                <div className={`bg-white shadow-lg ${openChat ? "hidden md:block md:w-1/4" : "w-full md:w-1/3"}`}>
+                <div className={`bg-white shadow-lg ${openChat ? "hidden md:block md:w-1/" : "w-full md:w-1/3"}`}>
                     <div className="p-4">
                         <input
                             value={search}
@@ -343,7 +343,7 @@ export default function MessagesPage() {
 
                 {/* Chat Area */}
                 {openChat ? (
-                    <div className="flex-1 flex flex-col">
+                    <div className="flex-1 flex flex-col max-w-[100%]">
 
                         <div className="p-4 bg-white shadow-b flex justify-between ">
                             <div className="flex items-center gap-4">
