@@ -4,7 +4,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { HiOutlineCurrencyDollar, HiOutlineUser } from 'react-icons/hi'
+import { HiChatAlt2, HiOutlineCurrencyDollar, HiOutlineUser } from 'react-icons/hi'
 type SubscriptionWithPlan = {
   status: string
   trial_end: string | null
@@ -46,6 +46,7 @@ const links = [
   { label: 'Teams', href: '/dashboard/teams', icon: HiOutlineUsers, roles: ['admin', 'owner'], plans: ['business_plus', 'hr', 'inventory'] },
   { label: 'Clock In/Out', href: '/dashboard/clock_in_out', icon: HiOutlineClock, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr'] },
   { label: 'Leave Management', href: '/dashboard/leave-management', icon: HiOutlineCalendarDays, roles: ['admin', 'owner'], plans: ['business_plus', 'hr'] },
+  { label: 'Messages', href: '/dashboard/messages', icon: HiChatAlt2, roles: ['admin', 'owner','employee'], plans: ['business_plus', 'hr'] },
   { label: 'Leave', href: '/dashboard/leave', icon: HiOutlineCalendarDays, roles: ['employee'], plans: ['business_plus', 'hr'] },
   { label: 'issues & Compliants', href: '/dashboard/issue-complaints', icon: HiOutlineExclamationTriangle, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr'] },
   { label: 'Company Feed', href: '/dashboard/companyfeed', icon: HiOutlineSpeakerWave, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr'] },
