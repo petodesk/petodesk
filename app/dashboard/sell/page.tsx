@@ -58,7 +58,7 @@ export default function SellPage() {
   const supabase = createClient()
   const { company, currency } = useCompany()
 
-  const [range, setRange] = useState<Range>('this_month')
+  const [range, setRange] = useState<Range>('this_year')
   const [sales, setSales] = useState<Sale[]>([])
   const [loading, setLoading] = useState(true)
   const [openModal, setOpenModal] = useState(false)

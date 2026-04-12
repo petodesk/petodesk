@@ -175,35 +175,35 @@ const RejectedLeaves = employee.leaves?.filter((l)=>l.status == 'rejected').leng
         { label: "  Policy Compliance ", value: "Good" },
         { label: "Manager Feedback", value: "Positive" },
     ];
-    const handleSendSetupLink = async () => {
-        if (!employee || !employee.company_id) return
+    // const handleSendSetupLink = async () => {
+    //     if (!employee || !employee.company_id) return
 
-        try {
-            setLoading(true)
+    //     try {
+    //         setLoading(true)
 
-            const res = await fetch('/api/invite', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email: employee.email,
-                    name: employee.name,
-                    companyName: company?.name || "Your Company",
-                    companyId: employee.company_id
-                })
-            })
+    //         const res = await fetch('/api/invite', {
+    //             method: 'POST',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify({
+    //                 email: employee.email,
+    //                 name: employee.name,
+    //                 companyName: company?.name || "Your Company",
+    //                 companyId: employee.company_id
+    //             })
+    //         })
 
-            const data = await res.json()
-            console.log(data)
+    //         const data = await res.json()
+    //         console.log(data)
 
-            if (!res.ok) throw new Error(data.error)
+    //         if (!res.ok) throw new Error(data.error)
 
-            toast.success("Invite sent 🚀")
-        } catch (err: any) {
-            toast.error(err.message)
-        } finally {
-            setLoading(false)
-        }
-    }
+    //         toast.success("Invite sent 🚀")
+    //     } catch (err: any) {
+    //         toast.error(err.message)
+    //     } finally {
+    //         setLoading(false)
+    //     }
+    // }
     return (
         <section className="w-full px-6 py-6 bg-gray-50 max-h-screen overflow-y-auto scrollbar-none">
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-20">
@@ -220,8 +220,7 @@ const RejectedLeaves = employee.leaves?.filter((l)=>l.status == 'rejected').leng
                 </button>
                 <button
                     disabled={loading}
-                    onClick={handleSendSetupLink}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 cursor-pointer"
                 >
                     Add Performance
                 </button>
