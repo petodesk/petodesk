@@ -76,15 +76,15 @@ export default function OfficeLocationPage() {
 
     }
     return (
-        <div className="flex flex-col gap-4 md:flex-row items-center">
+        <div className="flex  gap-4 md:flex-row items-center">
 
-            <h2 className="text-xl font-bold">Set Office Location</h2>
+            <h2 className="text-lg md:text-xl font-bold">Set Office Location</h2>
 
 
 
             <button
                 onClick={handleSetOffice}
-                className="px-6 py-2 bg-blue-600 text-white rounded-xl cursor-pointer"
+                className="px-4 md:px-6 py-2 bg-blue-600 text-white rounded-xl cursor-pointer"
             >
                 Save Location
             </button>

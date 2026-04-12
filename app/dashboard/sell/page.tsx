@@ -23,7 +23,7 @@ type Range =
 
 type Sale = {
   id: string
-  sold_by:string
+  sold_by: string
   total_amount: number
   payment_method: string
   created_at: string
@@ -58,7 +58,7 @@ export default function SellPage() {
   const supabase = createClient()
   const { company, currency } = useCompany()
 
-  const [range, setRange] = useState<Range>('this_year')
+  const [range, setRange] = useState<Range>('this_month')
   const [sales, setSales] = useState<Sale[]>([])
   const [loading, setLoading] = useState(true)
   const [openModal, setOpenModal] = useState(false)
@@ -80,7 +80,7 @@ export default function SellPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [sellerCompanyId, setSellerCompanyId] = useState<string | null>(null)
-  const[role,setRole] = useState()
+  const [role, setRole] = useState()
   /* ---------------- DATE RANGE LOGIC ---------------- */
   const getRangeDates = (range: Range) => {
     const now = new Date()
@@ -208,7 +208,7 @@ export default function SellPage() {
   useEffect(() => {
     fetchSales()
   }, [fetchSales])
-console.log(sales)
+  console.log(sales)
 
   useEffect(() => {
     const fetchCompany = async () => {
@@ -220,11 +220,11 @@ console.log(sales)
         .select('company_id, role')
         .eq('id', userData.user.id)
         .single()
-  
+
 
       setSellerCompanyId(profile?.company_id || null)
       setRole(profile?.role)
-    
+
     }
 
     fetchCompany()
@@ -335,78 +335,78 @@ console.log(sales)
 
 
 
- const handleCheckout = async (paymentMethod: string) => {
-  if (cart.length === 0) return;
-  if (!confirm(`Complete sale of ₦${cartTotal.toLocaleString()}?`)) return;
+  const handleCheckout = async (paymentMethod: string) => {
+    if (cart.length === 0) return;
+    if (!confirm(`Complete sale of ₦${cartTotal.toLocaleString()}?`)) return;
 
-  setIsCheckoutLoading(true);
+    setIsCheckoutLoading(true);
 
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    // 1. Create the Main Sale Record
-    const { data: sale, error: saleError } = await supabase
-      .from('sales')
-      .insert([{
-        total_amount: cartTotal,
-        payment_method: paymentMethod,
-        sold_by: user?.id,
-        company_id: sellerCompanyId
-      }])
-      .select().single();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
 
-    if (saleError) throw saleError;
+      // 1. Create the Main Sale Record
+      const { data: sale, error: saleError } = await supabase
+        .from('sales')
+        .insert([{
+          total_amount: cartTotal,
+          payment_method: paymentMethod,
+          sold_by: user?.id,
+          company_id: sellerCompanyId
+        }])
+        .select().single();
 
-    // 2. Prepare Items for Bulk Insert
-    const saleItems = cart.map((item) => {
-      const subtotal = (item.selling_price * item.quantity);
-      const taxAmount = subtotal * (item.tax_percent / 100);
-      const discountAmount = subtotal * (item.discount_percent / 100);
-      
-      return {
-        sale_id: sale.id,
-        product_id: item.id,
-        item_name: item.name,
-        quantity: item.quantity,
-        selling_price: item.selling_price,
-        cost_price: item.cost_price,
-        discount_percent: item.discount_percent,
-        discount:discountAmount,
-        tax_percent: item.tax_percent,
-        tax_amount: taxAmount,
-        subtotal: subtotal + taxAmount,
-        status: 'Sold'
-      };
-    });
+      if (saleError) throw saleError;
 
-    const { error: itemsError } = await supabase.from('sale_items').insert(saleItems);
-    if (itemsError) throw itemsError;
+      // 2. Prepare Items for Bulk Insert
+      const saleItems = cart.map((item) => {
+        const subtotal = (item.selling_price * item.quantity);
+        const taxAmount = subtotal * (item.tax_percent / 100);
+        const discountAmount = subtotal * (item.discount_percent / 100);
 
-    // 3. Update Stock (Better to do this via a single RPC call if possible, 
-    // but for now, we'll loop)
-    for (const item of cart) {
+        return {
+          sale_id: sale.id,
+          product_id: item.id,
+          item_name: item.name,
+          quantity: item.quantity,
+          selling_price: item.selling_price,
+          cost_price: item.cost_price,
+          discount_percent: item.discount_percent,
+          discount: discountAmount,
+          tax_percent: item.tax_percent,
+          tax_amount: taxAmount,
+          subtotal: subtotal + taxAmount,
+          status: 'Sold'
+        };
+      });
+
+      const { error: itemsError } = await supabase.from('sale_items').insert(saleItems);
+      if (itemsError) throw itemsError;
+
+      // 3. Update Stock (Better to do this via a single RPC call if possible, 
+      // but for now, we'll loop)
+      for (const item of cart) {
         const { data: currentStock } = await supabase
-            .from('product_stock')
-            .select('quantity')
-            .eq('product_id', item.id)
-            .single();
+          .from('product_stock')
+          .select('quantity')
+          .eq('product_id', item.id)
+          .single();
 
         await supabase
-            .from('product_stock')
-            .update({ quantity: (currentStock?.quantity || 0) - item.quantity })
-            .eq('product_id', item.id);
-    }
+          .from('product_stock')
+          .update({ quantity: (currentStock?.quantity || 0) - item.quantity })
+          .eq('product_id', item.id);
+      }
 
-    alert('Sale Completed Successfully!');
-    setCart([]);
-    setIsCartOpen(false);
-    fetchSales();
-  } catch (err: any) {
-    alert('Error: ' + err.message);
-  } finally {
-    setIsCheckoutLoading(false);
-  }
-};
+      alert('Sale Completed Successfully!');
+      setCart([]);
+      setIsCartOpen(false);
+      fetchSales();
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    } finally {
+      setIsCheckoutLoading(false);
+    }
+  };
 
 
 
@@ -611,7 +611,7 @@ console.log(sales)
 
   /* ---------------- UI ---------------- */
   return (
-    <section className="w-full px-6 py-6 bg-gray-50">
+    <section className="w-full p-2 md:p-6 bg-gray-50">
 
       {/* ---------------- TOP ACTION BAR ---------------- */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -689,17 +689,17 @@ console.log(sales)
           show={show}
           onToggle={() => setShow(!show)}
         />
-{
-  role === 'owner' && (
- <SummaryCard
-          label="Total Profit"
-          value={`${currency} ${totalProfit.toLocaleString()}`}
-          show={show}
-          onToggle={() => setShow(!show)}
-        />
-  )
-}
-       
+        {
+          role === 'owner' && (
+            <SummaryCard
+              label="Total Profit"
+              value={`${currency} ${totalProfit.toLocaleString()}`}
+              show={show}
+              onToggle={() => setShow(!show)}
+            />
+          )
+        }
+
 
         <div className="flex flex-row md:flex-col justify-between items-center rounded-xl bg-white p-4 shadow-sm">
           <p className="text-sm text-gray-500">Transactions</p>
@@ -751,7 +751,7 @@ console.log(sales)
           </span>
         </div>
         {/* ---------------- MOBILE SALES CARDS ---------------- */}
-        <div className="space-y-4 md:hidden">
+        <div className="space-y-4 md:hidden my-3">
           {!loading &&
             filteredSales.slice(0, 5).flatMap((sale) =>
               sale.sale_items.map((item) => {

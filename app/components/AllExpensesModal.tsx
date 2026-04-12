@@ -54,7 +54,7 @@ export function AllExpensesModal({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto p-2 md:px-6 py-4">
 
           {/* ---------------- MOBILE (CARDS) ---------------- */}
           <div className="space-y-4 md:hidden">

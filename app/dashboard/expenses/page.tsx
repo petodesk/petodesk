@@ -320,7 +320,7 @@ export default function ExpensesPage() {
 
   /* ---------------- UI ---------------- */
   return (
-    <section className="w-full px-6 py-6 bg-gray-50 min-h-screen">
+    <section className="w-full p-2 md:p-6 bg-gray-50 min-h-screen">
       {/* ---------------- TOP ACTION BAR ---------------- */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Left: Add Expense */}
@@ -413,7 +413,7 @@ export default function ExpensesPage() {
             >
 
               <div className="flex items-center justify-between">
-                <p className="text-md font-semibold text-gray-700 mb-1">
+                <p className="text-sm font-semibold text-gray-700 mb-1">
                   {new Date(ex.created_at).toLocaleDateString()}
                 </p>
                 {
@@ -428,39 +428,39 @@ export default function ExpensesPage() {
 
               {/* Name */}
               <div className="flex items-center justify-between">
-                <p className="text-md font-semibold text-gray-700 mb-1">Expense Title</p>
-                <p className="text-base font-semibold text-gray-900">
+                <p className="text-sm font-semibold text-gray-700 mb-1">Expense Title</p>
+                <p className="text-sm font-semibold text-gray-900">
                   {ex.title}
                 </p>
               </div>
 
               {/* Category */}
               <div className="flex items-center justify-between">
-                <p className="text-md font-semibold text-gray-700 mb-1">Expense Category</p>
-                <p className="font-medium text-gray-800">
+                <p className="text-sm font-semibold text-gray-700 mb-1">Expense Category</p>
+                <p className="text-sm font-medium text-gray-800">
                   {ex.category || '—'}
                 </p>
               </div>
 
               {/* Quantity */}
               <div className="flex items-center justify-between">
-                <p className="text-md font-semibold text-gray-700 mb-1">Amount</p>
-                <p className="font-medium text-gray-800">
+                <p className="text-sm font-semibold text-gray-700 mb-1">Amount</p>
+                <p className="text-sm font-medium text-gray-800">
                   {currency} {ex.amount?.toLocaleString() || '—'}
                 </p>
               </div>
 
               {/* Price */}
               <div className="flex items-center justify-between">
-                <p className="text-md font-semibold text-gray-700 mb-1">Added By</p>
-                <p className="font-semibold text-gray-900">
+                <p className="text-sm font-semibold text-gray-700 mb-1">Added By</p>
+                <p className="text-sm font-semibold text-gray-900">
                   {ex.profiles?.full_name}
                 </p>
               </div>
 
               {/* Status */}
               <div className="flex items-center justify-between">
-                <p className="text-md font-semibold text-gray-700 mb-1">Status</p>
+                <p className="text-sm font-semibold text-gray-700 mb-1">Status</p>
                 <span
                   className={`inline-block rounded-full px-3 py-1 text-xs font-semibold
             ${ex.status === 'Cancelled'

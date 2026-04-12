@@ -369,7 +369,6 @@ const exportToPDF = () => {
 
 
                     </select>
-                    {/* <div className="flex flex-col md:flex-row gap-3"> */}
 
 
                     <button
@@ -383,7 +382,6 @@ const exportToPDF = () => {
                         className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500  md:w-40 cursor-pointer"
 
                         onClick={exportToPDF}>Export PDF</button>
-                    {/* </div> */}
                 </div>
             </div>
 
@@ -405,10 +403,10 @@ const exportToPDF = () => {
                 <div className="bg-white rounded-lg shadow-sm p-4 flex flex-col gap-4 flex-1">
                     <h2 className="text-lg font-semibold text-gray-800">Sales & Expenses</h2>
 
-                    <div className="flex flex-col md:flex-row items-center gap-4 justify-center gap-2">
+                    <div className="flex flex-col md:flex-row md:items-center gap-4 md:justify-center gap-2">
                         {/* Sales Section */}
-                        <div className="flex flex-col gap-8 flex-1">
-                            <div className="gap-2">
+                        <div className="flex flex-col gap-4 md:gap-8 flex-1">
+                            <div className="max-sm:flex max-sm:items-center max-sm:justify-between gap-2">
                              <h3 className="text-lg font-medium text-gray-500">Sales</h3>
                             <p className="text-md font-bold text-gray-900">{currency} {salesTotal}</p>
                             </div>
@@ -439,8 +437,9 @@ const exportToPDF = () => {
                         </div>
 
                         {/* Expenses Section */}
-                        <div className="flex flex-col gap-8 flex-1">
-                            <div className="gap-2">
+                        <div className="flex flex-col gap-4 md:gap-8 flex-1">
+                            <div className="max-sm:flex max-sm:items-center max-sm:justify-between gap-2">
+                            
                                 <h3 className="text-sm font-medium text-gray-500">Expenses</h3>
 
                                 <p className="text-md font-bold text-gray-900">{currency} {expenseTotal}</p>
