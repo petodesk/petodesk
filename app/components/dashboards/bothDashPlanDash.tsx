@@ -242,7 +242,7 @@ export default function Dashboard() {
                 <div className="flex justify-between mb-6">
                     <h3 className="font-bold text-lg text-gray-700">Inventory Stats</h3>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-12">
+                <div className="grid grid-cols-2 md:grid-cols-3 md:gap-y-6 gap-x-12">
                     <StatLine
                         col
                         label="Total Products" value={`${stats.inventory.total} items`} />
@@ -258,7 +258,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
                     <h3 className="font-bold text-lg text-gray-700">HR Suite Stats</h3>
-                    <div className="space-y-5">
+                    <div className="md:space-y-5">
                         <StatLine label="Attendance Today" value={`${stats.hr.attendance} present`} subValue={`${stats.hr.absent} absent`} />
                         <StatLine label="Upcoming Birthdays" value={`${stats.hr.birthdays} this week`} />
                         <StatLine label="Recent Hires" value={`${stats.hr.hires} this month`} />
