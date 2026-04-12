@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from "react"
-import { HiSearch } from "react-icons/hi"
+import { HiSearch, HiX } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
 import AddTaskModal from "@/app/components/AddTaskModal"
 import AddCommentModal from "@/app/components/AddCommentModal"
@@ -247,7 +247,7 @@ export default function Tasks() {
         <>
             {viewMore ? (
                 /* ---------------- VIEW TASK PAGE ---------------- */
-                <div className="w-full min-h-screen p-2 md:p-6 rounded-lg border bg-white">
+                <div className="w-full min-h-screen p-2  md:p-6 rounded-lg border bg-white">
                     <div className="flex justify-between items-center mb-6">
                         <div>
                             <h2 className="text-2xl font-bold">Task Details</h2>
@@ -255,12 +255,11 @@ export default function Tasks() {
                                 Assigned on {new Date(selectedTask.created_at).toLocaleDateString()}
                             </p>
                         </div>
-                        <button
-                            onClick={() => setViewMore(false)}
-                            className="px-4 py-2 border rounded-lg bg-gray-100 cursor-pointer"
-                        >
-                            Back
-                        </button>
+                        <HiX
+                        className="cursor-pointer"
+                        onClick={()=>setViewMore(false)}
+                         width={32}/>
+                        
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-6">
@@ -317,7 +316,7 @@ export default function Tasks() {
                 </div>
             ) : (
                 /* ---------------- DASHBOARD ---------------- */
-                <div className="w-full p-2 md:p-6 rounded-lg border-2 border-green-200">
+                <div className="w-full py-4 md:p-6 rounded-lg border-2 border-green-200">
                     {
                         openReports ? (
                             <Reports open={openReports} onClose={() => setOpenReports(false)} />
@@ -341,11 +340,7 @@ export default function Tasks() {
                                         </button>
                                     }
 
-                                    <button
-                                        onClick={() => setOpenReports(true)}
-                                        className="bg-white rounded-lg py-3 px-6 border cursor-pointer">
-                                        Daily Reports
-                                    </button>
+                                
                                 </div>
 
                                 {/* -------- SUMMARY CARDS -------- */}
