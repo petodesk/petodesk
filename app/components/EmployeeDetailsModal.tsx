@@ -6,6 +6,8 @@ import { createClient } from '@/app/utils/supabase/client';
 import { AddEmployModal } from '@/app/components/AddEmployModal';
 import { toast } from 'react-toastify';
 import { useCompany } from '@/app/context/CompanyContext';
+import AddPerformanceModal from './AddPerformance';
+import { formatDate } from '../utils/dateFormatter';
 
 type Employee = {
     id: string;
@@ -63,16 +65,25 @@ type Employee = {
         start_date: string
         end_date: Date
         status: string
-    }[] | null
+    }[] | null,
+    performance?:{
+        status:string,
+        warning:number,
+        score:number,
+        created_at:string
+    }[] | null,
+    tasks?:any,
+    attendance:any
 };
 
-export default function EmployeeDetailsModal({ open, onClose, employee }: { open: boolean, onClose: () => void, employee: Employee }) {
+export default function EmployeeDetailsModal({ open, onClose, employee, currency }: { open: boolean, onClose: () => void, employee: Employee, currency:any }) {
     const { id } = useParams();
     const supabase = createClient();
     const [openEdit, setOpenEdit] = useState(false)
     const [loading, setLoading] = useState(false)
     const [employeeD, setEmployeeD] = useState(employee)
-    const { company } = useCompany()
+    const [openPerformanceModal, setOpenPerfromanceModal] = useState(false)
+    console.log('employee details', employee)
     useEffect(() => {
         async function getFullDetails() {
             const { data, error } = await supabase
@@ -82,6 +93,8 @@ export default function EmployeeDetailsModal({ open, onClose, employee }: { open
                     employee_info (*),
                     salary (*),
                     assessment (*),
+                    performance(status, warning, score),
+
                     employee_reference (*)
                 `)
                 .eq('id', id)
@@ -104,8 +117,38 @@ export default function EmployeeDetailsModal({ open, onClose, employee }: { open
         getFullDetails();
     }, [id]);
 
- 
+const calculateCompletionRate = (tasks: any[]) => {
+    if (!tasks || tasks.length === 0) return 0;
 
+    const completedTasks = tasks.filter(
+        (task) => task.status === "completed"
+    ).length;
+
+    const totalTasks = tasks.length;
+
+    return Math.round((completedTasks / totalTasks) * 100);
+};
+const completionRate = calculateCompletionRate(employee.tasks);
+
+console.log(completionRate)
+
+const calculateAttendanceRate = (attendance: any[], expectedDays: number) => {
+    if (!attendance || expectedDays === 0) return 0;
+
+    const validDays = attendance.filter(
+        (day) =>
+            day.status === "Completed" &&
+            day.clock_in &&
+            day.clock_out &&
+            day.is_verified_out === true
+    ).length;
+
+    return Math.round((validDays / expectedDays) * 100);
+};
+
+const attendanceRAte = calculateAttendanceRate(employee.attendance, 1);
+
+console.log(completionRate)
     if (!employee) return <div className="p-10 text-center text-gray-500">Loading profile...</div>;
 
     // --- FINANCIAL LOGIC (Fixing the numeric fetch) ---
@@ -119,93 +162,83 @@ export default function EmployeeDetailsModal({ open, onClose, employee }: { open
     const baseSalary = Number(salaryData?.base_salary) || 0;
     const netSalary = Number(salaryData?.net_salary) || 0;
     const totalDeductions = taxAmount + pensionAmount;
-const approvedLeaves = employee.leaves?.filter((l)=>l.status == 'approved').length
-const pendingdLeaves = employee.leaves?.filter((l)=>l.status == 'pending').length
-const RejectedLeaves = employee.leaves?.filter((l)=>l.status == 'rejected').length
+    const approvedLeaves = employee.leaves?.filter((l) => l.status == 'approved').length
+    const pendingdLeaves = employee.leaves?.filter((l) => l.status == 'pending').length
+    const RejectedLeaves = employee.leaves?.filter((l) => l.status == 'rejected').length
     // 1. Logic to calculate dynamic values
     const statusData = [
         { label: "Employee Status", value: employee.employee_info?.employee_status },
         { label: "Salary Type", value: employee.salary?.salary_type },
-        { label: "Base Salary", value: baseSalary ? ` ${baseSalary.toLocaleString()}` : '0' },
-        { label: "Allowances", value: `${totalAllowance.toLocaleString()}` },
+        { label: "Base Salary", value: baseSalary ? `${currency} ${baseSalary.toLocaleString()}` : '0' },
+        { label: "Allowances", value: `${currency} ${totalAllowance.toLocaleString()}` },
         { label: "Deductions", value: `${totalDeductions.toLocaleString()}` },
-        { label: "Net Salary", value: netSalary ? ` ${netSalary.toLocaleString()}` : '0' },
+        { label: "Net Salary", value: netSalary ? ` ${currency} ${netSalary.toLocaleString()}` : '0' },
     ];
 
     const hrGrowthData = [
-        { label: "Probation End", value: employee.employee_info?.probation_end_date || 'N/A' },
-        { label: "Next Promotion", value: employee.employee_info?.next_promotion_date || 'TBD' },
+        { label: "Probation End", value: formatDate(employee.employee_info?.probation_end_date || 'N/A' )},
+        { label: "Next Promotion", value: formatDate(employee.employee_info?.next_promotion_date || 'TBD') },
         { label: "Recruitment Stage", value: employee.assessment?.stage || 'Completed' },
         { label: "Interview Score", value: `${employee.assessment?.interview_score || 0}/100` },
     ];
 
     const leaveData = [
         { label: "Leaves Status", value: "Active" },
-        { label: "Approved", value:approvedLeaves },
+        { label: "Approved", value: approvedLeaves },
         { label: "Pending", value: pendingdLeaves },
         { label: "Rejected", value: RejectedLeaves },
     ];
 
     const desciplineRecords = [
-        { label: "Total Warnings", value: "2 " },
-        { label: "Current Risk Level ", value: "Low" },
-        { label: " Last Warning Date", value: "None" },
-        { label: " Next Review Date", value: "May 2025" },
+        { label: "Total Warnings", value: employee.performance?.[0]?.warning},
+        { label: "Current Risk Level ", value: employee.performance?.[0]?.warning === 1 ? "Low":"High"},
+        { label: " Last Warning Date", value: formatDate(employee.performance?.[0]?.created_at || "")},
+        { label: " Next Review Date", value: (() => {
+            const createdAt = employee.performance?.[0]?.created_at;
+            if (!createdAt) return '—';
+            const date = new Date(createdAt);
+            date.setDate(date.getDate() + 30);
+            return formatDate(date.toISOString());
+        })() },
     ];
 
     const retentionData = [
         { label: "Tenure", value: "2 Years" },
         { label: "Internal Transfers", value: 0 },
-        { label: "Final Warning", value: "None" },
-        { label: "Training Completed", value: "3 Modules" },
-        { label: "Current Salary", value: baseSalary ? `S${baseSalary.toLocaleString()}` : 'N/A' },
-        { label: "Last Increase", value: "Jan 2024" },
+        { label: "Final Warning", value: employee.performance?.[0]?.warning === 3 ? "1":"None" },
+        { label: "Training Completed", value: "- Modules" },
+        { label: "Current Salary", value: baseSalary ? `${currency} ${baseSalary.toLocaleString()}` : 'N/A' },
+        { label: "Last Increase", value: "Jan 2025" },
     ];
 
     const performanceIndex = [
-        { label: "Task Completion Rate ", value: "90%" },
-        { label: "Attendance Score ", value: "90%" },
+        { label: "Task Completion Rate ", value: `${completionRate}%`},
+        { label: "Attendance Score ", value: `${attendanceRAte}%`},
         { label: " Quality of Work ", value: "90%" },
         { label: "Team Collaboration Score", value: "90%" },
     ];
 
-    const behaviorIndicators = [
-        { label: " Behavior Indicators ", value: "Good" },
-        { label: " Communication Rating ", value: "Good" },
-        { label: "  Policy Compliance ", value: "Good" },
-        { label: "Manager Feedback", value: "Positive" },
-    ];
-    // const handleSendSetupLink = async () => {
-    //     if (!employee || !employee.company_id) return
+const behaviorIndicators = [
+    {
+        label: "Behavior Indicators",
+        value:
+            employee.performance && employee.performance[0] && typeof employee.performance[0].score === 'number'
+                ? employee.performance[0].score >= 80
+                    ? "Great"
+                    : employee.performance[0].score >= 60
+                    ? "Good"
+                    : employee.performance[0].score >= 50
+                    ? "Average"
+                    : "At Risk"
+                : "At Risk"
+    },
+    { label: " Communication Rating ", value: "Good" },
+    { label: "  Policy Compliance ", value: "Good" },
+    { label: "Manager Feedback", value: "Positive" },
+];
 
-    //     try {
-    //         setLoading(true)
-
-    //         const res = await fetch('/api/invite', {
-    //             method: 'POST',
-    //             headers: { 'Content-Type': 'application/json' },
-    //             body: JSON.stringify({
-    //                 email: employee.email,
-    //                 name: employee.name,
-    //                 companyName: company?.name || "Your Company",
-    //                 companyId: employee.company_id
-    //             })
-    //         })
-
-    //         const data = await res.json()
-    //         console.log(data)
-
-    //         if (!res.ok) throw new Error(data.error)
-
-    //         toast.success("Invite sent 🚀")
-    //     } catch (err: any) {
-    //         toast.error(err.message)
-    //     } finally {
-    //         setLoading(false)
-    //     }
-    // }
     return (
-        <section className="w-full px-6 py-6 bg-gray-50 max-h-screen overflow-y-auto scrollbar-none">
+        <section className="w-full p-2 md:p-6 bg-gray-50 max-h-screen overflow-y-auto scrollbar-none">
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-20">
                 <button className='btn-secondary rounded-lg p-2'>
                     <button onClick={onClose} className="text-gray-600 hover:text-gray-800 text-white text-sm">
@@ -219,6 +252,7 @@ const RejectedLeaves = employee.leaves?.filter((l)=>l.status == 'rejected').leng
                     + Edit Employee
                 </button>
                 <button
+                onClick={()=>setOpenPerfromanceModal(true)}
                     disabled={loading}
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 cursor-pointer"
                 >
@@ -269,7 +303,7 @@ const RejectedLeaves = employee.leaves?.filter((l)=>l.status == 'rejected').leng
                     </div>
                     <div>
                         <h1 className='text-md font-medium text-gray-500'>Date of birth</h1>
-                        <p className='text-md font-medium text-gray-800'>{employee.birthday}</p>
+                        <p className='text-md font-medium text-gray-800'>{formatDate(employee.birthday)}</p>
                     </div>
                     <div>
                         <h1 className='text-md font-medium text-gray-500'>phone</h1>
@@ -287,27 +321,27 @@ const RejectedLeaves = employee.leaves?.filter((l)=>l.status == 'rejected').leng
                 <div className='mt-6 grid grid-cols-2 md:grid-cols-3 gap-4'>
                     <div className='flex flex-col gap-2'>
                         <h1 className='text-md font-medium text-gray-500'>Name</h1>
-                        <p className='text-md font-medium text-gray-800'>{employee.employee_reference?.name}</p>
+                        <p className='text-md font-medium text-gray-800'>{employee.employee_reference?.name || "-"}</p>
                     </div>
                     <div className='flex flex-col gap-2'>
                         <h1 className='text-md font-medium text-gray-500'>Relationship</h1>
-                        <p className='text-md font-medium text-gray-800'>{employee.employee_reference?.relationship}</p>
+                        <p className='text-md font-medium text-gray-800'>{employee.employee_reference?.relationship || "-"}</p>
                     </div>
                     <div className='flex flex-col gap-2'>
                         <h1 className='text-md font-medium text-gray-500'>Company/ Organization</h1>
-                        <p className='text-md font-medium text-gray-800'>{employee.employee_reference?.company}</p>
+                        <p className='text-md font-medium text-gray-800'>{employee.employee_reference?.company || "-"}</p>
                     </div>
                     <div className='flex flex-col gap-2'>
                         <h1 className='text-md font-medium text-gray-500'>Email</h1>
-                        <p className='text-md font-medium text-gray-800'>{employee.employee_reference?.email}</p>
+                        <p className='text-md font-medium text-gray-800'>{employee.employee_reference?.email || "-"}</p>
                     </div>
                     <div className='flex flex-col gap-2'>
                         <h1 className='text-md font-medium text-gray-500'>phone</h1>
-                        <p className='text-md font-medium text-gray-800'>{employee.employee_reference?.phone1}</p>
+                        <p className='text-md font-medium text-gray-800'>{employee.employee_reference?.phone1 || "-"}</p>
                     </div>
                     <div className='flex flex-col gap-2'>
                         <h1 className='text-md font-medium text-gray-500'> Address</h1>
-                        <p className='text-md font-medium text-gray-800'>{employee.employee_reference?.address}</p>
+                        <p className='text-md font-medium text-gray-800'>{employee.employee_reference?.address || "-"}</p>
                     </div>
                 </div>
             </div>
@@ -340,7 +374,7 @@ const RejectedLeaves = employee.leaves?.filter((l)=>l.status == 'rejected').leng
 
             <div className='mt-6 rounded-lg bg-white p-6 shadow-sm mb-6'>
                 <h1 className='text-lg font-semibold'> Documents</h1>
-                <div className='mt-6 grid grid-cols-2 md:grid-cols-3 gap-4'>
+                <div className='mt-6 grid grid-cols-1 md:grid-cols-3 gap-4'>
                     <div className='flex items-center gap-2'>
                         <input type="checkbox" name="probationAppointmentLetter" id="probationAppointmentLetter" />
                         <h1 className='text-md font-medium'> Probation / Appointment Letter</h1>
@@ -365,6 +399,9 @@ const RejectedLeaves = employee.leaves?.filter((l)=>l.status == 'rejected').leng
             </div>
 
             {openEdit && <AddEmployModal onClose={() => setOpenEdit(false)} employee={employee} />}
+                {
+                    openPerformanceModal && <AddPerformanceModal onClose={()=>setOpenPerfromanceModal(false)} open={openPerformanceModal} employee={employee}/>
+                }
         </section>
     )
 }

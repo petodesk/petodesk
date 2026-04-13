@@ -9,6 +9,7 @@ import { FadeLoader } from 'react-spinners'
 import { AllEmployeeModal } from '@/app/components/AllEmployeeModal'
 import { formatDate } from '@/app/utils/dateFormatter'
 import EmployeeDetailsModal from '@/app/components/EmployeeDetailsModal'
+import { useCompany } from '@/app/context/CompanyContext'
 
 type Range = 'today' | 'this_week' | 'this_month' | 'this_year' | 'all'
 
@@ -81,6 +82,7 @@ export default function EmployeesPage() {
   const [probationEmployee, setProbationEmployees] = useState<Employee[]>([])
   const [selectedEmployee, setSelectedEmployee] = useState<any>()
   const [opendDetails, setOpenDetails] = useState(false)
+  const{currency, company}  = useCompany()
   // Helper to get nested status safely
   const getStatus = (emp: Employee) => {
     if (Array.isArray(emp.employee_info)) {
@@ -127,7 +129,10 @@ export default function EmployeesPage() {
                     employee_info (*),
                     salary (*),
                     assessment (*),
+                    tasks(*),
+                    attendance(*),
                     employee_reference (*),
+                    performance(status, warning, score, created_at),
                     leaves(id, leave_type, start_date, end_date, status)
                 `)
       .gte('created_at', from.toISOString())
@@ -160,7 +165,7 @@ export default function EmployeesPage() {
     setEmployees(data || [])
     setLoading(false)
   }, [range, supabase])
-
+console.log('employee', employees)
   const fetchLeaves = useCallback(async () => {
     const { data } = await supabase.from('leaves').select('status')
     if (data) setLeaves(data as LeaveRequest[])
@@ -211,7 +216,7 @@ export default function EmployeesPage() {
   })
 
   return opendDetails ? (
-    <EmployeeDetailsModal open={opendDetails} employee={selectedEmployee} onClose={() => {setOpenDetails(false)
+    <EmployeeDetailsModal open={opendDetails} employee={selectedEmployee} currency={currency} onClose={() => {setOpenDetails(false)
       fetchEmployees()
     }} />
   ) : (
@@ -349,10 +354,12 @@ export default function EmployeesPage() {
 
                 </p>
 
-                <p className="px-4 py-3">
-                  <Link href={`/dashboard/employee/${emp.id}`} className="text-blue-600 hover:underline">View</Link>
-                </p>
-
+                <p onClick={() => {
+                    setOpenDetails(true)
+                    setSelectedEmployee(emp)
+                  }} className="px-4 py-3 text-md text-blue-600 cursor-pointer">
+                    View
+                  </p>
 
               </div>
 
