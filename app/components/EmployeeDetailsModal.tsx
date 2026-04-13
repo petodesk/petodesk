@@ -146,7 +146,7 @@ const calculateAttendanceRate = (attendance: any[], expectedDays: number) => {
     return Math.round((validDays / expectedDays) * 100);
 };
 
-const attendanceRAte = calculateAttendanceRate(employee.attendance, 1);
+const attendanceRAte = calculateAttendanceRate(employee.attendance, 5);
 
 console.log(completionRate)
     if (!employee) return <div className="p-10 text-center text-gray-500">Loading profile...</div>;
