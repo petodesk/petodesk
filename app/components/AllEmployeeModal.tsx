@@ -171,7 +171,7 @@ export function AllEmployeeModal({
 
                 <div className="flex items-center justify-between">
 
-                  <p className="text-md font-semibold text-gray-700 mb-1">Employee Name</p>
+                  <p className="text-md font-semibold text-gray-700 mb-1"> Name</p>
 
                   <p className="text-base font-semibold text-gray-900">
 
@@ -187,7 +187,7 @@ export function AllEmployeeModal({
 
                 <div className="flex items-center justify-between">
 
-                  <p className="text-md font-semibold text-gray-700 mb-1">Employee Role</p>
+                  <p className="text-md font-semibold text-gray-700 mb-1">Role</p>
 
                   <p className="font-medium text-gray-800">
 
@@ -203,7 +203,7 @@ export function AllEmployeeModal({
 
                 <div className="flex items-center justify-between">
 
-                  <p className="text-md font-semibold text-gray-700 mb-1">Employee ID</p>
+                  <p className="text-md font-semibold text-gray-700 mb-1">ID</p>
 
                   <p className="font-medium text-gray-800">
 

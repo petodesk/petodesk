@@ -280,25 +280,25 @@ const behaviorIndicators = [
                         <button className='bg-blue-600 text-white py-2 px-4 rounded-lg'>Send Email</button>
                     </div>
                 </div>
-                <div className='mt-6 grid grid-cols-2 md:grid-cols-3 justify-between gap-4'>
+                <div className='mt-6 grid grid-cols-1 md:grid-cols-3 justify-between gap-4'>
                     <div className='flex flex-col gap-2'>
                         <h1 className='text-md font-medium text-gray-500'>Employee Id</h1>
                         <p className='text-md font-medium text-gray-800'>{employee.employee_id_slug}</p>
                     </div>
                     <div className='flex flex-col gap-2'>
-                        <h1 className='text-md font-medium text-gray-500'>Name</h1>
+                        <h1 className='text-md font-medium text-gray-500'>Employee Name</h1>
                         <p className='text-md font-medium text-gray-800'>{employee.name}</p>
                     </div>
                     <div>
-                        <h1 className='text-md font-medium text-gray-500'>Role</h1>
+                        <h1 className='text-md font-medium text-gray-500'>Employee Role</h1>
                         <p className='text-md font-medium text-gray-800'>{employee.role}</p>
                     </div>
                     <div>
-                        <h1 className='text-md font-medium text-gray-500'>Department</h1>
+                        <h1 className='text-md font-medium text-gray-500'>Employee Department</h1>
                         <p className='text-md font-medium text-gray-800'>{employee.department}</p>
                     </div>
                     <div>
-                        <h1 className='text-md font-medium text-gray-500'>Email</h1>
+                        <h1 className='text-md font-medium text-gray-500'>Employee Email</h1>
                         <p className='text-md font-medium text-gray-800'>{employee.email}</p>
                     </div>
                     <div>
@@ -306,7 +306,7 @@ const behaviorIndicators = [
                         <p className='text-md font-medium text-gray-800'>{formatDate(employee.birthday)}</p>
                     </div>
                     <div>
-                        <h1 className='text-md font-medium text-gray-500'>phone</h1>
+                        <h1 className='text-md font-medium text-gray-500'>Employee phone</h1>
                         <p className='text-md font-medium text-gray-800'>{employee.phone}</p>
                     </div>
                     <div>
@@ -318,7 +318,7 @@ const behaviorIndicators = [
 
             <div className='mt-6 rounded-lg bg-white p-6 shadow-sm mb-6'>
                 <h1 className='text-lg font-semibold'>Reference Information</h1>
-                <div className='mt-6 grid grid-cols-2 md:grid-cols-3 gap-4'>
+                <div className='mt-6 grid grid-cols-1 md:grid-cols-3 gap-4'>
                     <div className='flex flex-col gap-2'>
                         <h1 className='text-md font-medium text-gray-500'>Name</h1>
                         <p className='text-md font-medium text-gray-800'>{employee.employee_reference?.name || "-"}</p>
@@ -348,7 +348,7 @@ const behaviorIndicators = [
 
             <div className='mt-6 rounded-lg bg-white p-6 shadow-sm mb-6'>
                 <h1 className='text-lg font-semibold'> Recruitment & Assessment</h1>
-                <div className='mt-6 grid grid-cols-2 md:grid-cols-3 gap-4'>
+                <div className='mt-6 grid grid-cols-1 md:grid-cols-3 gap-4'>
                     <div className='flex flex-col gap-2'>
                         <h1 className='text-md font-medium text-gray-500'>Interview Score</h1>
                         <p className='text-sm font-medium text-gray-800'>{employee.assessment?.interview_score}</p>

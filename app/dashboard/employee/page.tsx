@@ -220,7 +220,7 @@ console.log('employee', employees)
       fetchEmployees()
     }} />
   ) : (
-    <section className="w-full px-6 py-6 bg-gray-50 min-h-screen">
+    <section className="w-full p-2 md:p-6 bg-gray-50 min-h-screen">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           onClick={() => setOpenModal(true)}
@@ -278,7 +278,7 @@ console.log('employee', employees)
         />
       </div>
 
-      <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl bg-white shadow-sm overflow-hidden ">
         <div className="border-b px-4 py-3 text-sm font-medium flex justify-between items-center">
           <span>Employee Directory</span>
           <span className="text-xs text-gray-500">{filteredEmployees.length} records</span>
@@ -332,7 +332,7 @@ console.log('employee', employees)
 
         {/* mobile card */}
 
-        <div className="space-y-4 md:hidden">
+        <div className="space-y-4 md:hidden my-4">
 
           {filteredEmployees.slice(0, 4).map((emp) => (
 
@@ -340,7 +340,7 @@ console.log('employee', employees)
 
               key={emp.id}
 
-              className="rounded-xl bg-white p-4 shadow-sm border space-y-3"
+              className="rounded-xl bg-white p-3 shadow-sm border space-y-3"
 
             >
 
@@ -362,18 +362,12 @@ console.log('employee', employees)
                   </p>
 
               </div>
-
-
-
               <hr />
-
-
-
               {/* Name */}
 
               <div className="flex items-center justify-between">
 
-                <p className="text-md font-semibold text-gray-700 mb-1">Employee Name</p>
+                <p className="text-md font-semibold text-gray-700 mb-1">Name</p>
 
                 <p className="text-base font-semibold text-gray-900">
 
@@ -382,14 +376,11 @@ console.log('employee', employees)
                 </p>
 
               </div>
-
-
-
               {/* Category */}
 
               <div className="flex items-center justify-between">
 
-                <p className="text-md font-semibold text-gray-700 mb-1">Employee Role</p>
+                <p className="text-md font-semibold text-gray-700 mb-1">Role</p>
 
                 <p className="font-medium text-gray-800">
 
@@ -398,14 +389,11 @@ console.log('employee', employees)
                 </p>
 
               </div>
-
-
-
               {/* Quantity */}
 
               <div className="flex items-center justify-between">
 
-                <p className="text-md font-semibold text-gray-700 mb-1">Employee ID</p>
+                <p className="text-md font-semibold text-gray-700 mb-1">ID</p>
 
                 <p className="font-medium text-gray-800">
 
@@ -414,8 +402,6 @@ console.log('employee', employees)
                 </p>
 
               </div>
-
-
 
               {/* Price */}
 
@@ -430,10 +416,6 @@ console.log('employee', employees)
 
               </div>
 
-
-
-
-
             </div>
 
           ))}
@@ -445,8 +427,6 @@ console.log('employee', employees)
               <p className="px-4 py-10 text-center text-gray-400">
 
                 No employee found for this filter.
-
-
 
               </p>
 
