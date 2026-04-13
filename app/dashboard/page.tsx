@@ -8,6 +8,7 @@ import HrPlanDash from '../components/dashboards/HrPlanDash'
 import { Loading } from '../components/Loading'
 import { useRouter } from 'next/navigation'
 import { useCompany } from '../context/CompanyContext'
+import OfficeLocationPage from '../components/dashboards/HrPlanDash'
 type SubscriptionWithPlan = {
   status: string
   trial_end: string | null
@@ -110,7 +111,7 @@ useEffect(() => {
 
         {/* DASHBOARDS */}
         {plan === 'inventory' && <InventoryPlanDash />}
-        {plan === 'hr' && <HrPlanDash />}
+        {plan === 'hr' && <OfficeLocationPage />}
         {plan === 'business_plus' && <BothDashPlanDash />}
 
         {/* FALLBACK */}
