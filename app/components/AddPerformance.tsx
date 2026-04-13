@@ -8,63 +8,100 @@ export default function AddPerformanceModal({
     onClose,
     open,
     employee
-  
 }: {
     onClose: () => void,
     open: boolean,
     employee: any
-   
 }) {
     if (!open) return null;
 
     const [warning, setWarning] = useState('0');
     const [comment, setComment] = useState('');
-    const [period, setPeriod] = useState('');
+    const [period, setPeriod] = useState('monthly');
     const [score, setScore] = useState<number | ''>('');
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
-    const { company, profile } = useCompany()
 
+    const { company, profile } = useCompany();
     const supabase = createClient();
 
     const handleSavePerformance = async () => {
         setErrorMsg('');
 
-        // 🔍 Basic validation
-        if (!employee?.id || !company?.id) {
-            setErrorMsg("Missing employee or company");
+        // 🔍 Validation
+        if (!employee?.auth_user_id) {
+            setErrorMsg("Invalid employee");
             return;
         }
 
-        if (!period || score === '') {
-            setErrorMsg("Period and score are required");
+        if (!company?.id) {
+            setErrorMsg("Company not found");
+            return;
+        }
+
+        if (!period) {
+            setErrorMsg("Please select period");
+            return;
+        }
+
+        if (score === '' || score < 0 || score > 100) {
+            setErrorMsg("Score must be between 0 and 100");
             return;
         }
 
         try {
             setLoading(true);
 
-            const { error } = await supabase.from('performance').insert({
+            // 🔍 check if exists
+            const { data: existing, error: fetchError } = await supabase
+                .from('performance')
+                .select('id')
+                .eq('employee_id', employee.auth_user_id)
+                .eq('period', period)
+                .maybeSingle();
+
+            if (fetchError) throw fetchError;
+
+            const payload = {
                 employee_id: employee.auth_user_id,
                 company_id: company.id,
                 warning: Number(warning),
-                comments:comment,
+                comments: comment,
                 period,
-                reviewed_by:profile?.id,
+                reviewed_by: profile?.id,
                 score: Number(score)
-            });
+            };
 
-            if (error) throw error;
+            if (existing) {
+                // 🔄 UPDATE
+                const { error: updateError } = await supabase
+                    .from('performance')
+                    .update(payload)
+                    .eq('id', existing.id);
 
-            // ✅ reset & close
+                if (updateError) throw updateError;
+
+            } else {
+                // ➕ INSERT
+                const { error: insertError } = await supabase
+                    .from('performance')
+                    .insert(payload);
+
+                if (insertError) throw insertError;
+            }
+
+            // ✅ Reset form
             setWarning('0');
             setComment('');
-            setPeriod('');
+            setPeriod('monthly');
             setScore('');
+
+            // ✅ Close modal
             onClose();
 
-        } catch (error: any) {
-            setErrorMsg(error.message || "Something went wrong");
+        } catch (err: any) {
+            console.error(err);
+            setErrorMsg(err.message || "Something went wrong");
         } finally {
             setLoading(false);
         }
@@ -119,7 +156,7 @@ export default function AddPerformanceModal({
                         <label className="text-sm text-gray-500">Period</label>
                         <select
                             className="w-full mt-1 border rounded-md p-2"
-                            value={warning}
+                            value={period}
                             onChange={(e) => setPeriod(e.target.value)}
                         >
                             <option value="monthly">Monthly</option>

@@ -469,11 +469,11 @@ console.log('employee', employees)
       </div>
 
       {openModal && <AddEmployModal onClose={handleModalClose} />}
-      {openAllEmployeesModal && <AllEmployeeModal title="All Employees" loading={loading} onClose={() => setOpenAllEmployeesModal(false)} employees={employees} />}
-      {openActiveEmployees && <AllEmployeeModal title="Active Employees" loading={loading} onClose={() => setOpenActiveEmployees(false)} employees={activeEmployee} />}
-      {openInactiveEmployees && <AllEmployeeModal title="Inactive Employees" loading={loading} onClose={() => setOpenInactiveEmployees(false)} employees={inActiveEmployee} />}
-      {openRecentHires && <AllEmployeeModal title="Recent Hires" loading={loading} onClose={() => setOpenRecentHires(false)} employees={recentHires} />}
-      {openProbationEmployees && <AllEmployeeModal title="Probation Employees" loading={loading} onClose={() => setOpenProbationEmployees(false)} employees={probationEmployee} />}
+      {openAllEmployeesModal && <AllEmployeeModal openDetails = {setOpenDetails} setEmployee={setSelectedEmployee}  title="All Employees" loading={loading} onClose={() => setOpenAllEmployeesModal(false)} employees={employees} />}
+      {openActiveEmployees && <AllEmployeeModal openDetails = {setOpenDetails} setEmployee={setSelectedEmployee} title="Active Employees" loading={loading} onClose={() => setOpenActiveEmployees(false)} employees={activeEmployee} />}
+      {openInactiveEmployees && <AllEmployeeModal openDetails = {setOpenDetails} setEmployee={setSelectedEmployee} title="Inactive Employees" loading={loading} onClose={() => setOpenInactiveEmployees(false)} employees={inActiveEmployee} />}
+      {openRecentHires && <AllEmployeeModal openDetails = {setOpenDetails} setEmployee={setSelectedEmployee} title="Recent Hires" loading={loading} onClose={() => setOpenRecentHires(false)} employees={recentHires} />}
+      {openProbationEmployees && <AllEmployeeModal openDetails ={setOpenDetails} setEmployee={setSelectedEmployee} title="Probation Employees" loading={loading} onClose={() => setOpenProbationEmployees(false)} employees={probationEmployee} />}
 
     </section>
   )
