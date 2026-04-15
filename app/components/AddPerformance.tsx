@@ -119,7 +119,7 @@ export default function AddPerformanceModal({
             {/* Modal */}
             <div className="z-50 bg-white rounded-xl p-6 max-w-3xl w-full shadow-lg">
                 <h1 className="text-lg font-semibold mb-4">
-                    Add Performance for {employee?.name}
+                    Add Performance for <span className="text-xl font-bold text-blue-800 border-b-2">{employee?.name}</span> 
                 </h1>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

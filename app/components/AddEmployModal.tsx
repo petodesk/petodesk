@@ -651,6 +651,7 @@ const[createdEmployeeName, setCreatedEmployeeName] = useState<string | null>(nul
         email: createdEmployeeEmail,
         name: createdEmployeeName,
         companyId: company.id,
+        companyName: company.name
       })
     })
 

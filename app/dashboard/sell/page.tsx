@@ -167,7 +167,6 @@ export default function SellPage() {
 )
 
   `)
-      .eq('company_id', sellerCompanyId)
       .gte('created_at', from.toISOString())
       .lte('created_at', to.toISOString())
       .order('created_at', { ascending: false })

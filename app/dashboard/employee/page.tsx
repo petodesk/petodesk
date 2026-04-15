@@ -132,7 +132,7 @@ export default function EmployeesPage() {
                     tasks(*),
                     attendance(*),
                     employee_reference (*),
-                    performance(status, warning, score, created_at),
+                    performance(status, warning, score, created_at, comments, profiles(full_name)),
                     leaves(id, leave_type, start_date, end_date, status)
                 `)
       .gte('created_at', from.toISOString())
