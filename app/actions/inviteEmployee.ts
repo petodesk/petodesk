@@ -12,7 +12,7 @@ export async function createInvite(email: string, name:string, companyName: stri
   const resend = new Resend(process.env.RESEND_API_KEY)
   const token = randomUUID()
 
-  // ✅ Fixed Base URL logic
+  // ✅ Base URL logic
   const baseUrl =
     process.env.NODE_ENV === 'development'
       ? process.env.NEXT_PUBLIC_APP_URL 
