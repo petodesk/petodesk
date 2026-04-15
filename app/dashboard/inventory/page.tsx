@@ -7,6 +7,7 @@ import { HiDownload, HiSearch } from 'react-icons/hi'
 import Products from '@/app/types/products'
 import BarcodeLabel from '@/app/components/BarcodeLabel'
 import BarcodeBatchPrint from '@/app/components/barcodeBatch'
+import { useCompany } from '@/app/context/CompanyContext'
 
 type DateFilter =
   | 'today'
@@ -38,6 +39,7 @@ export default function inventoryPage() {
   const [search, setSearch] = useState('')
   const [stockFilter, setStockFilter] = useState<StockFilter>('all')
 const[viewaAllBarcode, setViewAllBArcode] = useState(false)
+const{currency}  = useCompany()
   // 🔹 Fetch today's sales
   const fetchAllProduct = useCallback(async () => {
     setLoading(true)
@@ -288,7 +290,7 @@ const[viewaAllBarcode, setViewAllBArcode] = useState(false)
   }
 
   return (
-    <section className="w-full px-6 py-6 bg-gray-50">
+    <section className="w-full p-2 md:p-6 bg-gray-50 my-3">
       {/* Top action */}
       <div className="flex flex-col gap-6 md:flex-row md:justify-between  mb-6">
         <button
@@ -432,7 +434,7 @@ const[viewaAllBarcode, setViewAllBArcode] = useState(false)
               <div className="flex items-center justify-between">
                 <p className="text-md font-semibold text-gray-700 mb-1">Selling Price</p>
                 <p className="font-semibold text-gray-900">
-                  ₦{Number(p.product_prices[0]?.selling_price).toLocaleString()}
+                  {currency} {Number(p.product_prices[0]?.selling_price).toLocaleString()}
                 </p>
               </div>
 
@@ -494,7 +496,7 @@ const[viewaAllBarcode, setViewAllBArcode] = useState(false)
                   <td className="px-4 py-3 text-gray-500">{p.category}</td>
                   <td className="px-4 py-3">{p.product_stock[0]?.quantity} {p.product_stock[0]?.unit_of_measure}</td>
                   <td className="px-4 py-3">
-                    ₦{Number(p.product_prices[0]?.selling_price).toLocaleString()}
+                    {currency} {Number(p.product_prices[0]?.selling_price).toLocaleString()}
                   </td>
 
                   <td className="px-4 py-3">
@@ -659,7 +661,7 @@ const[viewaAllBarcode, setViewAllBArcode] = useState(false)
                   <div className="flex items-center justify-between">
                     <p className="text-md font-semibold text-gray-700 mb-1">Selling Price</p>
                     <p className="font-semibold text-gray-900">
-                      ₦{Number(p.product_prices[0]?.selling_price).toLocaleString()}
+                      {currency} {Number(p.product_prices[0]?.selling_price).toLocaleString()}
                     </p>
                   </div>
 
@@ -710,7 +712,7 @@ const[viewaAllBarcode, setViewAllBArcode] = useState(false)
                       <td className="px-4 py-3 text-gray-500">{p.category}</td>
                       <td className="px-4 py-3">{p.product_stock[0]?.quantity}</td>
                       <td className="px-4 py-3">
-                        ₦{Number(p.product_prices[0]?.selling_price).toLocaleString()}
+                        {currency} {Number(p.product_prices[0]?.selling_price).toLocaleString()}
                       </td>
                       <td className="px-4 py-3">
                         <span

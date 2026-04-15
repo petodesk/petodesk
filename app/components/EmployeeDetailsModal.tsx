@@ -66,17 +66,22 @@ type Employee = {
         end_date: Date
         status: string
     }[] | null,
-    performance?:{
-        status:string,
-        warning:number,
-        score:number,
-        created_at:string
+    performance?: {
+        status: string
+        warning: number
+        score: number
+        comments: string
+        reviewer: string
+        created_at: string
+        profiles?: {
+            full_name: string
+        }
     }[] | null,
-    tasks?:any,
-    attendance:any
+    tasks?: any,
+    attendance: any
 };
 
-export default function EmployeeDetailsModal({ open, onClose, employee, currency }: { open: boolean, onClose: () => void, employee: Employee, currency:any }) {
+export default function EmployeeDetailsModal({ open, onClose, employee, currency }: { open: boolean, onClose: () => void, employee: Employee, currency: any }) {
     const { id } = useParams();
     const supabase = createClient();
     const [openEdit, setOpenEdit] = useState(false)
@@ -117,38 +122,38 @@ export default function EmployeeDetailsModal({ open, onClose, employee, currency
         getFullDetails();
     }, [id]);
 
-const calculateCompletionRate = (tasks: any[]) => {
-    if (!tasks || tasks.length === 0) return 0;
+    const calculateCompletionRate = (tasks: any[]) => {
+        if (!tasks || tasks.length === 0) return 0;
 
-    const completedTasks = tasks.filter(
-        (task) => task.status === "completed"
-    ).length;
+        const completedTasks = tasks.filter(
+            (task) => task.status === "completed"
+        ).length;
 
-    const totalTasks = tasks.length;
+        const totalTasks = tasks.length;
 
-    return Math.round((completedTasks / totalTasks) * 100);
-};
-const completionRate = calculateCompletionRate(employee.tasks);
+        return Math.round((completedTasks / totalTasks) * 100);
+    };
+    const completionRate = calculateCompletionRate(employee.tasks);
 
-console.log(completionRate)
+    console.log(completionRate)
 
-const calculateAttendanceRate = (attendance: any[], expectedDays: number) => {
-    if (!attendance || expectedDays === 0) return 0;
+    const calculateAttendanceRate = (attendance: any[], expectedDays: number) => {
+        if (!attendance || expectedDays === 0) return 0;
 
-    const validDays = attendance.filter(
-        (day) =>
-            day.status === "Completed" &&
-            day.clock_in &&
-            day.clock_out &&
-            day.is_verified_out === true
-    ).length;
+        const validDays = attendance.filter(
+            (day) =>
+                day.status === "Completed" &&
+                day.clock_in &&
+                day.clock_out &&
+                day.is_verified_out === true
+        ).length;
 
-    return Math.round((validDays / expectedDays) * 100);
-};
+        return Math.round((validDays / expectedDays) * 100);
+    };
 
-const attendanceRAte = calculateAttendanceRate(employee.attendance, 1);
+    const attendanceRAte = calculateAttendanceRate(employee.attendance, 5);
 
-console.log(completionRate)
+    console.log(completionRate)
     if (!employee) return <div className="p-10 text-center text-gray-500">Loading profile...</div>;
 
     // --- FINANCIAL LOGIC (Fixing the numeric fetch) ---
@@ -176,7 +181,7 @@ console.log(completionRate)
     ];
 
     const hrGrowthData = [
-        { label: "Probation End", value: formatDate(employee.employee_info?.probation_end_date || 'N/A' )},
+        { label: "Probation End", value: formatDate(employee.employee_info?.probation_end_date || 'N/A') },
         { label: "Next Promotion", value: formatDate(employee.employee_info?.next_promotion_date || 'TBD') },
         { label: "Recruitment Stage", value: employee.assessment?.stage || 'Completed' },
         { label: "Interview Score", value: `${employee.assessment?.interview_score || 0}/100` },
@@ -190,52 +195,54 @@ console.log(completionRate)
     ];
 
     const desciplineRecords = [
-        { label: "Total Warnings", value: employee.performance?.[0]?.warning},
-        { label: "Current Risk Level ", value: employee.performance?.[0]?.warning === 1 ? "Low":"High"},
-        { label: " Last Warning Date", value: formatDate(employee.performance?.[0]?.created_at || "")},
-        { label: " Next Review Date", value: (() => {
-            const createdAt = employee.performance?.[0]?.created_at;
-            if (!createdAt) return '—';
-            const date = new Date(createdAt);
-            date.setDate(date.getDate() + 30);
-            return formatDate(date.toISOString());
-        })() },
+        { label: "Total Warnings", value: employee.performance?.[0]?.warning },
+        { label: "Current Risk Level ", value: employee.performance?.[0]?.warning === 1 ? "Low" : "High" },
+        { label: " Last Warning Date", value: formatDate(employee.performance?.[0]?.created_at || "") },
+        {
+            label: " Next Review Date", value: (() => {
+                const createdAt = employee.performance?.[0]?.created_at;
+                if (!createdAt) return '—';
+                const date = new Date(createdAt);
+                date.setDate(date.getDate() + 30);
+                return formatDate(date.toISOString());
+            })()
+        },
     ];
 
     const retentionData = [
         { label: "Tenure", value: "2 Years" },
         { label: "Internal Transfers", value: 0 },
-        { label: "Final Warning", value: employee.performance?.[0]?.warning === 3 ? "1":"None" },
+        { label: "Final Warning", value: employee.performance?.[0]?.warning === 3 ? "1" : "None" },
         { label: "Training Completed", value: "- Modules" },
         { label: "Current Salary", value: baseSalary ? `${currency} ${baseSalary.toLocaleString()}` : 'N/A' },
         { label: "Last Increase", value: "Jan 2025" },
     ];
 
     const performanceIndex = [
-        { label: "Task Completion Rate ", value: `${completionRate}%`},
-        { label: "Attendance Score ", value: `${attendanceRAte}%`},
+        { label: "Task Completion Rate ", value: `${completionRate}%` },
+        { label: "Attendance Score ", value: `${attendanceRAte}%` },
         { label: " Quality of Work ", value: "90%" },
         { label: "Team Collaboration Score", value: "90%" },
     ];
 
-const behaviorIndicators = [
-    {
-        label: "Behavior Indicators",
-        value:
-            employee.performance && employee.performance[0] && typeof employee.performance[0].score === 'number'
-                ? employee.performance[0].score >= 80
-                    ? "Great"
-                    : employee.performance[0].score >= 60
-                    ? "Good"
-                    : employee.performance[0].score >= 50
-                    ? "Average"
+    const behaviorIndicators = [
+        {
+            label: "Behavior Indicators",
+            value:
+                employee.performance && employee.performance[0] && typeof employee.performance[0].score === 'number'
+                    ? employee.performance[0].score >= 80
+                        ? "Great"
+                        : employee.performance[0].score >= 60
+                            ? "Good"
+                            : employee.performance[0].score >= 50
+                                ? "Average"
+                                : "At Risk"
                     : "At Risk"
-                : "At Risk"
-    },
-    { label: " Communication Rating ", value: "Good" },
-    { label: "  Policy Compliance ", value: "Good" },
-    { label: "Manager Feedback", value: "Positive" },
-];
+        },
+        { label: " Communication Rating ", value: "Good" },
+        { label: "  Policy Compliance ", value: "Good" },
+        { label: "Manager Feedback", value: "Positive" },
+    ];
 
     return (
         <section className="w-full p-2 md:p-6 bg-gray-50 max-h-screen overflow-y-auto scrollbar-none">
@@ -252,7 +259,7 @@ const behaviorIndicators = [
                     + Edit Employee
                 </button>
                 <button
-                onClick={()=>setOpenPerfromanceModal(true)}
+                    onClick={() => setOpenPerfromanceModal(true)}
                     disabled={loading}
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 cursor-pointer"
                 >
@@ -345,6 +352,46 @@ const behaviorIndicators = [
                     </div>
                 </div>
             </div>
+            <div className='mt-6 rounded-lg bg-white p-6 shadow-sm mb-6 '>
+
+  <h1 className='text-lg font-semibold'>Performance</h1>
+
+  <div className='mt-6 grid grid-cols-1 md:grid-cols-2 gap-4'>
+
+    {/* Score */}
+    <div className='flex flex-col md:flex-row md:gap-4'>
+      <h1 className='text-md font-medium text-gray-500'>Performance Score:</h1>
+      <p className='text-md font-medium text-gray-800'>
+        {employee.performance?.[0]?.score}
+      </p>
+    </div>
+
+    {/* Warning */}
+    <div className='flex flex-col md:flex-row md:gap-4'>
+      <h1 className='text-md font-medium text-gray-500'>Warning Status:</h1>
+      <p className='text-md font-medium text-gray-800'>
+        {employee.performance?.[0]?.warning == 1 ? 'First Warning': employee.performance?.[0]?.warning == 2 ?'Second Warning' : employee.performance?.[0]?.warning == 3 ?"Final Warning":"No Warning"}
+      </p>
+    </div>
+
+    {/* Reviewer */}
+    <div className='flex flex-col md:flex-row md:gap-4'>
+      <h1 className='text-md font-medium text-gray-500'>Reviewer:</h1>
+      <p className='text-md font-medium text-gray-800'>
+        {employee.performance?.[0]?.profiles?.full_name}
+      </p>
+    </div>
+
+    {/* ✅ Comments FULL WIDTH */}
+    <div className='col-span-1 md:col-span-2 flex flex-col gap-2'>
+      <h1 className='text-md font-medium text-gray-500'>Reviewer Comments:</h1>
+      <p className='text-md text-gray-800 break-words whitespace-pre-wrap'>
+        {employee.performance?.[0]?.comments || '—'}
+      </p>
+    </div>
+
+  </div>
+</div>
 
             <div className='mt-6 rounded-lg bg-white p-6 shadow-sm mb-6'>
                 <h1 className='text-lg font-semibold'> Recruitment & Assessment</h1>
@@ -399,9 +446,9 @@ const behaviorIndicators = [
             </div>
 
             {openEdit && <AddEmployModal onClose={() => setOpenEdit(false)} employee={employee} />}
-                {
-                    openPerformanceModal && <AddPerformanceModal onClose={()=>setOpenPerfromanceModal(false)} open={openPerformanceModal} employee={employee}/>
-                }
+            {
+                openPerformanceModal && <AddPerformanceModal onClose={() => setOpenPerfromanceModal(false)} open={openPerformanceModal} employee={employee} />
+            }
         </section>
     )
 }
