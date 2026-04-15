@@ -13,14 +13,14 @@ export async function createInvite(email: string, name:string, companyName: stri
   const token = randomUUID()
 
   // ✅ Base URL logic
-  const baseUrl =
-    process.env.NODE_ENV === 'development'
-      ? process.env.NEXT_PUBLIC_APP_URL 
-      : `https://${process.env.NEXT_PUBLIC_LIVE_URL || process.env.VERCEL_URL}`
+const baseUrl =
+  process.env.NODE_ENV === 'development'
+    ? process.env.NEXT_PUBLIC_APP_URL
+    : process.env.NEXT_PUBLIC_LIVE_URL || `https://${process.env.VERCEL_URL}`
 
-  if (!baseUrl) {
-    throw new Error('Base URL is not configured')
-  }
+if (!baseUrl) {
+  throw new Error('Base URL is not configured')
+}
 
   // 1. Save invite in DB
   const { error: dbError } = await supabase.from('employee_invites').insert({
