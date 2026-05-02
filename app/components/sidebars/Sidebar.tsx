@@ -93,26 +93,26 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
     
 
       // 🚨 HANDLE EXPIRATION
-      const now = new Date()
+      // const now = new Date()
 
-      if (
-        subscription?.status === 'trialing' &&
-        subscription?.trial_end &&
-        new Date(subscription.trial_end) < now
-      ) {
-        await supabase
-          .from('subscriptions')
-          .update({ status: 'past_due' })
-          .eq('company_id', company?.id)
+      // if (
+      //   subscription?.status === 'trialing' &&
+      //   subscription?.trial_end &&
+      //   new Date(subscription.trial_end) < now
+      // ) {
+      //   await supabase
+      //     .from('subscriptions')
+      //     .update({ status: 'past_due' })
+      //     .eq('company_id', company?.id)
 
-        router.push('/dashboard/billing')
-        return
-      }
+      //   router.push('/dashboard/billing')
+      //   return
+      // }
 
-      if (subscription?.status === 'past_due') {
-        router.push('/dashboard/billing')
-        return
-      }
+      // if (subscription?.status === 'past_due') {
+      //   router.push('/dashboard/billing')
+      //   return
+      // }
 
       setLoading(false)
     }
