@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Poppins } from "next/font/google";
-import "./globals.css";
 import ToastProvider from "./components/ToastProvider";
 import { CompanyProvider } from "./context/CompanyContext";
-
+// @ts-ignore
+import './global.css'; // global styles
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
