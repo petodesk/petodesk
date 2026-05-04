@@ -4,6 +4,7 @@ export default interface Products {
     name: string
     brand:string
     category:string
+    expires_at:Date
     deleted:boolean
     product_stock: {
         quantity: number

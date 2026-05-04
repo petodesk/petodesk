@@ -17,6 +17,7 @@ export type ProductFormData = {
     costPrice: string
     sellingPrice: string
     quantity: string
+    expire_date: string
     unit: string
     image: string
     supplier_name: string
@@ -56,6 +57,9 @@ export function AddProductModal({ open, onClose, product }: Props) {
         name: product?.name ?? '',
         category: product?.category ?? '',
         brand: product?.brand ?? '',
+        expire_date: product?.expires_at
+            ? new Date(product.expires_at).toISOString().slice(0, 10)
+            : '',
         costPrice: product?.product_prices?.[0]?.cost_price?.toString() ?? '',
         sellingPrice: product?.product_prices?.[0]?.selling_price?.toString() ?? '',
         quantity: product?.product_stock?.[0]?.quantity?.toString() ?? '',
@@ -103,6 +107,7 @@ export function AddProductModal({ open, onClose, product }: Props) {
         if (!form.quantity || Number(form.quantity) < 0)
             e.quantity = 'Quantity must be 0 or more'
         if (!form.unit) e.unit = 'Unit is required'
+            if (!form.expire_date) e.expire_date = 'Expire date is required'
         if (form.hasVariant) {
             if (!form.size) e.size = 'Size is required'
             if (!form.color) e.color = 'Color is required'
@@ -190,6 +195,7 @@ export function AddProductModal({ open, onClose, product }: Props) {
                     p_selling_price: Number(form.sellingPrice),
                     p_quantity: Number(form.quantity),
                     p_unit: form.unit,
+                    p_expire_date: form.expire_date,
                     p_supplier_name: form.supplier_name,
                     p_supplier_location: form.supplier_location,
                     p_supplier_phone: form.supplier_phone,
@@ -209,6 +215,7 @@ export function AddProductModal({ open, onClose, product }: Props) {
                         name: form.name,
                         category: form.category,
                         brand: form.brand,
+                        expires_at: form.expire_date,
                     })
                     .eq('id', product.id)
 
@@ -330,6 +337,14 @@ export function AddProductModal({ open, onClose, product }: Props) {
                                 <option value="kg">Kilogram</option>
                                 <option value="carton">Carton</option>
                             </select>
+                        </Field>
+                          <Field label="Expire Date *" error={errors.expire_date}>
+                            <input
+                                type="date"
+                                value={form.expire_date}
+                                onChange={e => update('expire_date', e.target.value)}
+                                className="input"
+                            />
                         </Field>
 
                     </div>
