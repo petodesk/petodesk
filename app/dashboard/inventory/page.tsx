@@ -8,6 +8,7 @@ import Products from '@/app/types/products'
 import BarcodeLabel from '@/app/components/BarcodeLabel'
 import BarcodeBatchPrint from '@/app/components/barcodeBatch'
 import { useCompany } from '@/app/context/CompanyContext'
+import AllProducts from '@/app/components/AllProducts'
 
 type DateFilter =
   | 'today'
@@ -38,8 +39,13 @@ export default function inventoryPage() {
   const [dateFilter, setDateFilter] = useState<DateFilter>('thisMonth')
   const [search, setSearch] = useState('')
   const [stockFilter, setStockFilter] = useState<StockFilter>('all')
-const[viewaAllBarcode, setViewAllBArcode] = useState(false)
-const{currency}  = useCompany()
+  const [viewaAllBarcode, setViewAllBArcode] = useState(false)
+  const [openExpires, setOpenExpires] = useState(false)
+  const [openExpired, setOpenExpired] = useState(false)
+  const [openInStock, setOpenInStock] = useState(false)
+  const [openLowStock, setOpenLowStock] = useState(false)
+  const [openOutOfStock, setOpenOutOfStock] = useState(false)
+  const { currency } = useCompany()
   // 🔹 Fetch today's sales
   const fetchAllProduct = useCallback(async () => {
     setLoading(true)
@@ -64,6 +70,7 @@ const{currency}  = useCompany()
       category,
       brand,
       barcode,
+      expires_at,
       deleted,
       created_at,
       product_prices(selling_price, cost_price),
@@ -83,6 +90,7 @@ const{currency}  = useCompany()
     setProducts(data ?? [])
     setLoading(false)
   }, [supabase])
+  console.log(products)
 
   const filteredProducts = products.filter((p) => {
     /* ---------- DATE FILTER ---------- */
@@ -182,15 +190,37 @@ const{currency}  = useCompany()
     fetchAllProduct()
   }
 
-  const handleOpenAllBarcode  = ()=>{
+  const handleOpenAllBarcode = () => {
     setViewAllBArcode(true)
   }
 
   const totalItems = products.length;
   const totalStock = products.reduce((sum, p) => sum + (p.product_stock[0]?.quantity || 0), 0);
-  const inStockCount = products.filter(p => p.product_stock[0]?.status === 'in_stock').length;
-  const lowStockCount = products.filter(p => p.product_stock[0]?.status === 'low_stock').length;
-  const outOfStockCount = products.filter(p => p.product_stock[0]?.status === 'out_of_stock').length;
+  const inStockProducts = products.filter(p => p.product_stock[0]?.status === 'in_stock');
+  const inStockCount = inStockProducts.length;
+  const  lowStockProducts = products.filter(p => p.product_stock[0]?.status === 'low_stock');
+  const lowStockCount = lowStockProducts.length;
+  const  outOfStockProducts = products.filter(p => p.product_stock[0]?.status === 'out_of_stock');
+  const outOfStockCount = outOfStockProducts.length;
+
+  const expireSoonCount = products.filter(p => {
+    const expireDate = new Date(p.expires_at || '')
+    const now = new Date()
+
+    // Reset times to midnight for date-only comparison
+    expireDate.setHours(0, 0, 0, 0)
+    now.setHours(0, 0, 0, 0)
+
+    const diffInDays = (expireDate.getTime() - now.getTime()) / (1000 * 3600 * 24)
+    return diffInDays >= 0 && diffInDays <= 7
+  });
+  const expiredProducts = products.filter(p => {
+    const expireDate = new Date(p.expires_at || '')
+    const now = new Date()
+    return expireDate < now
+  })
+  console.log("Expiredsoon", expireSoonCount)
+
 
   function ActionMenu({ product }: { product: any }) {
     const [open, setOpen] = useState(false)
@@ -262,7 +292,7 @@ const{currency}  = useCompany()
                 </li>
               }
               <li
-                  className="cursor-pointer px-4 py-2 text-blue-600 hover:bg-gray-100"
+                className="cursor-pointer px-4 py-2 text-blue-600 hover:bg-gray-100"
 
                 onClick={handleViewBarcode}>
                 View Barcode
@@ -299,7 +329,7 @@ const{currency}  = useCompany()
         >
           + Add Product
         </button>
-         <button
+        <button
           onClick={handleOpenAllBarcode}
           className="flex flex-col md:flex-row items-center gap-2 rounded-lg bg-blue-600 w-full md:h-10 md:w-60  justify-center cursor-pointer px-4 py-2 text-sm font-medium text-white"
         >
@@ -308,7 +338,7 @@ const{currency}  = useCompany()
         <button className='flex gap-2 items-center justify-center md:h-10 rounded-md bg-white px-4 py-4 max-sm:w-full '>
           <HiDownload className='cursor-pointer' /> uplaod from CSV
         </button>
-        
+
       </div>
 
       {/* Summary cards */}
@@ -324,19 +354,31 @@ const{currency}  = useCompany()
         />
 
         <div className="flex flex-col gap-4 rounded-xl bg-white p-4 shadow-sm">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={()=>setOpenInStock(true)}>
             <div className="h-4 w-4 rounded-sm bg-green-500"></div>
-            <p className="text-gray-700">In Stock: {inStockCount}</p>
+            <p className="text-gray-700 ">In Stock: {inStockCount}</p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={()=>setOpenLowStock(true)}>
             <div className="h-4 w-4 rounded-sm bg-yellow-500"></div>
             <p className="text-gray-700">Low Stock: {lowStockCount}</p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={()=>setOpenOutOfStock(true)}>
             <div className="h-4 w-4 rounded-sm bg-red-500"></div>
-            <p className="text-gray-700">Out of Stock: {outOfStockCount}</p>
+            <p
+
+              className="text-gray-700">Out of Stock: {outOfStockCount}</p>
+          </div>
+          <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={()=>setOpenExpires(true)}>
+            <div className="h-4 w-4 rounded-sm bg-red-500"></div>
+            <p
+        
+              className="text-gray-700">Expire soon: {expireSoonCount.length}</p>
+          </div>
+          <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200" onClick={()=>setOpenExpired(true)}>
+            <div className="h-4 w-4 rounded-sm bg-red-500"></div>
+            <p className="text-gray-700">Expired: {expiredProducts.length}</p>
           </div>
         </div>
       </div>
@@ -534,7 +576,7 @@ const{currency}  = useCompany()
           </table>
         </div>
         {/* if product is grater than 5 i make it popup */}
-        {filteredProducts.length > 4 && (
+        {filteredProducts.length > 1 && (
           <div className="border-t px-4 py-3 text-center">
             <button
               onClick={() => setOpenAllProducts(true)}
@@ -553,193 +595,34 @@ const{currency}  = useCompany()
 
       />
       {openAllProducts && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
-          <div className="flex h-[95vh] w-full max-w-7xl flex-col mt-40 overflow-hidden rounded-2xl bg-white shadow-xl">
+        <AllProducts title='All Products' filteredProducts={products} open={openAllProducts} onClose={() => setOpenAllProducts(false)} fetchAllProduct={fetchAllProduct} />
 
-            {/* Header */}
-            <div className="sticky top-0 z-10 bg-white border-b px-4 py-3">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-
-                <h2 className="text-lg font-semibold">All Products</h2>
-
-                {/* Filters */}
-                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-
-                  {/* Search */}
-                  <div className="flex items-center w-full sm:w-64 rounded-xl bg-gray-100 px-3 py-2">
-                    <HiSearch className="text-gray-500" size={18} />
-                    <input
-                      type="text"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search products"
-                      className="w-full bg-transparent px-2 text-sm outline-none"
-                    />
-                  </div>
-
-                  {/* Stock Filter */}
-                  <select
-                    value={stockFilter}
-                    onChange={(e) => setStockFilter(e.target.value as StockFilter)}
-                    className="rounded-xl border px-3 py-2 text-sm"
-                  >
-                    <option value="all">All Stock</option>
-                    <option value="in_stock">In Stock</option>
-                    <option value="low_stock">Low Stock</option>
-                    <option value="out_of_stock">Out of Stock</option>
-                  </select>
-
-                  {/* Date Filter */}
-                  <select
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-                    className="rounded-xl border px-3 py-2 text-sm"
-                  >
-                    <option value="today">Today</option>
-                    <option value="yesterday">Yesterday</option>
-                    <option value="week">This Week</option>
-                    <option value="lastWeek">Last Week</option>
-                    <option value="thisMonth">This Month</option>
-                    <option value="lastMonth">Last Month</option>
-                    <option value="thisYear">This Year</option>
-                    <option value="lastYear">Last Year</option>
-                  </select>
-
-                  {/* Close */}
-                  <button
-                    onClick={() => setOpenAllProducts(false)}
-                    className="ml-auto text-gray-500 hover:text-gray-800"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4  max-h-[80vh] overflow-y-auto  md:hidden">
-              {filteredProducts.map((p) => (
-                <div
-                  key={p.id}
-                  className="rounded-xl bg-white p-4 shadow-sm border space-y-3"
-                >
-                  {/* Top row: Date + Action */}
-                  <div className="flex items-center justify-between">
-                    <p className="text-md font-semibold text-gray-700 mb-1">
-                      {new Date(p.created_at).toLocaleDateString()}
-                    </p>
-                    <ActionMenu product={p} />
-                  </div>
-
-                  <hr />
-
-                  {/* Name */}
-                  <div className="flex items-center justify-between">
-                    <p className="text-md font-semibold text-gray-700 mb-1">Product Name</p>
-                    <p className="text-base font-semibold text-gray-900">
-                      {p.name}
-                    </p>
-                  </div>
-
-                  {/* Category */}
-                  <div className="flex items-center justify-between">
-                    <p className="text-md font-semibold text-gray-700 mb-1">Category</p>
-                    <p className="font-medium text-gray-800">
-                      {p.category || '—'}
-                    </p>
-                  </div>
-
-                  {/* Quantity */}
-                  <div className="flex items-center justify-between">
-                    <p className="text-md font-semibold text-gray-700 mb-1">Quantity</p>
-                    <p className="font-medium text-gray-800">
-                      {p.product_stock[0]?.quantity}{' '}
-                      {p.product_stock[0]?.unit_of_measure}
-                    </p>
-                  </div>
-
-                  {/* Price */}
-                  <div className="flex items-center justify-between">
-                    <p className="text-md font-semibold text-gray-700 mb-1">Selling Price</p>
-                    <p className="font-semibold text-gray-900">
-                      {currency} {Number(p.product_prices[0]?.selling_price).toLocaleString()}
-                    </p>
-                  </div>
-
-                  {/* Status */}
-                  <div className="flex items-center justify-between">
-                    <p className="text-md font-semibold text-gray-700 mb-1">Status</p>
-                    <span
-                      className={`inline-block rounded-full px-3 py-1 text-xs font-semibold
-            ${p.deleted
-                          ? 'bg-red-100 text-red-700'
-                          : p.product_stock[0]?.status === 'in_stock'
-                            ? 'bg-green-100 text-green-700'
-                            : p.product_stock[0]?.status === 'low_stock'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-800'}
-          `}
-                    >
-                      {p.deleted
-                        ? 'Deleted'
-                        : p.product_stock[0]?.status?.replace('_', ' ')}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {/* Table */}
-            <div className="hidden md:block rounded-xl bg-white shadow-sm overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-gray-50 text-gray-500">
-                  <tr>
-                    <th className="px-4 py-3 text-left">Date</th>
-                    <th className="px-4 py-3 text-left">Item</th>
-                    <th className="px-4 py-3 text-left">Category</th>
-                    <th className="px-4 py-3 text-left">Quantity</th>
-                    <th className="px-4 py-3 text-left">Selling Price</th>
-                    <th className="px-4 py-3 text-left">Status</th>
-                    <th className="px-4 py-3 text-left">Action</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {filteredProducts.map((p) => (
-                    <tr key={p.id} className="border-t">
-                      <td className="px-4 py-3">
-                        {new Date(p.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3 font-medium">{p.name}</td>
-                      <td className="px-4 py-3 text-gray-500">{p.category}</td>
-                      <td className="px-4 py-3">{p.product_stock[0]?.quantity}</td>
-                      <td className="px-4 py-3">
-                        {currency} {Number(p.product_prices[0]?.selling_price).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-semibold ${p.product_stock[0]?.status === 'in_stock'
-                            ? 'bg-green-100 text-green-700'
-                            : p.product_stock[0]?.status === 'low_stock'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
-                            }`}
-                        >
-                          {p.product_stock[0]?.status.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-2 py-3 text-center">
-                        <ActionMenu product={p} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                hey
-              </table>
-            </div>
-          </div>
-        </div>
       )}
-      {viewaAllBarcode &&(
-        <BarcodeBatchPrint products={products} open={viewaAllBarcode} onClose={()=>(setViewAllBArcode(false))}/>
+      {
+        openExpires && (
+          <AllProducts title='Expire Soon Products' filteredProducts={expireSoonCount} open={openExpires} onClose={()=>setOpenExpires(false)} fetchAllProduct={fetchAllProduct} />
+        )
+      }
+      {
+        openExpired && (
+          <AllProducts title='Expired Products' filteredProducts={expiredProducts} open={openExpired} onClose={()=>setOpenExpired(false)} fetchAllProduct={fetchAllProduct} />
+        )
+      }
+
+        {openInStock && (
+          <AllProducts title='In Stock Products' filteredProducts={inStockProducts} open={openInStock} onClose={()=>setOpenInStock(false)} fetchAllProduct={fetchAllProduct} />
+        )}
+          {openLowStock && (  
+          <AllProducts title='Low Stock Products' filteredProducts={lowStockProducts} open={openLowStock} onClose={()=>setOpenLowStock(false)} fetchAllProduct={fetchAllProduct} />
+        )}
+          {openOutOfStock && (  
+          <AllProducts title='Out of Stock Products' filteredProducts={outOfStockProducts} open={openOutOfStock} onClose={()=>setOpenOutOfStock(false)} fetchAllProduct={fetchAllProduct} />
+        )}
+        
+
+
+      {viewaAllBarcode && (
+        <BarcodeBatchPrint products={products} open={viewaAllBarcode} onClose={() => (setViewAllBArcode(false))} />
       )}
 
     </section>
