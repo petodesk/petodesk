@@ -6,6 +6,7 @@ import { AddProductModal } from "./AddProductModal";
 import BarcodeLabel from "./BarcodeLabel";
 import { createClient } from "../utils/supabase/client";
 import { useCompany } from "../context/CompanyContext";
+import { formatDate } from "../utils/dateFormatter";
 
 
 
@@ -145,7 +146,7 @@ export default function AllProducts({ filteredProducts, open, onClose, fetchAllP
                             {/* Top row: Date + Action */}
                             <div className="flex items-center justify-between">
                                 <p className="text-md font-semibold text-gray-700 mb-1">
-                                    {new Date(p.created_at).toLocaleDateString()}
+                                    {formatDate(p.created_at)}
                                 </p>
                                 <ActionMenu product={p} />
                             </div>
@@ -226,7 +227,7 @@ export default function AllProducts({ filteredProducts, open, onClose, fetchAllP
                             {filteredProducts.map((p:any) => (
                                 <tr key={p.id} className="border-t">
                                     <td className="px-4 py-3">
-                                        {new Date(p.created_at).toLocaleDateString()}
+                                        {formatDate(p.created_at)}
                                     </td>
                                     <td className="px-4 py-3 font-medium">{p.name}</td>
                                     <td className="px-4 py-3 text-gray-500">{p.category}</td>
