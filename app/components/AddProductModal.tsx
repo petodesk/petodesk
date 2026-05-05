@@ -477,7 +477,7 @@ export function AddProductModal({ open, onClose, product }: Props) {
                 </div>
 
 
-                <div className="mt-4 flex justify-end gap-3">
+                <div className="mt-4 mr-4 flex justify-end gap-3">
                     <button onClick={onClose} className="rounded border px-5 py-2 text-sm">
                         Cancel
                     </button>
