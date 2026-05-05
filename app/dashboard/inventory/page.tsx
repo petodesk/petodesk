@@ -9,6 +9,7 @@ import BarcodeLabel from '@/app/components/BarcodeLabel'
 import BarcodeBatchPrint from '@/app/components/barcodeBatch'
 import { useCompany } from '@/app/context/CompanyContext'
 import AllProducts from '@/app/components/AllProducts'
+import { formatDate } from '@/app/utils/dateFormatter'
 
 type DateFilter =
   | 'today'
@@ -202,7 +203,11 @@ export default function inventoryPage() {
   const lowStockCount = lowStockProducts.length;
   const  outOfStockProducts = products.filter(p => p.product_stock[0]?.status === 'out_of_stock');
   const outOfStockCount = outOfStockProducts.length;
-
+const stockValue = products.reduce((sum, p) => {
+  const quantity = p.product_stock[0]?.quantity || 0;
+  const sellingPrice = p.product_prices[0]?.selling_price || 0;
+  return sum + (quantity * sellingPrice);
+}, 0);
   const expireSoonCount = products.filter(p => {
     const expireDate = new Date(p.expires_at || '')
     const now = new Date()
@@ -342,7 +347,7 @@ export default function inventoryPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-20 mb-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-20 mb-6">
         <SummaryCard
           label="Total Items"
           value={totalItems.toString()}
@@ -353,7 +358,9 @@ export default function inventoryPage() {
           value={totalStock.toLocaleString()}
         />
 
-        <div className="flex flex-col gap-4 rounded-xl bg-white p-4 shadow-sm">
+       
+      </div>
+       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-xl bg-white p-4 shadow-sm w-full mb-6">
           <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={()=>setOpenInStock(true)}>
             <div className="h-4 w-4 rounded-sm bg-green-500"></div>
             <p className="text-gray-700 ">In Stock: {inStockCount}</p>
@@ -365,6 +372,12 @@ export default function inventoryPage() {
           </div>
 
           <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={()=>setOpenOutOfStock(true)}>
+            <div className="h-4 w-4 rounded-sm bg-red-500"></div>
+            <p
+
+              className="text-gray-700">Stock Value: {currency} {stockValue.toLocaleString()}</p>
+          </div>
+            <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={()=>setOpenOutOfStock(true)}>
             <div className="h-4 w-4 rounded-sm bg-red-500"></div>
             <p
 
@@ -381,7 +394,6 @@ export default function inventoryPage() {
             <p className="text-gray-700">Expired: {expiredProducts.length}</p>
           </div>
         </div>
-      </div>
       <div className="flex flex-col md:flex-row gap-3 mb-4">
         {/* Search */}
         <div className="flex items-center w-full rounded-xl bg-gray-100 px-3 py-2">
@@ -411,7 +423,7 @@ export default function inventoryPage() {
       {/* Table */}
       <div className="rounded-xl bg-white shadow-sm">
         <div className="flex items-center justify-between border-b px-4 py-3 text-sm font-medium mb-2">
-          <span>{dateFilter === 'today' ? "Today's" : dateFilter == 'yesterday' ? "Yasterday's" : "This Week"} Added Products</span>
+          <span>{dateFilter === 'today' ? "Today's" : dateFilter === 'yesterday' ? "Yesterday's" : dateFilter === 'week' ? "This Week" :dateFilter === 'thisMonth' ? "This Month" : dateFilter ==='lastMonth' ? "Last Month" : dateFilter === 'thisYear' ? "This Year" : "All Time "} Added Products</span>
 
           <select
             value={dateFilter}
@@ -440,7 +452,7 @@ export default function inventoryPage() {
 
               <div className="flex items-center justify-between">
                 <p className="text-md font-semibold text-gray-700 mb-1">
-                  {new Date(p.created_at).toLocaleDateString()}
+                  {formatDate(p.created_at)}
                 </p>
                 <ActionMenu product={p} />
               </div>
@@ -532,7 +544,7 @@ export default function inventoryPage() {
               {filteredProducts.slice(0, 4).map((p) => (
                 <tr key={p.id} className="border-t">
                   <td className="px-4 py-3">
-                    {new Date(p.created_at).toLocaleDateString()}
+                    {formatDate(p.created_at)}
                   </td>
                   <td className="px-4 py-3 font-medium">{p.name}</td>
                   <td className="px-4 py-3 text-gray-500">{p.category}</td>
@@ -576,7 +588,7 @@ export default function inventoryPage() {
           </table>
         </div>
         {/* if product is grater than 5 i make it popup */}
-        {filteredProducts.length > 1 && (
+        {filteredProducts.length > 4 && (
           <div className="border-t px-4 py-3 text-center">
             <button
               onClick={() => setOpenAllProducts(true)}
