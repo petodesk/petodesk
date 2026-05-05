@@ -17,7 +17,7 @@ export type ProductFormData = {
     costPrice: string
     sellingPrice: string
     quantity: string
-    expire_date: string 
+    expire_date: string
     unit: string
     image: string
     supplier_name: string
@@ -106,7 +106,7 @@ export function AddProductModal({ open, onClose, product }: Props) {
             e.sellingPrice = 'Selling price cannot be lower than cost'
         if (!form.quantity || Number(form.quantity) < 0)
             e.quantity = 'Quantity must be 0 or more'
-      
+
         if (form.hasVariant) {
             if (!form.size) e.size = 'Size is required'
             if (!form.color) e.color = 'Color is required'
@@ -337,13 +337,18 @@ export function AddProductModal({ open, onClose, product }: Props) {
                                 <option value="carton">Carton</option>
                             </select>
                         </Field>
-                          <Field label="Expire Date *" >
+
+                        <Field label="Expire Date">
                             <input
                                 type="date"
                                 value={form.expire_date}
                                 onChange={e => update('expire_date', e.target.value)}
                                 className="input"
                             />
+                            <small className="block text-xs text-gray-500 mt-1 font-normal">
+                                <span className="inline-block mr-1">ℹ️</span>
+                                Optional — only if your item/service has an expiration
+                            </small>
                         </Field>
 
                     </div>
