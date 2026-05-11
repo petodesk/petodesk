@@ -11,39 +11,40 @@ import { HiOutlineArrowRightOnRectangle } from 'react-icons/hi2'
 /* -------------------------------- */
 
 const sidebarLinks: Record<string, { label: string; href: string }[]> = {
-  peto_owner : [
+  peto_owner: [
     { label: 'Dashboard', href: '/admindash' },
     { label: 'Users', href: '/admindash/users' },
     { label: 'Verification Center', href: '/admindash/verification-center' },
     { label: 'Transactions', href: '/admindash/transactions' },
     { label: 'Notifications', href: '/admindash/notifications' },
+    { label: 'Activity Logs', href: '/admindash/activity' }, // ✅ ADD HERE
     { label: 'Settings', href: '/admindash/settings' },
   ],
 
   peto_admin: [
-   { label: 'Dashboard', href: '/admindash' },
+    { label: 'Dashboard', href: '/admindash' },
     { label: 'Users', href: '/admindash/users' },
     { label: 'Verification Center', href: '/admindash/verification-center' },
     { label: 'Transactions', href: '/admindash/transactions' },
     { label: 'Notifications', href: '/admindash/notifications' },
+    { label: 'Activity Logs', href: '/admindash/activity' }, // ✅ ADD HERE
     { label: 'Settings', href: '/admindash/settings' },
   ],
 
   peto_verifier: [
     { label: 'Users', href: '/admindash/users' },
     { label: 'Verification Center', href: '/admindash/verification-center' },
-
   ],
 
   peto_analyst: [
-     { label: 'Dashboard', href: '/admindash' },
+    { label: 'Dashboard', href: '/admindash' },
     { label: 'Users', href: '/admindash/users' },
     { label: 'Verification Center', href: '/admindash/verification-center' },
     { label: 'Transactions', href: '/admindash/transactions' },
     { label: 'Notifications', href: '/admindash/notifications' },
+    { label: 'Activity Logs', href: '/admindash/activity' }, // ✅ ADD HERE
     { label: 'Settings', href: '/admindash/settings' },
   ],
-  
 }
 
 export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
