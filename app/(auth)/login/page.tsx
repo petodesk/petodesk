@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 import { Loading } from "@/app/components/Loading";
 import { getDashboardRoute } from "@/app/utils/routeredirect";
+import { logActivity } from "@/app/utils/activitylog";
 
 export default function Home() {
     const router = useRouter()
@@ -47,44 +48,91 @@ export default function Home() {
 
         checkUser()
     }, [router])
-    const handleSignIn = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setLoading(true)
+    // const handleSignIn = async (e: React.FormEvent) => {
+    //     e.preventDefault()
+    //     setLoading(true)
 
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        })
+    //     const { data, error } = await supabase.auth.signInWithPassword({
+    //         email,
+    //         password,
+    //     })
 
-        setLoading(false)
+    //     setLoading(false)
 
-        if (error) {
-            if (error.message.toLowerCase().includes('invalid login')) {
-                toast.error('Invalid email or password')
-            } else if (error.message.toLowerCase().includes('email not confirmed')) {
-                toast.error('Please verify your email first')
-            } else {
-                toast.error(error.message)
-            }
-            return
-        }
+    //     if (error) {
+    //         if (error.message.toLowerCase().includes('invalid login')) {
+    //             toast.error('Invalid email or password')
+    //         } else if (error.message.toLowerCase().includes('email not confirmed')) {
+    //             toast.error('Please verify your email first')
+    //         } else {
+    //             toast.error(error.message)
+    //         }
+    //         return
+    //     }
 
-        const user = data.user
+    //     const user = data.user
 
-        // ✅ same redirect logic you already use
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('id, role')
-            .eq('id', user.id)
-            .maybeSingle()
+    //     // ✅ same redirect logic you already use
+    //     const { data: profile } = await supabase
+    //         .from('profiles')
+    //         .select('id, role')
+    //         .eq('id', user.id)
+    //         .maybeSingle()
 
-        if (!profile) {
-            router.replace('/company')
-        } else {
-                router.push(getDashboardRoute(profile.role))
+    //     if (!profile) {
+    //         router.replace('/company')
+    //     } else {
+    //             router.push(getDashboardRoute(profile.role))
             
-        }
+    //     }
+    // }
+
+    const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+    })
+
+    setLoading(false)
+
+    if (error) {
+        toast.error(error.message)
+        return
     }
+
+    const user = data.user
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, role, company_id, email')
+        .eq('id', user.id)
+        .maybeSingle()
+
+    if (!profile) {
+        router.replace('/company')
+        return
+    }
+
+    // 🔥 LOG ACTIVITY HERE
+    await logActivity({
+        supabase,
+        company_id: profile.company_id,
+        user_id: profile.id,
+        action_type: "login",
+        module: "auth",
+        metadata: {
+            email: profile.email,
+            role: profile.role,
+            method: "password",
+            timestamp: new Date().toISOString()
+        }
+    })
+
+    router.push(getDashboardRoute(profile.role))
+}
 
     const handleForgotPassword = async (e: React.MouseEvent) => {
         e.preventDefault();

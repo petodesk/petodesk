@@ -39,6 +39,12 @@ export default function AdminDash() {
         totalUsers: 0,
         activeUsers: 0
     })
+
+    const [companyMetrics, setCompanyMetrics] = useState({
+    sales: 0,
+    invoices: 0,
+    inventory: 0
+})
     console.log('profile in users page', profile)
 
     const [companies, setCompanies] = useState<CompanyData[]>([])
@@ -98,6 +104,40 @@ export default function AdminDash() {
             console.error(error)
         }
     }
+
+    const fetchCompanyMetrics = async (companyId: string) => {
+    const supabase = createClient()
+
+    const [
+        salesRes,
+        invoiceRes,
+        inventoryRes
+    ] = await Promise.all([
+        supabase
+            .from("sales")
+            .select("id", { count: "exact", head: true })
+            .eq("company_id", companyId),
+
+        supabase
+            .from("invoices")
+            .select("id", { count: "exact", head: true })
+            .eq("company_id", companyId),
+
+        supabase
+            .from("products")
+            .select("id", { count: "exact", head: true })
+            .eq("company_id", companyId)
+    ])
+
+    setCompanyMetrics({
+        sales: salesRes.count || 0,
+        invoices: invoiceRes.count || 0,
+        inventory: inventoryRes.count || 0
+    })
+}
+
+
+
 
 
 
@@ -190,6 +230,7 @@ export default function AdminDash() {
                         ? company.profiles.length
                         : 0,
                 })
+                  fetchCompanyMetrics(company.id) 
             } else {
                 setSelectedCompany(null)
             }
@@ -416,6 +457,9 @@ export default function AdminDash() {
                                         <InfoRow label="Industry" value={selectedCompany.industry} />
                                         <InfoRow label="Service Type" value={selectedCompany.service_type} />
                                         <InfoRow label="Employees" value={selectedCompany.profiles?.length || 0} />
+                                        <InfoRow label="Sales Recorded" value={companyMetrics.sales} />
+                                        <InfoRow label="Invoice Generated" value={companyMetrics.invoices} />
+                                        <InfoRow label="Inventory Added" value={companyMetrics.inventory} />
 
                                         <InfoRow
                                             label="Status"
