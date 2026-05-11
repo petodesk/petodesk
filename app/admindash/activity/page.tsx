@@ -1,14 +1,13 @@
+
 'use client'
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/app/utils/supabase/client"
-import { HiSearch } from "react-icons/hi"
+import { formatDistanceToNow } from "date-fns"
 
-export default function ActivityLogsPage() {
+export default function ActivityPage() {
   const supabase = createClient()
-
   const [logs, setLogs] = useState<any[]>([])
-  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -19,150 +18,168 @@ export default function ActivityLogsPage() {
     setLoading(true)
 
     const { data, error } = await supabase
-      .from('activity_logs')
+      .from("activity_logs")
       .select(`
         id,
-        created_at,
-        user_id,
         action_type,
         module,
+        description,
         metadata,
-        profiles(email, full_name, role)
+        created_at,
+        profiles(email)
       `)
-      .order('created_at', { ascending: false })
-      .limit(200)
+      .order("created_at", { ascending: false })
+      .limit(100)
 
-    if (error) {
-      console.error(error)
-    } else {
-      setLogs(data || [])
-    }
+    if (!error) setLogs(data || [])
 
     setLoading(false)
   }
-  console.log(logs)
+  console.log(logs) 
+  const getSafeTime = (dateString: string) => {
+  if (!dateString) return "just now"
 
-  const filteredLogs = logs.filter(log =>
-    log.action?.toLowerCase().includes(search.toLowerCase()) ||
-    log.table_name?.toLowerCase().includes(search.toLowerCase()) ||
-    log.profiles?.email?.toLowerCase().includes(search.toLowerCase())
-  )
+  const date = new Date(dateString)
 
+  if (isNaN(date.getTime())) return "just now"
+
+  return formatDistanceToNow(date, { addSuffix: true })
+}
+
+  const formatActivity = (log: any) => {
+  const time = getSafeTime(log.created_at)
+
+  switch (log.action_type) {
+    case "user_registered":
+      return { text: `New user registered`, sub: log.profiles?.email, time }
+
+    case "login":
+      return { text: `User logged in`, sub: log.profiles?.email, time }
+
+    case "plan_upgrade":
+      return { text: `Plan upgraded`, sub: log.metadata?.plan, time }
+
+    case "user_suspended":
+      return { text: `User suspended`, sub: log.profiles?.email, time }
+
+    case "payment_received":
+      return { text: `Payment received`, sub: `$${log.metadata?.amount}`, time }
+
+    case "sale_recorded":
+      return { text: `Sale recorded`, sub: `$${log.metadata?.amount}`, time }
+
+    case "invoice_generated":
+      return { text: `Invoice generated`, sub: log.metadata?.customer, time }
+
+    case "inventory_updated":
+      return { text: `Inventory updated`, sub: log.metadata?.item, time }
+
+    default:
+      return { text: log.description || log.action_type, sub: "", time }
+  }
+}
+
+
+const getUserMetrics = async () => {
+  const now = new Date()
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const weekAgo = new Date()
+  weekAgo.setDate(now.getDate() - 7)
+
+  const monthAgo = new Date()
+  monthAgo.setDate(now.getDate() - 30)
+
+  const { data } = await supabase
+    .from('activity_logs')
+    .select('user_id, created_at')
+    .eq('action_type', 'login')
+
+  const dau = new Set(
+    data?.filter(d => new Date(d.created_at) >= today).map(d => d.user_id)
+  ).size
+
+  const wau = new Set(
+    data?.filter(d => new Date(d.created_at) >= weekAgo).map(d => d.user_id)
+  ).size
+
+  const mau = new Set(
+    data?.filter(d => new Date(d.created_at) >= monthAgo).map(d => d.user_id)
+  ).size
+
+  return { dau, wau, mau }
+}
+const [metrics, setMetrics] = useState({ dau: 0, wau: 0, mau: 0 })
+
+useEffect(() => {
+  const loadMetrics = async () => {
+    const m = await getUserMetrics()
+    setMetrics(m)
+  } 
+  loadMetrics()
+} , [])
   return (
-    <div className="w-full min-h-screen p-2 md:p-6 rounded-lg border-2 border-green-200">
 
-      {/* HEADER */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold">Activity Logs</h1>
-        <button
-          onClick={fetchLogs}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm"
-        >
-          Refresh
-        </button>
-      </div>
+    <>
 
-      {/* SEARCH */}
-      <div className="flex items-center gap-2 rounded-lg bg-gray-100 p-3 mb-6">
-        <HiSearch size={20} />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search actions, users, tables..."
-          className="w-full outline-none bg-transparent"
-        />
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <MetricCard label="Daily Active Users" value={metrics.dau} />
+  <MetricCard label="Weekly Active Users" value={metrics.wau} />
+  <MetricCard label="Monthly Active Users" value={metrics.mau} />
+</div>
+    
+  
+   <div className="p-4 md:p-6">
+  <h1 className="text-xl font-semibold mb-6">Activity Logs</h1>
 
-      {/* LOADING */}
-      {loading && (
-        <p className="text-gray-500 text-sm">Loading activity logs...</p>
-      )}
+  <div className="bg-white rounded-xl border shadow-sm divide-y">
 
-      {/* EMPTY */}
-      {!loading && filteredLogs.length === 0 && (
-        <p className="text-gray-400 text-center py-10">
-          No activity logs found.
-        </p>
-      )}
+    {loading ? (
+      <div className="p-4 text-sm text-gray-500">Loading activity...</div>
+    ) : logs.length === 0 ? (
+      <div className="p-4 text-sm text-gray-400">No activity found</div>
+    ) : (
+      logs.map((log) => {
+        const activity = formatActivity(log)
 
-      {/* TABLE */}
-      {!loading && filteredLogs.length > 0 && (
-        <>
-          {/* MOBILE */}
-          <div className="md:hidden space-y-3">
-            {filteredLogs.map((log) => (
-              <div key={log.id} className="bg-white border rounded-lg p-4 space-y-2">
-
-                <p className="text-sm text-gray-500">
-                  {new Date(log.created_at).toLocaleString()}
+        return (
+          <div
+            key={log.id}
+            className="flex items-start justify-between p-4 hover:bg-gray-50 transition"
+          >
+            <div>
+              <p className="text-sm font-medium text-gray-800">
+                {activity.text}
+              </p>
+              {activity.sub && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {activity.sub}
                 </p>
+              )}
+            </div>
 
-                <p className="font-semibold text-gray-800">
-                  {log.action_type} 
-                </p>
-
-                <p className="text-sm text-gray-600">
-                  Table: {log.module}
-                </p>
-
-                <p className="text-sm text-gray-600">
-                  User: {log.profiles?.email || 'System'}
-                </p>
-
-              </div>
-            ))}
+            <span className="text-xs text-gray-400 whitespace-nowrap">
+              {activity.time}
+            </span>
           </div>
+        )
+      })
+    )}
 
-          {/* DESKTOP TABLE */}
-          <div className="hidden md:block overflow-x-auto bg-white rounded-lg border">
+  </div>
+</div>
+  </>
+  )
+}
 
-            <table className="w-full text-sm">
 
-              <thead className="bg-gray-50 text-gray-600">
-                <tr>
-                  <th className="text-left p-3">Time</th>
-                  <th className="text-left p-3">User</th>
-                  <th className="text-left p-3">Action</th>
-                  <th className="text-left p-3">Table</th>
-                  <th className="text-left p-3">Role</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredLogs.map((log) => (
-                  <tr key={log.id} className="border-t hover:bg-gray-50">
-
-                    <td className="p-3 text-gray-600">
-                      {new Date(log.created_at).toLocaleString()}
-                    </td>
-
-                    <td className="p-3">
-                      {log.profiles?.email || 'System'}
-                    </td>
-
-                    <td className="p-3 font-medium text-gray-800">
-                      {log.action_type} 
-                    </td>
-
-                    <td className="p-3 text-gray-600">
-                      {log.module}
-                    </td>
-
-                    <td className="p-3">
-                      <span className="px-2 py-1 text-xs rounded bg-gray-100">
-                        {log.profiles?.role || 'system'}
-                      </span>
-                    </td>
-
-                  </tr>
-                ))}
-              </tbody>
-
-            </table>
-
-          </div>
-        </>
-      )}
+function MetricCard({ label, value }: any) {
+  return (
+    <div className="bg-white border rounded-xl p-4 shadow-sm">
+      <p className="text-sm text-gray-500">{label}</p>
+      <h2 className="text-2xl font-semibold mt-1">{value}</h2>
     </div>
   )
 }
