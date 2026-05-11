@@ -264,22 +264,7 @@ export default function AdminDash() {
             }
         }
 
-        // const updateCompanyStatus = async (status: string) => {
-        //     const { error } = await supabase
-        //         .from("companies")
-        //         .update({ status })
-        //         .eq("id", company.id)
-
-        //     if (error) {
-        //         toast.error("Failed to update status")
-        //         return
-        //     }
-
-        //     fetchDashboard()
-        //     setOpen(false)
-        // }
-
-        const updateCompanyStatus = async (status: string) => {
+      const updateCompanyStatus = async (status: string) => {
   const { error } = await supabase
     .from("companies")
     .update({ status })

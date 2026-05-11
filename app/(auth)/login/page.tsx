@@ -116,20 +116,6 @@ export default function Home() {
         return
     }
 
-    // 🔥 LOG ACTIVITY HERE
-    // await logActivity({
-    //     supabase,
-    //     company_id: profile.company_id,
-    //     user_id: profile.id,
-    //     action_type: "login",
-    //     module: "auth",
-    //     metadata: {
-    //         email: profile.email,
-    //         role: profile.role,
-    //         method: "password",
-    //         timestamp: new Date().toISOString()
-    //     }
-    // })
 await logActivity({
   supabase,
   company_id: profile?.company_id,
@@ -176,7 +162,6 @@ await logActivity({
         if (error) toast.error(error.message)
     }
     if (checkingSession) return <Loading />
-
     return (
         <div className="flex items-center justify-center bg-gray-60 p-4 h-screen ">
             <div className="w-full max-w-xl rounded-lg shadow-lg m-5 py-6 my-6">
