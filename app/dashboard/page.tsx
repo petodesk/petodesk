@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
 import BothDashPlanDash from '../components/dashboards/bothDashPlanDash'
 import InventoryPlanDash from '../components/dashboards/inventoryPlanDash'
@@ -9,6 +9,7 @@ import { Loading } from '../components/Loading'
 import { useRouter } from 'next/navigation'
 import { useCompany } from '../context/CompanyContext'
 import OfficeLocationPage from '../components/dashboards/HrPlanDash'
+import { toast } from 'react-toastify'
 type SubscriptionWithPlan = {
   status: string
   trial_end: string | null
@@ -25,12 +26,15 @@ export default function DashboardPage() {
   const [plan, setPlan] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [trialEnd, setTrialEnd] = useState<string | null>(null)
-  const { profile, company, refresh } = useCompany()
+  const { profile, company, refresh, companyStatus } = useCompany()
 useEffect(() => {
   if (!profile && !loading) {
     refresh()
   }
 }, [profile, loading])
+
+  const hasShownToast = useRef(false)
+
   useEffect(() => {
 
     const fetchSubscription = async () => {
@@ -85,6 +89,21 @@ useEffect(() => {
 
   }, [supabase, router, company?.id])
 
+
+   useEffect(() => {
+      // ✅ wait until status is known
+      if (!companyStatus) return
+  
+      if (companyStatus === "suspended") {
+        if (!hasShownToast.current) {
+          toast.error("Your company account is suspended. Contact admin.")
+          hasShownToast.current = true
+        }
+  
+        router.replace('/suspended')
+      }
+    }, [companyStatus, router])
+  
   if (loading) {
     return <Loading />
   }

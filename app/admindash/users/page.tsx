@@ -6,13 +6,14 @@ import { createClient } from "@/app/utils/supabase/client"
 import { FaEllipsisV } from "react-icons/fa"
 import { formatDate } from "@/app/utils/dateFormatter"
 import { toast } from "react-toastify"
-import { error } from "console"
 import { useCompany } from "@/app/context/CompanyContext"
+import { logActivity } from "@/app/utils/activitylog"
 
 interface CompanyData {
     id: string,
     created_at: string,
     name: string,
+    location: string,
     service_type: string,
     industry: string,
     profiles: {
@@ -41,10 +42,10 @@ export default function AdminDash() {
     })
 
     const [companyMetrics, setCompanyMetrics] = useState({
-    sales: 0,
-    invoices: 0,
-    inventory: 0
-})
+        sales: 0,
+        invoices: 0,
+        inventory: 0
+    })
     console.log('profile in users page', profile)
 
     const [companies, setCompanies] = useState<CompanyData[]>([])
@@ -67,14 +68,19 @@ export default function AdminDash() {
             const { data: companiesData } = await supabase
                 .from("companies")
                 .select(`
-                    id,
-                    created_at,
-                    name,
-                    service_type,
-                    industry,
-                    profiles(email),
-                    status
-                `)
+    id,
+    created_at,
+    name,
+    service_type,
+    industry,
+    status,
+    profiles!inner (
+      email,
+      full_name,
+      role
+    )
+  `)
+                .eq("profiles.role", "owner")
 
             const { data: employeeData } = await supabase
                 .from("profiles")
@@ -106,35 +112,35 @@ export default function AdminDash() {
     }
 
     const fetchCompanyMetrics = async (companyId: string) => {
-    const supabase = createClient()
+        const supabase = createClient()
 
-    const [
-        salesRes,
-        invoiceRes,
-        inventoryRes
-    ] = await Promise.all([
-        supabase
-            .from("sales")
-            .select("id", { count: "exact", head: true })
-            .eq("company_id", companyId),
+        const [
+            salesRes,
+            invoiceRes,
+            inventoryRes
+        ] = await Promise.all([
+            supabase
+                .from("sales")
+                .select("id", { count: "exact", head: true })
+                .eq("company_id", companyId),
 
-        supabase
-            .from("invoices")
-            .select("id", { count: "exact", head: true })
-            .eq("company_id", companyId),
+            supabase
+                .from("invoices")
+                .select("id", { count: "exact", head: true })
+                .eq("company_id", companyId),
 
-        supabase
-            .from("products")
-            .select("id", { count: "exact", head: true })
-            .eq("company_id", companyId)
-    ])
+            supabase
+                .from("products")
+                .select("id", { count: "exact", head: true })
+                .eq("company_id", companyId)
+        ])
 
-    setCompanyMetrics({
-        sales: salesRes.count || 0,
-        invoices: invoiceRes.count || 0,
-        inventory: inventoryRes.count || 0
-    })
-}
+        setCompanyMetrics({
+            sales: salesRes.count || 0,
+            invoices: invoiceRes.count || 0,
+            inventory: inventoryRes.count || 0
+        })
+    }
 
 
 
@@ -158,6 +164,14 @@ export default function AdminDash() {
                 p_company_id: companyId,
                 p_plan_name: newPlan
             })
+            await logActivity({
+                supabase,
+                company_id: companyId,
+                user_id: profile?.id || "",
+                action_type: "plan_change",
+                module: "company",
+                description: `Plan changed to ${newPlan} for  : ${selectedCompany?.name || companyId} company by :- ${profile?.full_name || "Unknown User"}`,
+            })
 
             if (error) {
                 toast.error(error.message || "Failed to update plan")
@@ -175,6 +189,9 @@ export default function AdminDash() {
     const isAdminOrOwner =
         profile?.role === "peto_owner" || profile?.role === "peto_admin"
     const isOwner = profile?.role === "peto_owner"
+
+
+
     function ActionMenu({ company }: { company: CompanyData }) {
         const [open, setOpen] = useState(false)
         const [isDeleting, setIsDeleting] = useState(false)
@@ -210,9 +227,10 @@ export default function AdminDash() {
                 service_type,
                 industry,
                 location,
-                profiles(email, full_name, phone, status, acquisition),
+                profiles!inner(email, full_name, phone, status, acquisition),
                 status
             `)
+                .eq("profiles.role", "owner")
                 .eq("id", companyId)
 
             if (error) {
@@ -230,7 +248,7 @@ export default function AdminDash() {
                         ? company.profiles.length
                         : 0,
                 })
-                  fetchCompanyMetrics(company.id) 
+                fetchCompanyMetrics(company.id)
             } else {
                 setSelectedCompany(null)
             }
@@ -265,6 +283,38 @@ export default function AdminDash() {
                 toast.error("Failed to update status")
                 return
             }
+
+            // ✅ SEND EMAIL ONLY IF SUSPENDED
+            if (status === "suspended") {
+                try {
+                    await fetch("/api/send-suspension-email", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            email: company.profiles?.[0]?.email,
+                            companyName: company.name
+                        })
+                    })
+                    await logActivity({
+                        supabase,
+                        company_id: company.id,
+                        user_id: profile?.id || "",
+                        action_type: "suspend",
+                        module: "company",
+                        description: ` ${company.name} company suspended by :- ${profile?.full_name || "Unknown User"}`,
+                    })
+                } catch (err) {
+                    console.error("Email failed")
+                }
+            }
+
+            toast.success(
+                status === "suspended"
+                    ? "Company suspended & notified 📩"
+                    : "Company reactivated"
+            )
 
             fetchDashboard()
             setOpen(false)
@@ -456,10 +506,8 @@ export default function AdminDash() {
                                         <InfoRow label="Business Name" value={selectedCompany.name} />
                                         <InfoRow label="Industry" value={selectedCompany.industry} />
                                         <InfoRow label="Service Type" value={selectedCompany.service_type} />
+                                        <InfoRow label="Location" value={selectedCompany.location || 0} />
                                         <InfoRow label="Employees" value={selectedCompany.profiles?.length || 0} />
-                                        <InfoRow label="Sales Recorded" value={companyMetrics.sales} />
-                                        <InfoRow label="Invoice Generated" value={companyMetrics.invoices} />
-                                        <InfoRow label="Inventory Added" value={companyMetrics.inventory} />
 
                                         <InfoRow
                                             label="Status"
@@ -514,10 +562,24 @@ export default function AdminDash() {
                                             </div>)
                                     }
 
+                                    <div className="rounded-xl border p-5 shadow-sm space-y-4">
+                                        <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
+                                            Business Activity
+                                        </h3>
+
+
+                                        <InfoRow label="Sales Recorded" value={companyMetrics.sales} />
+                                        <InfoRow label="Invoice Generated" value={companyMetrics.invoices} />
+                                        <InfoRow label="Inventory Added" value={companyMetrics.inventory} />
+
+
+                                    </div>
+
 
                                 </div>
                             </>
                         )}
+
 
                     </div>
                 ) : (
