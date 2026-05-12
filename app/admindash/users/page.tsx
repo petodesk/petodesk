@@ -7,12 +7,13 @@ import { FaEllipsisV } from "react-icons/fa"
 import { formatDate } from "@/app/utils/dateFormatter"
 import { toast } from "react-toastify"
 import { useCompany } from "@/app/context/CompanyContext"
+import { logActivity } from "@/app/utils/activitylog"
 
 interface CompanyData {
     id: string,
     created_at: string,
     name: string,
-    location:string,
+    location: string,
     service_type: string,
     industry: string,
     profiles: {
@@ -64,9 +65,9 @@ export default function AdminDash() {
                 .select("*", { count: "exact", head: true })
                 .eq("status", "active")
 
- const { data: companiesData } = await supabase
-  .from("companies")
-  .select(`
+            const { data: companiesData } = await supabase
+                .from("companies")
+                .select(`
     id,
     created_at,
     name,
@@ -79,7 +80,7 @@ export default function AdminDash() {
       role
     )
   `)
-  .eq("profiles.role", "owner")
+                .eq("profiles.role", "owner")
 
             const { data: employeeData } = await supabase
                 .from("profiles")
@@ -163,6 +164,14 @@ export default function AdminDash() {
                 p_company_id: companyId,
                 p_plan_name: newPlan
             })
+            await logActivity({
+                supabase,
+                company_id: companyId,
+                user_id: profile?.id || "",
+                action_type: "plan_change",
+                module: "company",
+                description: `Plan changed to ${newPlan} for  : ${selectedCompany?.name || companyId} company by :- ${profile?.full_name || "Unknown User"}`,
+            })
 
             if (error) {
                 toast.error(error.message || "Failed to update plan")
@@ -182,7 +191,7 @@ export default function AdminDash() {
     const isOwner = profile?.role === "peto_owner"
 
 
-    
+
     function ActionMenu({ company }: { company: CompanyData }) {
         const [open, setOpen] = useState(false)
         const [isDeleting, setIsDeleting] = useState(false)
@@ -221,7 +230,7 @@ export default function AdminDash() {
                 profiles!inner(email, full_name, phone, status, acquisition),
                 status
             `)
-               .eq("profiles.role", "owner")
+                .eq("profiles.role", "owner")
                 .eq("id", companyId)
 
             if (error) {
@@ -264,44 +273,52 @@ export default function AdminDash() {
             }
         }
 
-      const updateCompanyStatus = async (status: string) => {
-  const { error } = await supabase
-    .from("companies")
-    .update({ status })
-    .eq("id", company.id)
+        const updateCompanyStatus = async (status: string) => {
+            const { error } = await supabase
+                .from("companies")
+                .update({ status })
+                .eq("id", company.id)
 
-  if (error) {
-    toast.error("Failed to update status")
-    return
-  }
+            if (error) {
+                toast.error("Failed to update status")
+                return
+            }
 
-  // ✅ SEND EMAIL ONLY IF SUSPENDED
-  if (status === "suspended") {
-    try {
-      await fetch("/api/send-suspension-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          email: company.profiles?.[0]?.email,
-          companyName: company.name
-        })
-      })
-    } catch (err) {
-      console.error("Email failed")
-    }
-  }
+            // ✅ SEND EMAIL ONLY IF SUSPENDED
+            if (status === "suspended") {
+                try {
+                    await fetch("/api/send-suspension-email", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            email: company.profiles?.[0]?.email,
+                            companyName: company.name
+                        })
+                    })
+                    await logActivity({
+                        supabase,
+                        company_id: company.id,
+                        user_id: profile?.id || "",
+                        action_type: "suspend",
+                        module: "company",
+                        description: ` ${company.name} company suspended by :- ${profile?.full_name || "Unknown User"}`,
+                    })
+                } catch (err) {
+                    console.error("Email failed")
+                }
+            }
 
-  toast.success(
-    status === "suspended"
-      ? "Company suspended & notified 📩"
-      : "Company reactivated"
-  )
+            toast.success(
+                status === "suspended"
+                    ? "Company suspended & notified 📩"
+                    : "Company reactivated"
+            )
 
-  fetchDashboard()
-  setOpen(false)
-}
+            fetchDashboard()
+            setOpen(false)
+        }
 
         const deleteCompany = async (companyId: string) => {
             try {
@@ -491,7 +508,7 @@ export default function AdminDash() {
                                         <InfoRow label="Service Type" value={selectedCompany.service_type} />
                                         <InfoRow label="Location" value={selectedCompany.location || 0} />
                                         <InfoRow label="Employees" value={selectedCompany.profiles?.length || 0} />
-                                        
+
                                         <InfoRow
                                             label="Status"
                                             value={
@@ -545,17 +562,17 @@ export default function AdminDash() {
                                             </div>)
                                     }
 
-                                     <div className="rounded-xl border p-5 shadow-sm space-y-4">
+                                    <div className="rounded-xl border p-5 shadow-sm space-y-4">
                                         <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
                                             Business Activity
                                         </h3>
 
-                                       
+
                                         <InfoRow label="Sales Recorded" value={companyMetrics.sales} />
                                         <InfoRow label="Invoice Generated" value={companyMetrics.invoices} />
                                         <InfoRow label="Inventory Added" value={companyMetrics.inventory} />
 
-                                        
+
                                     </div>
 
 

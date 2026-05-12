@@ -11,6 +11,7 @@ import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
 import { Loading } from '@/app/components/Loading'
 import CurrencySelect from '@/app/components/CurrencySelector'
+import { logActivity } from '@/app/utils/activitylog'
 
 export default function CompanySetup() {
   const supabase = createClient()
@@ -63,34 +64,51 @@ export default function CompanySetup() {
 
     setPhoneError('')
 
-    try {
-      const { data: sessionData } = await supabase.auth.getSession()
-      const user = sessionData.session?.user
+   try {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const user = sessionData.session?.user;
 
-      if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Not authenticated");
 
-      const { error: rpcError } =
-        await supabase.rpc('create_company_and_profile', {
-          p_company_name: companyName,
-          p_industry: industry,
-          p_plan_name: feature,
-          p_currency: currency,
-          p_size: size,
-          p_location: location,
-          p_full_name: fullName,
-          p_phone: phone,
-          p_email: user.email,
-          p_acquisition: acquisition
-        });
+  const { data: rpcData, error: rpcError } =
+    await supabase.rpc("create_company_and_profile", {
+      p_company_name: companyName,
+      p_industry: industry,
+      p_plan_name: feature,
+      p_currency: currency,
+      p_size: size,
+      p_location: location,
+      p_full_name: fullName,
+      p_phone: phone,
+      p_email: user.email,
+      p_acquisition: acquisition
+    });
 
-      if (rpcError) throw rpcError
+  if (rpcError) throw rpcError;
 
-      router.push('/success')
-    } catch (err: any) {
-      alert(err.message || 'Something went wrong')
-    } finally {
-      setLoading(false)
+  const new_company_id = rpcData; // adjust if needed
+
+  // ✅ ACTIVITY LOG
+  await logActivity({
+    supabase,
+    company_id: new_company_id,
+    user_id: user.id,
+    action_type: "create",
+    module: "company",
+    description: `New company created: ${companyName}`,
+    metadata: {
+      company_name: companyName,
+      owner_email: user.email,
+      plan: feature,
+      industry,
     }
+  });
+
+  router.push('/success');
+
+} catch (err: any) {
+  alert(err.message || 'Something went wrong');
+}
   }
 
   if (sessionCheck) {

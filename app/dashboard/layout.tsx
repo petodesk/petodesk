@@ -25,19 +25,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [profile, loading])
 
-  useEffect(() => {
-    // ✅ wait until status is known
-    if (!companyStatus) return
+  // useEffect(() => {
+  //   // ✅ wait until status is known
+  //   if (!companyStatus) return
 
-    if (companyStatus === "suspended") {
-      if (!hasShownToast.current) {
-        toast.error("Your company account is suspended. Contact admin.")
-        hasShownToast.current = true
-      }
+  //   if (companyStatus === "suspended") {
+  //     if (!hasShownToast.current) {
+  //       toast.error("Your company account is suspended. Contact admin.")
+  //       hasShownToast.current = true
+  //     }
 
-      router.replace('/suspended') // ✅ better than window.location
-    }
-  }, [companyStatus, router])
+  //     router.replace('/suspended') // ✅ better than window.location
+  //   }
+  // }, [companyStatus, router])
 
   if (!profile) {
     return <Loading />
