@@ -10,7 +10,8 @@ import BarcodeBatchPrint from '@/app/components/barcodeBatch'
 import { useCompany } from '@/app/context/CompanyContext'
 import AllProducts from '@/app/components/AllProducts'
 import { formatDate } from '@/app/utils/dateFormatter'
-
+import * as XLSX from "xlsx"
+import { saveAs } from "file-saver"
 type DateFilter =
   | 'today'
   | 'yesterday'
@@ -92,6 +93,53 @@ export default function inventoryPage() {
     setLoading(false)
   }, [supabase])
   console.log(products)
+
+  const mapProductsForExport = (data: Products[]) => {
+  return data.map((p) => {
+    const stock = p.product_stock?.[0] || {}
+    const price = p.product_prices?.[0] || {}
+
+    return {
+      Name: p.name,
+      Category: p.category || "",
+      Brand: p.brand || "",
+      Barcode: p.barcode || "",
+      Quantity: stock.quantity || 0,
+      Unit: stock.unit_of_measure || "",
+      Status: stock.status || "",
+      SellingPrice: price.selling_price || 0,
+      CostPrice: price.cost_price || 0,
+      ExpiryDate: p.expires_at ? formatDate(p.expires_at) : "",
+      CreatedAt: formatDate(p.created_at)
+    }
+  })
+}
+
+
+const exportToExcel = () => {
+  const exportData = mapProductsForExport(filteredProducts)
+
+  if (exportData.length === 0) {
+    alert("No products to export")
+    return
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(exportData)
+  const workbook = XLSX.utils.book_new()
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Products")
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array"
+  })
+
+  const fileData = new Blob([excelBuffer], {
+    type: "application/octet-stream"
+  })
+
+  saveAs(fileData, "Products.xlsx")
+}
 
   const filteredProducts = products.filter((p) => {
     /* ---------- DATE FILTER ---------- */
@@ -341,8 +389,10 @@ const stockValue = products.reduce((sum, p) => {
           View Products Barcode
         </button>
        
-          <button className='flex gap-2 cursor-pointer items-center justify-center md:h-10 rounded-md bg-white px-4 py-4 max-sm:w-full '>
-          <HiDownload className='cursor-pointer' />Export to CSV
+          <button
+          onClick={exportToExcel}
+           className='flex gap-2 cursor-pointer items-center justify-center md:h-10 rounded-md bg-blue-600 text-white px-4 py-4 max-sm:w-full hover:bg-blue-800 '>
+          Export to Excel
         </button>
 
 
