@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 
     images: [
       {
-        url: 'https://www.petodesk.com/opengraph-image',
+        url: 'https://www.petodesk.com/opengraph-image?v=2',
         width: 1200,
         height: 630,
         alt: 'PetoDesk',
@@ -53,8 +53,7 @@ export const metadata: Metadata = {
 
     description:
       'Business Management Software for Inventory, Invoice, Payroll, Sales & HR.',
-
-    images: ['https://www.petodesk.com/opengraph-image'],
+  images: ["https://www.petodesk.com/opengraph-image?v=2"],
   },
 }
 
