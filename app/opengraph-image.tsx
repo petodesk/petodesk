@@ -57,14 +57,14 @@ export default function Image() {
             >
               <img
                 src="https://petodesk.com/logo.svg"
-                width="56"
-                height="56"
+                width="44"
+                height="44"
                 alt="PetoDesk"
               />
 
               <div
                 style={{
-                  fontSize: '46px',
+                  fontSize: '36px',
                   fontWeight: 700,
                   color: '#2563eb',
                   marginLeft: '16px',
@@ -84,7 +84,7 @@ export default function Image() {
             >
               <div
                 style={{
-                  fontSize: '64px',
+                  fontSize: '54px',
                   fontWeight: 800,
                   color: '#2563eb',
                 }}
@@ -94,7 +94,7 @@ export default function Image() {
 
               <div
                 style={{
-                  fontSize: '64px',
+                  fontSize: '54px',
                   fontWeight: 800,
                   color: '#111827',
                   marginTop: '8px',
