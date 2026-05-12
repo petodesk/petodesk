@@ -15,36 +15,32 @@ const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
 });
 
-export const metadata: Metadata = {
-  title: "Petodesk",
-  description: "Business Management Software for Inventory, Invoice, Payroll, Sales & HR.",
+export const metadata = {
+  metadataBase: new URL('https://petodesk.com'),
 
-  icons: {
-    icon: "/logo.svg",
+  title: 'PetoDesk',
+   description: "Business Management Software for Inventory, Invoice, Payroll, Sales & HR.",
+
+  openGraph: {
+    title: 'PetoDesk',
+    description:
+      'Manage your business and team smarter all in one platform.',
+    images: ['/opengraph-image'],
   },
-
- openGraph: {
-  title: "Petodesk",
-  description: "Business Management Software for Inventory, Invoice, Payroll, Sales & HR.",
-  url: "https://www.petodesk.com",
-  siteName: "Petodesk",
-  images: [
-    {
-      url: "https://www.petodesk.com/preview.png",
-      width: 1200,
-      height: 630,
-      alt: "Petodesk",
-    },
-  ],
-},
 
   twitter: {
-    card: "summary_large_image",
-    title: "Petodesk",
-    description: "Business Management Software for Inventory, Invoice, Payroll, Sales & HR.",
-    images: ["https://www.petodesk.com/preview.png"],
+    card: 'summary_large_image',
+    title: 'PetoDesk',
+    description:
+      'Manage your business and team smarter all in one platform.',
+    images: ['/opengraph-image'],
   },
-};
+}
+
+
+
+
+
 
 export default function RootLayout({
   children,

@@ -340,9 +340,11 @@ const stockValue = products.reduce((sum, p) => {
         >
           View Products Barcode
         </button>
-        <button className='flex gap-2 items-center justify-center md:h-10 rounded-md bg-white px-4 py-4 max-sm:w-full '>
-          <HiDownload className='cursor-pointer' /> uplaod from CSV
+       
+          <button className='flex gap-2 cursor-pointer items-center justify-center md:h-10 rounded-md bg-white px-4 py-4 max-sm:w-full '>
+          <HiDownload className='cursor-pointer' />Export to CSV
         </button>
+
 
       </div>
 
