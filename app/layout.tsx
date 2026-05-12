@@ -15,25 +15,46 @@ const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
 });
 
-export const metadata = {
-  metadataBase: new URL('https://petodesk.com'),
+export const metadata: Metadata = {
+  metadataBase: new URL('https://www.petodesk.com'),
 
   title: 'PetoDesk',
-   description: "Business Management Software for Inventory, Invoice, Payroll, Sales & HR.",
+
+  description:
+    'Business Management Software for Inventory, Invoice, Payroll, Sales & HR.',
 
   openGraph: {
     title: 'PetoDesk',
-   description: "Business Management Software for Inventory, Invoice, Payroll, Sales & HR.",
-   
-    images: ['/opengraph-image'],
+
+    description:
+      'Business Management Software for Inventory, Invoice, Payroll, Sales & HR.',
+
+    url: 'https://www.petodesk.com',
+
+    siteName: 'PetoDesk',
+
+    images: [
+      {
+        url: 'https://www.petodesk.com/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'PetoDesk',
+      },
+    ],
+
+    locale: 'en_US',
+    type: 'website',
   },
 
   twitter: {
     card: 'summary_large_image',
+
     title: 'PetoDesk',
-   description: "Business Management Software for Inventory, Invoice, Payroll, Sales & HR.",
-    
-    images: ['/opengraph-image'],
+
+    description:
+      'Business Management Software for Inventory, Invoice, Payroll, Sales & HR.',
+
+    images: ['https://www.petodesk.com/opengraph-image'],
   },
 }
 

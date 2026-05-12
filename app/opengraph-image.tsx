@@ -44,7 +44,7 @@ export default function Image() {
             style={{
               display: 'flex',
               flexDirection: 'column',
-              width: '60%',
+              width: '65%',
             }}
           >
             {/* LOGO */}
@@ -57,8 +57,8 @@ export default function Image() {
             >
               <img
                 src="https://petodesk.com/logo.svg"
-                width="44"
-                height="44"
+                width="50"
+                height="50"
                 alt="PetoDesk"
               />
 
@@ -79,12 +79,12 @@ export default function Image() {
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                lineHeight: 1.1,
+                lineHeight: 1.01,
               }}
             >
               <div
                 style={{
-                  fontSize: '54px',
+                  fontSize: '40px',
                   fontWeight: 800,
                   color: '#2563eb',
                 }}
@@ -94,7 +94,7 @@ export default function Image() {
 
               <div
                 style={{
-                  fontSize: '54px',
+                  fontSize: '44px',
                   fontWeight: 800,
                   color: '#111827',
                   marginTop: '8px',
@@ -125,7 +125,7 @@ export default function Image() {
           <div
             style={{
               display: 'flex',
-              width: '35%',
+              width: '30%',
               height: '100%',
               justifyContent: 'center',
               alignItems: 'center',
