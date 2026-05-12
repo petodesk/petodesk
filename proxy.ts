@@ -44,14 +44,7 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url))
   }
 
-  /* -------------------------------- */
-  /* Already logged in → block auth pages */
-  // /* -------------------------------- */
-  // if (user && publicRoutes.includes(pathname)) {
-  //   return NextResponse.redirect(new URL("/dashboard", req.url))
-  // }
 
-  // If still no user (public route), allow
   if (!user) return res
 
   /* -------------------------------- */
@@ -74,12 +67,20 @@ export async function proxy(req: NextRequest) {
   /* -------------------------------- */
   let plan: string | null = null
 
-  if (!role.startsWith("peto_")) {
-    const { data: company } = await supabase
-      .from("companies")
-      .select("service_type")
-      .eq("id", profile.company_id)
-      .single()
+   if (!role.startsWith("peto_")) {
+   const { data: company } = await supabase
+  .from("companies")
+  .select("service_type, status")
+  .eq("id", profile.company_id)
+  .single()
+
+if (!role.startsWith("peto_") && company?.status === "suspended") {
+  if (!pathname.startsWith("/suspended")) {
+    return NextResponse.redirect(new URL("/suspended", req.url))
+  }
+
+  return res
+}
 
     plan = company?.service_type || null
   }
@@ -146,6 +147,7 @@ export const config = {
     "/dashboard",
     "/dashboard/:path*",
     "/admindash",
+    "/suspended",
     "/admindash/:path*",
   ],
 }

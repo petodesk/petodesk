@@ -48,44 +48,7 @@ export default function Home() {
 
         checkUser()
     }, [router])
-    // const handleSignIn = async (e: React.FormEvent) => {
-    //     e.preventDefault()
-    //     setLoading(true)
 
-    //     const { data, error } = await supabase.auth.signInWithPassword({
-    //         email,
-    //         password,
-    //     })
-
-    //     setLoading(false)
-
-    //     if (error) {
-    //         if (error.message.toLowerCase().includes('invalid login')) {
-    //             toast.error('Invalid email or password')
-    //         } else if (error.message.toLowerCase().includes('email not confirmed')) {
-    //             toast.error('Please verify your email first')
-    //         } else {
-    //             toast.error(error.message)
-    //         }
-    //         return
-    //     }
-
-    //     const user = data.user
-
-    //     // ✅ same redirect logic you already use
-    //     const { data: profile } = await supabase
-    //         .from('profiles')
-    //         .select('id, role')
-    //         .eq('id', user.id)
-    //         .maybeSingle()
-
-    //     if (!profile) {
-    //         router.replace('/company')
-    //     } else {
-    //             router.push(getDashboardRoute(profile.role))
-            
-    //     }
-    // }
 
     const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -123,9 +86,11 @@ await logActivity({
   action_type: 'login',
   module: 'auth',
   description: 'User logged in',
+  log_date: new Date().toISOString().split('T')[0],
 })
     router.push(getDashboardRoute(profile.role))
 }
+
 
     const handleForgotPassword = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -161,6 +126,8 @@ await logActivity({
         setGoogleLoading(false)
         if (error) toast.error(error.message)
     }
+
+    
     if (checkingSession) return <Loading />
     return (
         <div className="flex items-center justify-center bg-gray-60 p-4 h-screen ">

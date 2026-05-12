@@ -28,6 +28,7 @@ type CompanyContextType = {
   profile: Profile | null
   loading: boolean
   currency: string
+  companyStatus: string
   refresh: () => Promise<void>
 }
 
@@ -45,6 +46,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [currency, setCurrency] = useState<string>('')
+  const[companyStatus, setCompanyStatus] = useState<string>('')
   const fetchCompanyData = async () => {
     setLoading(true)
     try {
@@ -69,6 +71,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
         .single()
       setCompany(companyData)
       setCurrency(companyData?.currency || '')
+      setCompanyStatus(companyData?.status || '')
 
     } catch (err) {
       console.error('Failed to fetch company data', err)
@@ -76,6 +79,8 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false)
     }
   }
+
+
 
   useEffect(() => {
     fetchCompanyData()
@@ -88,6 +93,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
         profile,
         loading,
         currency,
+        companyStatus,
         refresh: fetchCompanyData,
       }}
     >
