@@ -23,16 +23,16 @@ export const metadata = {
 
   openGraph: {
     title: 'PetoDesk',
-    description:
-      'Manage your business and team smarter all in one platform.',
+   description: "Business Management Software for Inventory, Invoice, Payroll, Sales & HR.",
+   
     images: ['/opengraph-image'],
   },
 
   twitter: {
     card: 'summary_large_image',
     title: 'PetoDesk',
-    description:
-      'Manage your business and team smarter all in one platform.',
+   description: "Business Management Software for Inventory, Invoice, Payroll, Sales & HR.",
+    
     images: ['/opengraph-image'],
   },
 }
