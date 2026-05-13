@@ -74,13 +74,13 @@ export default function AdminDash() {
     service_type,
     industry,
     status,
-    profiles!inner (
+     profiles!profiles_company_id_fkey (
       email,
       full_name,
       role
     )
   `)
-    .eq("profiles.role", "owner")
+                .eq("profiles.role", "owner")
 
             const { data: employeeData } = await supabase
                 .from("profiles")
@@ -227,7 +227,14 @@ export default function AdminDash() {
                 service_type,
                 industry,
                 location,
-                profiles!inner(email, full_name, phone, status, acquisition),
+                profiles!profiles_company_id_fkey (
+      email,
+      role,
+      full_name,
+      phone,
+      status,
+      acquisition
+    ),
                 status
             `)
                 .eq("profiles.role", "owner")

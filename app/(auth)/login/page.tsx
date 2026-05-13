@@ -8,8 +8,7 @@ import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 import { Loading } from "@/app/components/Loading";
 import { getDashboardRoute } from "@/app/utils/routeredirect";
-import { logActivity } from "@/app/utils/activitylog";
-import { touchCompanyActivity } from "@/app/utils/activity";
+
 
 export default function Home() {
     const router = useRouter()
