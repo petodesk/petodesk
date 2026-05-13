@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/app/utils/supabase/client"
+import * as XLSX from "xlsx"
+import { saveAs } from "file-saver"
 
 export default function AdminDash() {
 
@@ -109,10 +111,24 @@ export default function AdminDash() {
             premium
         })
     }
-    console.log(SelectedCompany)
-
-
-
+  const summaryData = (data: any) => ({
+        TotalBusiness: data.businesses,
+        TotalUser: data.totalUsers,
+        ActiveUsers: data.activeUsers,
+        SuspendedUsers: data.suspendedUsers,
+        SimpleStartUsers: data.simpleinv,
+        HRUsers: data.simpleHr,
+        BusinessPlusUsers: data.both,
+        PremiumUsers: data.premium
+    })
+   
+    const exportToExcel = () => {
+        const summary = summaryData(stats)
+        const worksheet = XLSX.utils.json_to_sheet([summary])
+        const workbook = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Summary")
+        XLSX.writeFile(workbook, "summary.xlsx")
+    }
 
     return (
         <>
@@ -121,7 +137,10 @@ export default function AdminDash() {
 
                     <div className=" w-full min-h-screen p-2 md:p-6 rounded-lg border-2 border-green-200">
                         <div className=" flex text-center max-sm:justify-center my-3">
-                            <button className="btn-primary rounded-lg py-3 px-6 text-white">Export Data (CSV)</button>
+                            <button 
+                            className="btn-primary rounded-lg py-3 px-6 text-white" onClick={exportToExcel}>
+                                Export Data (Excel)
+                            </button>
                         </div>
 
                         {/* -------- SUMMARY CARDS -------- */}

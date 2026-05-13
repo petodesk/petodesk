@@ -14,10 +14,10 @@ export default function AnnouncePage() {
     const [selectedAnnounce, setSelectedAnnounce] = useState<any>()
     const [role, setRole] = useState<any>()
 
-    const [tasks, setTasks] = useState<any[]>([])
+    const [announcements, setAnnouncements] = useState<any[]>([])
 
     useEffect(() => {
-        fetchTasks()
+        fetchAnnouncements()
         fetchUser()
     }, [])
 
@@ -25,15 +25,16 @@ export default function AnnouncePage() {
 
 
 
-    async function fetchTasks() {
+    async function fetchAnnouncements() {
         const { data, error } = await supabase
             .from("announcements")
             .select(`
                 id,
+                author,
                 created_at,
                 title,
                 description,
-                profiles(full_name, role)
+                profiles(id, full_name, role)
                 `)
             .order("created_at", { ascending: false })
 
@@ -42,13 +43,19 @@ export default function AnnouncePage() {
             return
         }
 
-        setTasks(data || [])
+        setAnnouncements(data || [])
     }
     /* ---------------- USER ---------------- */
     async function getProfileId() {
         const { data: { user } } = await supabase.auth.getUser()
         return user?.id
     }
+    const isAuthor = async (authorId: string) => {
+        const userId = await getProfileId()
+        return userId === authorId
+    }
+
+
 
     async function deleteAnnouncement(id: string) {
         const confirmDelete = confirm("Are you sure you want to delete this announcement?")
@@ -63,7 +70,7 @@ export default function AnnouncePage() {
             console.error(error)
             alert("Failed to delete")
         } else {
-            fetchTasks()
+            fetchAnnouncements()
         }
     }
     const fetchUser = async () => {
@@ -95,7 +102,7 @@ export default function AnnouncePage() {
                             + Add announcement
                         </button>
                        {/* SUMMARY */}
-                    <SummaryCard label="Announcements" value={tasks.length.toString()} />
+                    <SummaryCard label="Announcements" value={announcements.length.toString()} />
                        
                     </div>
 
@@ -107,11 +114,11 @@ export default function AnnouncePage() {
                     </div>
 
                     {
-                        tasks.map((task) => (
+                        announcements.map((announcement) => (
 
 
                             <div
-                                key={task.id}
+                                key={announcement.id}
                                 className="bg-white rounded-xl shadow-sm p-4 md:p-5 my-4
                                             flex flex-col gap-4 md:grid md:grid-cols-2 md:gap-6 overflow-y-auto "
                             >
@@ -122,14 +129,14 @@ export default function AnnouncePage() {
                                     <div>
                                         <p className="text-xs font-bold text-gray-900">Title</p>
                                         <p className="text-xs font-semibold text-gray-800 break-words">
-                                            {task.title}
+                                            {announcement.title}
                                         </p>
                                     </div>
 
                                     <div>
                                         <p className="text-xs font-bold text-gray-900">Date</p>
                                         <p className="text-xs text-gray-600">
-                                            {formatDateForAnnouncements(task.created_at)}
+                                            {formatDateForAnnouncements(announcement            .created_at)}
                                         </p>
                                     </div>
 
@@ -142,10 +149,10 @@ export default function AnnouncePage() {
                                         <p className="text-xs font-bold text-gray-900">Author</p>
                                         <div className="flex gap-3 items-center">
                                             <p className="text-sm font-medium text-gray-700">
-                                                {task.profiles?.full_name || "-"}
+                                                {announcement.profiles?.full_name || "-"}
 
                                             </p>
-                                           <p className="text-sm text-gray-900"> role : {task.profiles?.role}</p>
+                                           <p className="text-sm text-gray-900"> role : {announcement.profiles?.role}</p>
                                         </div>
 
                                     </div>
@@ -153,23 +160,24 @@ export default function AnnouncePage() {
                                     <div>
                                         <p className="text-xs font-bold text-gray-900">Description</p>
                                         <p className="text-sm text-gray-700 break-words whitespace-pre-wrap ">
-                                            {task.description}
+                                            {announcement.description}
                                         </p>
                                     </div>
 
                                 </div>
+                                
                                 {
                                     role === 'owner' && (
                                         <div className="flex gap-20">
                                             <button
                                                 onClick={() => {
-                                                    setSelectedAnnounce(task)
+                                                    setSelectedAnnounce(announcement)
                                                     setEditAnounce(true)
                                                 }}
                                                 className="text-white bg-blue-600 rounded-lg p-2 w-40 cursor-pointer hover:bg-blue-400"
                                             >Edit</button>
                                             <button
-                                                onClick={() => deleteAnnouncement(task.id)}
+                                                onClick={() => deleteAnnouncement(announcement  .id)}
                                                 className="text-white bg-red-300 rounded-lg p-2 w-40 cursor-pointer hover:bg-red-400"
                                             >Delete</button>
                                         </div>
@@ -189,7 +197,7 @@ export default function AnnouncePage() {
                             open={addAnnounceOpen}
                             onClose={() => {
                                 setAddAnnounceOpen(false)
-                                fetchTasks()
+                                fetchAnnouncements()
                             }}
                         />
                     )}
