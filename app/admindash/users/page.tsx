@@ -14,6 +14,7 @@ interface CompanyData {
     created_at: string,
     name: string,
     location: string,
+    last_active_at: string,
     service_type: string,
     industry: string,
     profiles: {
@@ -36,6 +37,7 @@ export default function AdminDash() {
     const [newPlan, setNwPlan] = useState(selectedCompany?.service_type)
     const [loading, setLoading] = useState(false)
     const { profile } = useCompany()
+    const [search, setSearch] = useState<string>("")
     const [stats, setStats] = useState({
         totalUsers: 0,
         activeUsers: 0
@@ -73,6 +75,7 @@ export default function AdminDash() {
     name,
     service_type,
     industry,
+    location,
     status,
      profiles!profiles_company_id_fkey (
       email,
@@ -190,7 +193,19 @@ export default function AdminDash() {
         profile?.role === "peto_owner" || profile?.role === "peto_admin"
     const isOwner = profile?.role === "peto_owner"
 
+    const statusCheck  = (date:string) => {
+        const lastActive = new Date(date)
+        const now = new Date()
+        const diffInDays = (now.getTime() - lastActive.getTime()) / (1000 * 3600 * 24)      
+        return diffInDays > 7 ? "Inactive" : "Active"
+    }
 
+
+    const filteredCompanies = companies.filter(company =>
+        company.name?.toLowerCase().includes(search.toLowerCase()) ||
+        company.status?.toLowerCase().includes(search.toLowerCase()) ||
+        company.location?.toLowerCase().includes(search.toLowerCase()) 
+    )
 
     function ActionMenu({ company }: { company: CompanyData }) {
         const [open, setOpen] = useState(false)
@@ -225,6 +240,7 @@ export default function AdminDash() {
                 created_at,
                 name,
                 service_type,
+                last_active_at,
                 industry,
                 location,
                 profiles!profiles_company_id_fkey (
@@ -578,6 +594,8 @@ export default function AdminDash() {
                                         <InfoRow label="Sales Recorded" value={companyMetrics.sales} />
                                         <InfoRow label="Invoice Generated" value={companyMetrics.invoices} />
                                         <InfoRow label="Inventory Added" value={companyMetrics.inventory} />
+                                        <InfoRow label="Last Active" value={formatDate(selectedCompany.last_active_at)} />
+                                        <InfoRow label="Activity Status" value={statusCheck(selectedCompany.last_active_at)} />
 
 
                                     </div>
@@ -595,7 +613,10 @@ export default function AdminDash() {
 
                         <div className="flex items-center gap-2 rounded-lg bg-gray-300 w-full p-4 my-8">
                             <HiSearch size={25} />
-                            <input type="text" placeholder="Search" className="w-full outline-none bg-transparent" />
+                            <input
+                            onChange={(e) => setSearch(e.target.value)}
+                            
+                            type="text" placeholder="Search by name, status, or location" className="w-full outline-none bg-transparent" />
                         </div>
 
                         <div>
@@ -604,7 +625,7 @@ export default function AdminDash() {
 
                         {/* MOBILE CARD */}
                         <div className="space-y-4 md:hidden">
-                            {companies.map((ex) => (
+                            {filteredCompanies.map((ex) => (
                                 <div key={ex.id} className="rounded-xl bg-white p-4 shadow-sm border space-y-3">
 
                                     <div className="flex items-center justify-between">
@@ -652,7 +673,7 @@ export default function AdminDash() {
                                 </thead>
 
                                 <tbody>
-                                    {companies.map((company) => (
+                                    {filteredCompanies.map((company) => (
                                         <tr key={company.id} className="border-t hover:bg-gray-50">
 
                                             <td className="px-4 py-1">
