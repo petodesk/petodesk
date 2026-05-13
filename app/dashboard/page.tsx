@@ -90,19 +90,19 @@ useEffect(() => {
   }, [supabase, router, company?.id])
 
 
-   useEffect(() => {
-      // ✅ wait until status is known
-      if (!companyStatus) return
+  //  useEffect(() => {
+  //     // ✅ wait until status is known
+  //     if (!companyStatus) return
   
-      if (companyStatus === "suspended") {
-        if (!hasShownToast.current) {
-          toast.error("Your company account is suspended. Contact admin.")
-          hasShownToast.current = true
-        }
+  //     if (companyStatus === "suspended") {
+  //       if (!hasShownToast.current) {
+  //         toast.error("Your company account is suspended. Contact admin.")
+  //         hasShownToast.current = true
+  //       }
   
-        router.replace('/suspended')
-      }
-    }, [companyStatus, router])
+  //       router.replace('/suspended')
+  //     }
+  //   }, [companyStatus, router])
   
   if (loading) {
     return <Loading />
