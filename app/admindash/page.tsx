@@ -1,9 +1,7 @@
 'use client'
 
 import { useEffect, useState } from "react"
-import { HiSearch } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
-import OnlineUsers from "../components/OnlineUsers"
 interface CompanyData {
     id: string,
     created_at: string,
@@ -61,7 +59,7 @@ export default function AdminDash() {
             .eq("status", "suspended")
 
         /* -------- BUSINESSES -------- */
-        const { data: companiesData, count: businesses } = await supabase
+        const { data: companiesData, count: businesses, error } = await supabase
             .from("companies")
             .select(`
                 id,
@@ -69,10 +67,22 @@ export default function AdminDash() {
     name,
     service_type,
     industry,
-    profiles(email),
+    profiles!profiles_company_id_fkey (
+      email,
+      full_name,
+      phone,
+      status,
+      acquisition
+    ),
     status
+    
                 ` ,
                 { count: "exact" })
+
+        if (error) {
+            console.error("Error fetching companies:", error)
+            return
+        }
 
 
         /* -------- EMPLOYEE COUNTS -------- */
@@ -102,6 +112,7 @@ export default function AdminDash() {
         const premium = companiesData?.filter(c => c.service_type === "premium").length || 0
 
         setCompanies(companiesWithEmployees)
+        console.log(companies)
 
         setStats({
             totalUsers: totalUsers || 0,
@@ -116,216 +127,13 @@ export default function AdminDash() {
     }
     console.log(SelectedCompany)
 
-    const [actionLoading, setActionLoading] = useState<string | null>(null)
 
-const updateCompanyStatus = async (companyId: string, status: string) => {
-    setActionLoading(companyId + status)
 
-    const { error } = await supabase
-        .from('companies')
-        .update({ status })
-        .eq('id', companyId)
-
-    if (error) {
-        console.error(error)
-        alert('Failed to update status')
-        setActionLoading(null)
-        return
-    }
-
-    // update UI instantly
-    setCompanies(prev =>
-        prev.map(c =>
-            c.id === companyId ? { ...c, status } : c
-        )
-    )
-
-    setActionLoading(null)
-}
-
-   function ActionMenu({ company }: { company: any }) {
-
-    const [open, setOpen] = useState(false)
-
-    // close on outside click
-    useEffect(() => {
-        const handleClick = () => setOpen(false)
-        if (open) {
-            window.addEventListener('click', handleClick)
-        }
-        return () => window.removeEventListener('click', handleClick)
-    }, [open])
-
-    const stopPropagation = (e: any) => e.stopPropagation()
-
-    const fetchMoreAboutCompany = async (companyId: any) => {
-
-        const { data, error } = await supabase
-            .from('companies')
-            .select(`
-                id,
-                created_at,
-                name,
-                service_type,
-                industry,
-                location,
-                profiles(email, full_name, phone, status, acquisition),
-                status
-            `)
-            .eq('id', companyId)
-
-        if (error) {
-            console.error(error)
-            return
-        }
-
-        setSelectedCompany(data ?? [])
-        setViewMore(true)
-    }
-
-    return (
-        <div className="relative" onClick={stopPropagation}>
-
-            {/* BUTTON */}
-            <button
-                onClick={(e) => {
-                    e.stopPropagation()
-                    setOpen(!open)
-                }}
-                className="px-2 py-1 text-gray-600 hover:text-gray-900"
-            >
-                ⋮
-            </button>
-
-            {/* MENU */}
-            {open && (
-                <div className="absolute right-0 z-20 w-44 rounded-lg border bg-white shadow-lg">
-
-                    <ul className="py-2 text-sm">
-
-                        <li
-                            onClick={() => fetchMoreAboutCompany(company.id)}
-                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                        >
-                            View
-                        </li>
-
-                        {company.status === 'suspended' ? (
-                            <li
-                                onClick={() => {
-                                    if (confirm('Reactivate this company?')) {
-                                        updateCompanyStatus(company.id, 'active')
-                                    }
-                                }}
-                                className="px-3 py-2 hover:bg-green-100 text-green-700 cursor-pointer"
-                            >
-                                Reactivate
-                            </li>
-                        ) : (
-                            <li
-                                onClick={() => {
-                                    if (confirm('Suspend this company?')) {
-                                        updateCompanyStatus(company.id, 'suspended')
-                                    }
-                                }}
-                                className="px-3 py-2 hover:bg-red-100 text-red-600 cursor-pointer"
-                            >
-                                Suspend
-                            </li>
-                        )}
-
-                        <li className="px-3 py-2 hover:bg-gray-100 cursor-pointer">
-                            Edit (coming soon)
-                        </li>
-
-                        <li className="px-3 py-2 hover:bg-gray-100 cursor-pointer">
-                            Reset Password (coming soon)
-                        </li>
-
-                    </ul>
-
-                </div>
-            )}
-        </div>
-    )
-}
 
     return (
         <>
-            {
-                viewMore ? (
-                    <div className="w-full min-h-screen p-3 md:p-6 rounded-lg border-2 border-green-200 bg-white">
-
-                        {SelectedCompany.length > 0 && (
-                            <>
-                                {/* HEADER */}
-                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
-                                    <div>
-                                        <h2 className="text-2xl font-bold text-gray-800">
-                                            {SelectedCompany[0].name}
-                                        </h2>
-                                        <p className="text-gray-500 text-sm">
-                                            Joined {new Date(SelectedCompany[0].created_at).toLocaleDateString()}
-                                        </p>
-                                    </div>
-
-                                    <button
-                                        onClick={() => setViewMore(false)}
-                                        className="px-4 py-2 rounded-lg border bg-gray-100 hover:bg-gray-200 text-sm"
-                                    >
-                                        Back
-                                    </button>
-                                </div>
-
-                                {/* COMPANY INFO */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                                    {/* BUSINESS INFO */}
-                                    <div className="rounded-xl border p-5 shadow-sm space-y-4">
-                                        <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-                                            Business Information
-                                        </h3>
-
-                                        <InfoRow label="Business Name" value={SelectedCompany[0].name} />
-                                        <InfoRow label="Industry" value={SelectedCompany[0].industry} />
-                                        <InfoRow label="Service Type" value={SelectedCompany[0].service_type} />
-                                        <InfoRow label="Location" value={SelectedCompany[0].location} />
-                                        <InfoRow label="Employees" value={SelectedCompany[0].profiles?.length || 0} />
-
-                                        <InfoRow
-                                            label="Status"
-                                            value={
-                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize
-                                             ${SelectedCompany[0].status === "suspended"
-                                                        ? "bg-red-100 text-red-700"
-                                                        : "bg-green-100 text-green-700"}`}>
-                                                    {SelectedCompany[0].status}
-                                                </span>
-                                            }
-                                        />
-                                    </div>
-
-                                    {/* OWNER INFO */}
-                                    <div className="rounded-xl border p-5 shadow-sm space-y-4">
-                                        <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-                                            Owner Information
-                                        </h3>
-
-                                        <InfoRow label="Email" value={SelectedCompany[0].profiles?.[0]?.email} />
-                                        <InfoRow label="Full Name" value={SelectedCompany[0].profiles?.[0]?.full_name} />
-                                        <InfoRow label="Phone" value={SelectedCompany[0].profiles?.[0]?.phone} />
-                                        <InfoRow label="Account Status" value={SelectedCompany[0].profiles?.[0]?.status} />
-                                        <InfoRow label="Where did they hear about us " value={SelectedCompany[0].profiles?.[0]?.acquisition} />
-                                    </div>
-
-                                </div>
-
-
-                            </>
-                        )}
-
-                    </div>
-                ) : (
+            
+              
 
                     <div className=" w-full minh-screen p-2 md:p-6 rounded-lg border-2 border-green-200">
                         <div className=" flex text-center max-sm:justify-center my-3">
@@ -345,14 +153,12 @@ const updateCompanyStatus = async (companyId: string, status: string) => {
                             <SummaryCard label="Premium Users" value={stats.premium.toString()} />
 
                         </div>
-                        <div className="p-6">
-                            <OnlineUsers />
-                        </div>
+                       
 
 
                     </div>
-                )
-            }
+                
+            
 
         </>
     )
