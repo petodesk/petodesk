@@ -8,13 +8,15 @@ import { formatDate } from "@/app/utils/dateFormatter"
 import { toast } from "react-toastify"
 import { useCompany } from "@/app/context/CompanyContext"
 import { logActivity } from "@/app/utils/activitylog"
-
+import * as XLSX from "xlsx"
+import { saveAs } from "file-saver"
 interface CompanyData {
     id: string,
     created_at: string,
     name: string,
     location: string,
     last_active_at: string,
+    last_activity_type: string,
     service_type: string,
     industry: string,
     profiles: {
@@ -34,7 +36,7 @@ export default function AdminDash() {
 
     const [viewMore, setViewMore] = useState(false)
     const [selectedCompany, setSelectedCompany] = useState<CompanyData | null>(null)
-    const [newPlan, setNwPlan] = useState(selectedCompany?.service_type)
+    const [newPlan, setNewPlan] = useState(selectedCompany?.service_type)
     const [loading, setLoading] = useState(false)
     const { profile } = useCompany()
     const [search, setSearch] = useState<string>("")
@@ -76,6 +78,8 @@ export default function AdminDash() {
     service_type,
     industry,
     location,
+    last_activity_type,
+    last_active_at,
     status,
      profiles!profiles_company_id_fkey (
       email,
@@ -150,6 +154,53 @@ export default function AdminDash() {
 
 
 
+     const mapProductsForExport = (data: CompanyData[]) => {
+      return data.map((c) => {
+    
+        return {
+          DateJoined: c.created_at ? formatDate(c.created_at) : "",
+          Name: c.name  || "",
+          email: c.profiles?.[0]?.email || "",
+          full_name: c.profiles?.[0]?.full_name || "",
+          Plan: c.service_type || "",
+          Employees: c.employee_count || 0,
+            Location: c.location || "",
+              Status: c.status || "",
+              Industry: c.industry || "",
+              LastActive: c.last_active_at ? formatDate(c.last_active_at) : "",
+                LastActivityType: c.last_activity_type || "",
+         
+        }
+      })
+    }
+    
+    
+    const exportToExcel = () => {
+      const exportData = mapProductsForExport(companies)
+    
+      if (exportData.length === 0) {
+        alert("No products to export")
+        return
+      }
+    
+      const worksheet = XLSX.utils.json_to_sheet(exportData)
+      const workbook = XLSX.utils.book_new()
+    
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Companies")
+    
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array"
+      })
+    
+      const fileData = new Blob([excelBuffer], {
+        type: "application/octet-stream"
+      })
+    
+      saveAs(fileData, "Companies.xlsx")
+    }
+    
+
 
     const updatePlan = async ({
         companyId,
@@ -193,10 +244,10 @@ export default function AdminDash() {
         profile?.role === "peto_owner" || profile?.role === "peto_admin"
     const isOwner = profile?.role === "peto_owner"
 
-    const statusCheck  = (date:string) => {
+    const statusCheck = (date: string) => {
         const lastActive = new Date(date)
         const now = new Date()
-        const diffInDays = (now.getTime() - lastActive.getTime()) / (1000 * 3600 * 24)      
+        const diffInDays = (now.getTime() - lastActive.getTime()) / (1000 * 3600 * 24)
         return diffInDays > 7 ? "Inactive" : "Active"
     }
 
@@ -204,7 +255,7 @@ export default function AdminDash() {
     const filteredCompanies = companies.filter(company =>
         company.name?.toLowerCase().includes(search.toLowerCase()) ||
         company.status?.toLowerCase().includes(search.toLowerCase()) ||
-        company.location?.toLowerCase().includes(search.toLowerCase()) 
+        company.location?.toLowerCase().includes(search.toLowerCase())
     )
 
     function ActionMenu({ company }: { company: CompanyData }) {
@@ -241,6 +292,7 @@ export default function AdminDash() {
                 name,
                 service_type,
                 last_active_at,
+                last_activity_type,
                 industry,
                 location,
                 profiles!profiles_company_id_fkey (
@@ -595,7 +647,10 @@ export default function AdminDash() {
                                         <InfoRow label="Invoice Generated" value={companyMetrics.invoices} />
                                         <InfoRow label="Inventory Added" value={companyMetrics.inventory} />
                                         <InfoRow label="Last Active" value={formatDate(selectedCompany.last_active_at)} />
+                                        <InfoRow label="Last Active Type" value={selectedCompany.last_activity_type} />
+
                                         <InfoRow label="Activity Status" value={statusCheck(selectedCompany.last_active_at)} />
+
 
 
                                     </div>
@@ -610,13 +665,18 @@ export default function AdminDash() {
                 ) : (
 
                     <div className="w-full max-h-[85vh] overflow-y-auto p-2 md:p-6 rounded-lg border-2 border-green-200">
-
+                        <div className=" flex text-center max-sm:justify-center my-3">
+                            <button
+                                className="btn-primary rounded-lg py-3 px-6 text-white" onClick={exportToExcel}>
+                                Export Data (Excel)
+                            </button>
+                        </div>
                         <div className="flex items-center gap-2 rounded-lg bg-gray-300 w-full p-4 my-8">
                             <HiSearch size={25} />
                             <input
-                            onChange={(e) => setSearch(e.target.value)}
-                            
-                            type="text" placeholder="Search by name, status, or location" className="w-full outline-none bg-transparent" />
+                                onChange={(e) => setSearch(e.target.value)}
+
+                                type="text" placeholder="Search by name, status, or location" className="w-full outline-none bg-transparent" />
                         </div>
 
                         <div>
