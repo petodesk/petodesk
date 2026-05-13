@@ -80,57 +80,11 @@ export default function ActivityPage() {
   }
 
 
-  const getUserMetrics = async () => {
-    const now = new Date()
 
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
 
-    const weekAgo = new Date()
-    weekAgo.setDate(now.getDate() - 7)
-
-    const monthAgo = new Date()
-    monthAgo.setDate(now.getDate() - 30)
-
-    const { data } = await supabase
-      .from('activity_logs')
-      .select('user_id, created_at')
-      .eq('action_type', 'login')
-
-    const dau = new Set(
-      data?.filter(d => new Date(d.created_at) >= today).map(d => d.user_id)
-    ).size
-
-    const wau = new Set(
-      data?.filter(d => new Date(d.created_at) >= weekAgo).map(d => d.user_id)
-    ).size
-
-    const mau = new Set(
-      data?.filter(d => new Date(d.created_at) >= monthAgo).map(d => d.user_id)
-    ).size
-
-    return { dau, wau, mau }
-  }
-  const [metrics, setMetrics] = useState({ dau: 0, wau: 0, mau: 0 })
-
-  useEffect(() => {
-    const loadMetrics = async () => {
-      const m = await getUserMetrics()
-      setMetrics(m)
-    }
-    loadMetrics()
-  }, [])
   return (
 
-    <div className="space-y-6  overflow-hidden max-h-[85vh] overflow-y-auto mt-10">
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <MetricCard label="Daily Active Users" value={metrics.dau} />
-        <MetricCard label="Weekly Active Users" value={metrics.wau} />
-        <MetricCard label="Monthly Active Users" value={metrics.mau} />
-      </div>
-
-
+    <div className="space-y-6  overflow-hidden max-h-[85vh] overflow-y-auto mt-6">
       <div className="p-4 md:p-6">
         <h1 className="text-xl font-semibold mb-6">Activity Logs</h1>
 
