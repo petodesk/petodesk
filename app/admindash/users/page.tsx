@@ -604,7 +604,7 @@ export default function AdminDash() {
 
                         {/* MOBILE CARD */}
                         <div className="space-y-4 md:hidden">
-                            {companies.slice(0, 4).map((ex) => (
+                            {companies.map((ex) => (
                                 <div key={ex.id} className="rounded-xl bg-white p-4 shadow-sm border space-y-3">
 
                                     <div className="flex items-center justify-between">
