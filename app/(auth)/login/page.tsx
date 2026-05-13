@@ -9,6 +9,7 @@ import { ClipLoader } from "react-spinners";
 import { Loading } from "@/app/components/Loading";
 import { getDashboardRoute } from "@/app/utils/routeredirect";
 import { logActivity } from "@/app/utils/activitylog";
+import { touchCompanyActivity } from "@/app/utils/activity";
 
 export default function Home() {
     const router = useRouter()
@@ -78,16 +79,16 @@ export default function Home() {
         router.replace('/company')
         return
     }
+    const { data: activityData } = await supabase.rpc(
+        'touch_company_activity',
+        {
+          p_company_id: profile.company_id,
+          p_user_id: profile.id,
+          p_activity: 'logged in',
+        }
+      )
 
-await logActivity({
-  supabase,
-  company_id: profile?.company_id,
-  user_id: user.id,
-  action_type: 'login',
-  module: 'auth',
-  description: 'User logged in',
-  log_date: new Date().toISOString().split('T')[0],
-})
+
     router.push(getDashboardRoute(profile.role))
 }
 

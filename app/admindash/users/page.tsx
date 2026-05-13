@@ -80,7 +80,7 @@ export default function AdminDash() {
       role
     )
   `)
-                .eq("profiles.role", "owner")
+    .eq("profiles.role", "owner")
 
             const { data: employeeData } = await supabase
                 .from("profiles")

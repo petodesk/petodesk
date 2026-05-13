@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
 import { toast } from 'react-toastify'
+import { touchCompanyActivity } from '../utils/activity'
 
 export function AddExpendeModal({
   open,
@@ -79,15 +80,15 @@ export function AddExpendeModal({
 
   // ✅ Save or update
   const handleSave = async () => {
-   if (!title || !categroy || !amount || !paidTo || !receiptNumber) {
-    toast.error('Please fill all required fields')
-    return
-  }
+    if (!title || !categroy || !amount || !paidTo || !receiptNumber) {
+      toast.error('Please fill all required fields')
+      return
+    }
 
-  if (!payerId || !userCompanyId) {
-    alert('User or company not found')
-    return
-  }
+    if (!payerId || !userCompanyId) {
+      alert('User or company not found')
+      return
+    }
     setLoading(true)
 
     try {
@@ -110,6 +111,17 @@ export function AddExpendeModal({
         added_by: payerId,
         company_id: userCompanyId,
       }
+
+      const { data } = await supabase.rpc(
+        'touch_company_activity',
+        {
+          p_company_id: userCompanyId,
+          p_user_id: payerId,
+          p_activity: ` ${isEdit ? 'Expense updated' : 'Expense added'}: ${title} - $${amount}`,
+        }
+      )
+
+      
 
       // 3️⃣ Insert or update
       const query = isEdit
@@ -147,7 +159,7 @@ export function AddExpendeModal({
 
       {/* Modal */}
       <div className="relative z-50 mx-4 w-full max-w-3xl mt-10 max-h-[80vh] rounded-xl bg-white shadow-lg flex flex-col">
-        
+
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-semibold">
@@ -165,12 +177,12 @@ export function AddExpendeModal({
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Input
-            
-            required
-            label="Expense Title *" value={title} onChange={settitle} />
-            
+
+              required
+              label="Expense Title *" value={title} onChange={settitle} />
+
             <Select
-            required
+              required
               label="Expense Category *"
               options={expensesCategory}
               value={categroy}
@@ -178,7 +190,7 @@ export function AddExpendeModal({
             />
 
             <Input
-            required
+              required
               label="Amount *"
               type="number"
               value={amount}
@@ -186,7 +198,7 @@ export function AddExpendeModal({
             />
 
             <Input
-            required
+              required
               label="Paid to / Vendor *"
               value={paidTo}
               onChange={setPiadTo}
@@ -200,8 +212,8 @@ export function AddExpendeModal({
             />
 
             <Input
-            required
-             label="Note" value={note} onChange={setNote} />
+              required
+              label="Note" value={note} onChange={setNote} />
 
             {/* File Upload */}
             <div className="col-span-1 md:col-span-2 flex flex-col gap-4 md:flex-row md:items-end">
@@ -246,7 +258,7 @@ export function AddExpendeModal({
             Cancel
           </button>
           <button
-          onClick={handleSave}
+            onClick={handleSave}
             disabled={loading}
             className="rounded-lg bg-blue-600 px-8 py-2 text-sm text-white
                        hover:bg-blue-700 disabled:opacity-60"
