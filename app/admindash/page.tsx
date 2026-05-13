@@ -2,26 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/app/utils/supabase/client"
-interface CompanyData {
-    id: string,
-    created_at: string,
-    name: string,
-    service_type: string,
-    industry: string,
-    profiles: {
-        email: string,
 
-    },
-    status: string,
-    employee_count: number
-
-
-
-}
 export default function AdminDash() {
 
     const supabase = createClient()
-    const [viewMore, setViewMore] = useState(false)
     const [SelectedCompany, setSelectedCompany] = useState<any[]>([])
 
     const [stats, setStats] = useState({
@@ -135,7 +119,7 @@ export default function AdminDash() {
             
               
 
-                    <div className=" w-full minh-screen p-2 md:p-6 rounded-lg border-2 border-green-200">
+                    <div className=" w-full min-h-screen p-2 md:p-6 rounded-lg border-2 border-green-200">
                         <div className=" flex text-center max-sm:justify-center my-3">
                             <button className="btn-primary rounded-lg py-3 px-6 text-white">Export Data (CSV)</button>
                         </div>

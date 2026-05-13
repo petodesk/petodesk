@@ -481,7 +481,7 @@ export default function AdminDash() {
         <>
             {
                 viewMore ? (
-                    <div className="w-full min-h-screen p-3 md:p-6 rounded-lg border-2 border-green-200 bg-white font-poppins">
+                    <div className="w-full max-h-[90vh] overflow-y-auto p-3 md:p-6 rounded-lg border-2 border-green-200 bg-white font-poppins">
 
                         {selectedCompany && (
                             <>
@@ -591,7 +591,7 @@ export default function AdminDash() {
                     </div>
                 ) : (
 
-                    <div className="w-full max-h-[90vh] overflow-y-auto p-2 md:p-6 rounded-lg border-2 border-green-200">
+                    <div className="w-full max-h-[85vh] overflow-y-auto p-2 md:p-6 rounded-lg border-2 border-green-200">
 
                         <div className="flex items-center gap-2 rounded-lg bg-gray-300 w-full p-4 my-8">
                             <HiSearch size={25} />
