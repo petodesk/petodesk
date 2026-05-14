@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { HiSearch } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
 import { FaEllipsisV } from "react-icons/fa"
-import { formatDate } from "@/app/utils/dateFormatter"
+import { formatDate, formatDateWithTime } from "@/app/utils/dateFormatter"
 import { toast } from "react-toastify"
 import { useCompany } from "@/app/context/CompanyContext"
 import { logActivity } from "@/app/utils/activitylog"
@@ -646,7 +646,7 @@ export default function AdminDash() {
                                         <InfoRow label="Sales Recorded" value={companyMetrics.sales} />
                                         <InfoRow label="Invoice Generated" value={companyMetrics.invoices} />
                                         <InfoRow label="Inventory Added" value={companyMetrics.inventory} />
-                                        <InfoRow label="Last Active" value={formatDate(selectedCompany.last_active_at)} />
+                                        <InfoRow label="Last Active" value={formatDateWithTime(selectedCompany.last_active_at)} />
                                         <InfoRow label="Last Active Type" value={selectedCompany.last_activity_type} />
 
                                         <InfoRow label="Activity Status" value={statusCheck(selectedCompany.last_active_at)} />
