@@ -159,7 +159,7 @@ export function PaySlipModal({
 
     return (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 overflow-y-auto">
-            <div className="relative w-full max-w-4xl rounded-xl bg-white max-sm:p-4 p-10 mt-50 max-h-(80vh) text-black">
+            <div className="relative w-full max-w-xl rounded-xl bg-white max-sm:p-4 p-10 mt-50 max-h-(80vh) text-black">
                 {/* Add CSS to ensure colors are safe */}
                 <style jsx>{`
                     @media print {
