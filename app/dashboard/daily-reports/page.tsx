@@ -54,7 +54,7 @@ export default function Reports({ onClose }: { onClose: () => void }) {
             .from("daily_reports")
             .select(`
     *,
-    profiles (full_name, role),
+    profiles!daily_reports_employee_id_fkey (full_name, role),
     report_comments (
         id,
         comment,
@@ -151,7 +151,7 @@ export default function Reports({ onClose }: { onClose: () => void }) {
                 .from("daily_reports")
                 .update({
                     status: newStatus,
-                    reviewed_at: new Date().toISOString(),
+                    reviewed_at: new Date(),
                     reviewed_by: profileId
                 })
                 .eq("id", report.id)
@@ -180,11 +180,16 @@ export default function Reports({ onClose }: { onClose: () => void }) {
                             <li onClick={viewTask} className="px-3 py-2 hover:bg-gray-100 cursor-pointer">
                                 View Full Report
                             </li>
-                            <li
-                                onClick={() => updateStatus('reviewed')}
-                                className="px-3 py-2 hover:bg-gray-50 cursor-pointer">
-                                Mark as reviewed
-                            </li>
+                            {
+                                report.status === "submitted" && role !== "employee" && (
+                                    <li
+                                        onClick={() => updateStatus('reviewed')}
+                                        className="px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                                        Mark as reviewed
+                                    </li>
+                                )
+                            }
+                           
 
                             <li
                                 onClick={() => {
@@ -290,7 +295,17 @@ export default function Reports({ onClose }: { onClose: () => void }) {
                                 <InfoRow label="Task worked on" value={report?.title} />
                                 <InfoRow label="Employee name" value={report.profiles?.full_name} />
                                 <InfoRow label="Summary" value={report.summary} />
-                                <InfoRow label="Status" value={report.status} />
+                                <InfoRow label="Status" value={
+                                    report.status === "submitted" ? (
+                                        <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                                            Submitted   
+                                        </span>
+                                    ) : (
+                                        <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">   
+                                            Reviewed
+                                        </span>
+                                    )
+                                } />
                             </div>
                         ))}
                     </div>
@@ -326,7 +341,20 @@ export default function Reports({ onClose }: { onClose: () => void }) {
                                                 {report.summary}
                                             </p>
                                         </td>
-                                        <td className="px-4 py-3">{report.status}</td>
+                                        <td className="px-4 py-3">
+                                            <span>
+                                                {report.status === "submitted" ? (
+                                                    <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                                                        Submitted   
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                                                        Reviewed
+                                                    </span>
+                                                )}
+                                            </span>
+                                            
+                                        </td>
                                         <td className="px-4 py-3">
                                             <ActionMenu report={report} />
                                         </td>
