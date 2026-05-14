@@ -163,7 +163,7 @@ export default function Dashboard() {
     if (loading) return <div className="p-8 text-center"><Loading /></div>
 
     return (
-        <div className="py-2  md:p-2 bg-gray-50 max-h-[95vh] overflow-auto space-y-6 text-gray-800 ">
+        <div className="py-2 my-10 md:p-2 bg-gray-50 max-h-[95vh] overflow-auto space-y-6 text-gray-800 ">
             {/* TOP ROW */}
             <div className="flex justify-content-end">
                 <OfficeLocationPage />
