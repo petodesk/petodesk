@@ -23,7 +23,6 @@ export default function Reports() {
     const [expenseTotal, setExpenseTotal] = useState(0)
     const [netProfit, setNetProfit] = useState(0)
     const [profitTotal, setProfitTotal] = useState(0)
-
     const [chartData, setChartData] = useState<any[]>([])
     const [range, setRange] = useState<Range>('this_month')
     const [label, setLabel] = useState<string>('')
@@ -384,8 +383,9 @@ const exportToPDF = () => {
                         onClick={exportToPDF}>Export PDF</button>
                 </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1.8fr_1.2fr] gap-2 w-full">
+            {
+               ( company?.service_type === 'business_plus' || company?.service_type === 'inventory' ) && (
+                    <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1.8fr_1.2fr] gap-2 w-full">
                 <MetricCard
                     onClick={(value: Range) => setRange(value)}
                     option
@@ -490,6 +490,11 @@ const exportToPDF = () => {
                 </div>
 
             </div>
+                )
+
+            }
+
+            
 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full">
