@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/app/utils/supabase/client"
 import * as XLSX from "xlsx"
-import { saveAs } from "file-saver"
 
 export default function AdminDash() {
 
@@ -111,7 +110,7 @@ export default function AdminDash() {
             premium
         })
     }
-  const summaryData = (data: any) => ({
+    const summaryData = (data: any) => ({
         TotalBusiness: data.businesses,
         TotalUser: data.totalUsers,
         ActiveUsers: data.activeUsers,
@@ -121,7 +120,7 @@ export default function AdminDash() {
         BusinessPlusUsers: data.both,
         PremiumUsers: data.premium
     })
-   
+
     const exportToExcel = () => {
         const summary = summaryData(stats)
         const worksheet = XLSX.utils.json_to_sheet([summary])
@@ -132,36 +131,36 @@ export default function AdminDash() {
 
     return (
         <>
-            
-              
-
-                    <div className=" w-full min-h-screen p-2 md:p-6 rounded-lg border-2 border-green-200">
-                        <div className=" flex text-center max-sm:justify-center my-3">
-                            <button 
-                            className="btn-primary rounded-lg py-3 px-6 text-white" onClick={exportToExcel}>
-                                Export Data (Excel)
-                            </button>
-                        </div>
-
-                        {/* -------- SUMMARY CARDS -------- */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
-                            <SummaryCard label="Total Businesses" value={stats.businesses.toString()} />
-
-                            <SummaryCard label="Total Users" value={stats.totalUsers.toString()} />
-                            <SummaryCard label="Active Users" value={stats.activeUsers.toString()} />
-                            <SummaryCard label="Suspended Users" value={stats.suspendedUsers.toString()} />
-                            <SummaryCard label="Inventory – Simple Start" value={stats.simpleinv.toString()} />
-                            <SummaryCard label="Simple Start – HR Users" value={stats.simpleHr.toString()} />
-                            <SummaryCard label="Business Plus Users" value={stats.both.toString()} />
-                            <SummaryCard label="Premium Users" value={stats.premium.toString()} />
-
-                        </div>
-                       
 
 
-                    </div>
-                
-            
+
+            <div className=" w-full min-h-screen p-2 md:p-6 rounded-lg border-2 border-green-200">
+                <div className=" flex text-center max-sm:justify-center my-3">
+                    <button
+                        className="btn-primary rounded-lg py-3 px-6 text-white" onClick={exportToExcel}>
+                        Export Data (Excel)
+                    </button>
+                </div>
+
+                {/* -------- SUMMARY CARDS -------- */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
+                    <SummaryCard label="Total Businesses" value={stats.businesses.toString()} />
+
+                    <SummaryCard label="Total Users" value={stats.totalUsers.toString()} />
+                    <SummaryCard label="Active Users" value={stats.activeUsers.toString()} />
+                    <SummaryCard label="Suspended Users" value={stats.suspendedUsers.toString()} />
+                    <SummaryCard label="Inventory – Simple Start" value={stats.simpleinv.toString()} />
+                    <SummaryCard label="Simple Start – HR Users" value={stats.simpleHr.toString()} />
+                    <SummaryCard label="Business Plus Users" value={stats.both.toString()} />
+                    <SummaryCard label="Premium Users" value={stats.premium.toString()} />
+
+                </div>
+
+
+
+            </div>
+
+
 
         </>
     )

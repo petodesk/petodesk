@@ -29,18 +29,14 @@ export async function GET(request: Request) {
 
   // 3️⃣ LOG ACTIVITY (IMPORTANT)
   if (profile) {
-    await supabase.from('activity_logs').insert({
-      user_id: profile.id,
-      company_id: profile.company_id,
-      action_type: 'login',
-      module: 'auth',
-      metadata: {
-        email: profile.email,
-        role: profile.role,
-        method: 'google',
-        timestamp: new Date().toISOString(),
-      },
-    })
+    const { data: activityData } = await supabase.rpc(
+        'touch_company_activity',
+        {
+          p_company_id: profile.company_id,
+          p_user_id: profile.id,
+          p_activity: 'logged in',
+        }
+      )
   }
 
   // 4️⃣ Redirect based on role

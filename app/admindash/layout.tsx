@@ -32,7 +32,7 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
       setLoading(false)
     }
     getRole()
-  }, [])
+  }, [userProfile, supabase])
 
 
  
