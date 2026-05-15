@@ -2,6 +2,7 @@
 import { createClient } from '@/app/utils/supabase/client'
 import { useEffect, useState } from 'react'
 import { useCompany } from '../context/CompanyContext'
+import { toast } from 'react-toastify'
 
 
 
@@ -67,10 +68,11 @@ export default function OfficeLocationPage() {
                 .eq('id', company?.id)
 
             if (!error) {
-                alert("Office location saved!")
+                toast.success("Office location saved!")
             }
         } catch (err: any) {
             console.log(err.message)
+            toast.error("Failed to save office location.")  
         }
 
 

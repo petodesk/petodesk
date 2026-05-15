@@ -76,6 +76,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             console.error('Insert Error:', insertError)
         }
 
+        onClose()
     }
 
         

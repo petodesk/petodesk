@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { createClient } from "@/app/utils/supabase/client"
 import AddCommentModal from "@/app/components/AddCommentModal"
 import AddReportModal from "@/app/components/AddReportModal"
+import { formatDate, formatDateForAnnouncements } from "@/app/utils/dateFormatter"
 
 export default function Reports({ onClose }: { onClose: () => void }) {
     const supabase = createClient()
@@ -112,28 +113,28 @@ export default function Reports({ onClose }: { onClose: () => void }) {
         setRole(data?.role || null)
     }
 
-    function timeAgo(dateString: string) {
-        const now = new Date()
-        const past = new Date(dateString)
-        const diff = Math.floor((now.getTime() - past.getTime()) / 1000)
+    // function timeAgo(dateString: string) {
+    //     const now = new Date()
+    //     const past = new Date(dateString)
+    //     const diff = Math.floor((now.getTime() - past.getTime()) / 1000)
 
-        if (diff < 60) return "now"
+    //     if (diff < 60) return "now"
 
-        const minutes = Math.floor(diff / 60)
-        if (minutes < 60) return `${minutes} min ago`
+    //     const minutes = Math.floor(diff / 60)
+    //     if (minutes < 60) return `${minutes} min ago`
 
-        const hours = Math.floor(minutes / 60)
-        if (hours < 24) return `${hours} h ago`
+    //     const hours = Math.floor(minutes / 60)
+    //     if (hours < 24) return `${hours} h ago`
 
-        const days = Math.floor(hours / 24)
-        if (days < 7) return `${days} day${days > 1 ? "s" : ""} ago`
+    //     const days = Math.floor(hours / 24)
+    //     if (days < 7) return `${days} day${days > 1 ? "s" : ""} ago`
 
-        const weeks = Math.floor(days / 7)
-        if (weeks < 4) return `${weeks} week${weeks > 1 ? "s" : ""} ago`
+    //     const weeks = Math.floor(days / 7)
+    //     if (weeks < 4) return `${weeks} week${weeks > 1 ? "s" : ""} ago`
 
-        const months = Math.floor(days / 30)
-        return `${months} month${months > 1 ? "s" : ""} ago`
-    }
+    //     const months = Math.floor(days / 30)
+    //     return `${months} month${months > 1 ? "s" : ""} ago`
+    // }
 
     function ActionMenu({ report }: { report: any }) {
         const [open, setOpen] = useState(false)
@@ -247,7 +248,7 @@ export default function Reports({ onClose }: { onClose: () => void }) {
                                                     Role: {c.profiles?.role}
                                                 </p>
                                             </div>
-                                            <span>{timeAgo(c.created_at)}</span>
+                                            <span>{formatDateForAnnouncements(c.created_at)}</span>
                                         </div>
 
                                         <p className="break-words">{c.comment}</p>
@@ -287,7 +288,7 @@ export default function Reports({ onClose }: { onClose: () => void }) {
                             <div key={report.id} className="rounded-xl bg-white p-4 shadow-sm border space-y-3">
                                 <div className="flex items-center justify-between">
                                     <p className="text-md font-semibold text-gray-700">
-                                        {report.created_at ? timeAgo(report.created_at) : "Unknown date"}
+                                        {report.created_at ? formatDateForAnnouncements(report.created_at) : "Unknown date"}
                                     </p>
                                     <ActionMenu report={report} />
                                 </div>
@@ -328,7 +329,7 @@ export default function Reports({ onClose }: { onClose: () => void }) {
                                 {reports.map((report) => (
                                     <tr key={report.id} className="border-t">
                                         <td className="px-4 py-3">
-                                            {new Date(report.created_at).toLocaleDateString()}
+                                            {formatDate(report.created_at)}
                                         </td>
                                         <td className="px-4 py-3 max-w-[250px]">
                                             <p className="line-clamp-2 break-words">

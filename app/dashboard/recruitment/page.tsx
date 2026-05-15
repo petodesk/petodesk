@@ -93,7 +93,7 @@ export default function Recruitment() {
         <>
           
               
-                <div className="w-full p-2 md:p-6 rounded-lg shadow-md">
+                <div className="w-full max-h-[85vh] overflow-y-auto p-2 md:p-6 rounded-lg shadow-md">
                    
                             <div>
 
