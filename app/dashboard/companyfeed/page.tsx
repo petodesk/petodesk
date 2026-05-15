@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/app/utils/supabase/client"
-import Reports from "@/app/components/Reports"
 import AddAnnounceModal from "@/app/components/AddAnnounceModal"
 import { formatDateForAnnouncements } from "@/app/utils/dateFormatter"
 
@@ -13,7 +12,7 @@ export default function AnnouncePage() {
     const [editAnnonce, setEditAnounce] = useState<boolean>(false)
     const [selectedAnnounce, setSelectedAnnounce] = useState<any>()
     const [role, setRole] = useState<any>()
-
+    const [userId, setUserId] = useState<string | null>(null)
     const [announcements, setAnnouncements] = useState<any[]>([])
 
     useEffect(() => {
@@ -50,6 +49,7 @@ export default function AnnouncePage() {
         const { data: { user } } = await supabase.auth.getUser()
         return user?.id
     }
+    
     const isAuthor = async (authorId: string) => {
         const userId = await getProfileId()
         return userId === authorId
@@ -73,16 +73,23 @@ export default function AnnouncePage() {
             fetchAnnouncements()
         }
     }
+    
+
+
     const fetchUser = async () => {
-        const userId = await getProfileId()
-        try {
-            const { data: profiles } = await supabase.from('profiles')
-                .select('role')
-                .eq('id', userId)
-                .single()
-            setRole(profiles?.role)
-        } catch (error) { }
-    }
+    const id = await getProfileId()
+    setUserId(id as string)
+
+    try {
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', id)
+            .single()
+
+        setRole(profiles?.role)
+    } catch (error) {}
+}
 
 
 
@@ -167,7 +174,7 @@ export default function AnnouncePage() {
                                 </div>
                                 
                                 {
-                                    role === 'owner' && (
+                                    userId === announcement.author && (
                                         <div className="flex gap-20">
                                             <button
                                                 onClick={() => {
@@ -203,7 +210,10 @@ export default function AnnouncePage() {
                     )}
                     {
                         editAnnonce && selectedAnnounce && (
-                            <AddAnnounceModal open={editAnnonce} onClose={() => setEditAnounce(false)} announce={selectedAnnounce} />
+                            <AddAnnounceModal open={editAnnonce} onClose={() => {setEditAnounce(false)
+                                setSelectedAnnounce(null)
+                                fetchAnnouncements()
+                            }} announce={selectedAnnounce} />
                         )
                     }
                 </div>
