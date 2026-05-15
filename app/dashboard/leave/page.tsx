@@ -581,19 +581,7 @@ export default function LeavePage() {
     end_date,
     status,
     created_at,
-    approved_at,
-    rejected_at,
-    approved_by,
-    rejected_by,
-    approved_profile:profiles!leaves_approved_by_fkey(
-        full_name,
-        email
-    ),
-  rejected_profile:profiles!leaves_rejected_by_fkey(
-        full_name,
-        email
-    ),
-  reason,
+    reason,
     leave_comments(
         id,
         comment,
@@ -849,18 +837,7 @@ export default function LeavePage() {
                                             {leave.status}
                                         </span>
                                     } />
-                                    {viewMoreLeave.approved_at && (
-                                        <>
-                                            <InfoRow label="Approved At" value={formatDate(viewMoreLeave.approved_at)} />
-                                            <InfoRow label="Approved By" value={viewMoreLeave.approved_profile?.full_name} />
-                                        </>
-                                    )}
-                                    {viewMoreLeave.rejected_at && (
-                                        <>
-                                            <InfoRow label="Rejected At" value={formatDate(viewMoreLeave.rejected_at)} />
-                                            <InfoRow label="Rejected By" value={viewMoreLeave.rejected_profile?.full_name} />
-                                        </>
-                                    )}
+
 
 
 

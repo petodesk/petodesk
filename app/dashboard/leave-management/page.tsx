@@ -15,7 +15,7 @@ export default function AdminDash() {
     const [viewMore, setViewMore] = useState(false)
     const [selectedLeave, setSelectedLeave] = useState<any>(null)
     const [openComment, setOpenComment] = useState(false)
-    const{ company, profile, refresh } = useCompany()
+    const { company, profile, refresh } = useCompany()
     const [stats, setStats] = useState({
         approved_leaves: 0,
         pending_leaves: 0,
@@ -27,7 +27,9 @@ export default function AdminDash() {
 
     useEffect(() => {
         fetchDashboard()
-
+        if (!profile || !company) {
+            refresh()
+        }
         const channel = supabase
             .channel('realtime-leaves')
             .on(
@@ -40,15 +42,13 @@ export default function AdminDash() {
         return () => {
             supabase.removeChannel(channel)
         }
-        if (!profile || !company) {
-            refresh()
-        }
-    }, [])
+
+    }, [profile, company])
 
     async function fetchDashboard() {
         const { data, error } = await supabase
             .from('leaves')
-           .select(`
+            .select(`
     id,
     leave_type,
     start_date,
@@ -70,7 +70,7 @@ export default function AdminDash() {
         email
     ),
 
-    employees(name),
+    employees(name, email, department, role),
     reason,
     leave_comments(
         id,
@@ -81,13 +81,13 @@ export default function AdminDash() {
 `)
             .eq('company_id', profile?.company_id)
             .order('created_at', { ascending: false })
-            if(error) {
-                console.error("Error fetching leaves:", error)
-                return
-            }
+        if (error) {
+            console.error("Error fetching leaves:", error)
+            return
+        }
 
         const leavesData = data || []
-console.log(leavesData)
+        console.log(leavesData)
         const approved = leavesData.filter(l => l.status === "approved").length
         const pending = leavesData.filter(l => l.status === "pending").length
         const rejected = leavesData.filter(l => l.status === "rejected").length
@@ -263,10 +263,10 @@ console.log(leavesData)
                                     Employee Information
                                 </h3>
 
-                                <InfoRow label="Employee Name" value={selectedLeave.employee_name} />
-                                <InfoRow label="Email" value={selectedLeave.employee_email} />
-                                <InfoRow label="Department" value={selectedLeave.employee_department} />
-                                <InfoRow label="Role" value={selectedLeave.employee_role} />
+                                <InfoRow label="Employee Name" value={selectedLeave.employees.name} />
+                                <InfoRow label="Email" value={selectedLeave.employees.email} />
+                                <InfoRow label="Department" value={selectedLeave.employees.department} />
+                                <InfoRow label="Role" value={selectedLeave.employees.role} />
 
                             </div>
 
@@ -298,14 +298,14 @@ console.log(leavesData)
 
                                 {selectedLeave.approved_at && (
                                     <>
-                                    <InfoRow label="Approved At" value={formatDate(selectedLeave.approved_at)} />
-                                    <InfoRow label="Approved By" value={selectedLeave.approved_profile?.full_name} />
+                                        <InfoRow label="Approved At" value={formatDate(selectedLeave.approved_at)} />
+                                        <InfoRow label="Approved By" value={selectedLeave.approved_profile?.full_name} />
                                     </>
                                 )}
                                 {selectedLeave.rejected_at && (
                                     <>
-                                    <InfoRow label="Rejected At" value={formatDate(selectedLeave.rejected_at)} />
-                                    <InfoRow label="Rejected By" value={selectedLeave.rejected_profile?.full_name} />   
+                                        <InfoRow label="Rejected At" value={formatDate(selectedLeave.rejected_at)} />
+                                        <InfoRow label="Rejected By" value={selectedLeave.rejected_profile?.full_name} />
                                     </>
                                 )}
 
