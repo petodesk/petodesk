@@ -4,6 +4,9 @@ import { useEffect, useState } from "react"
 import { HiSearch } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
 import AddCommentModal from "@/app/components/AddCommentModal"
+import { formatDate } from "@/app/utils/dateFormatter"
+import { profile } from "console"
+import { useCompany } from "@/app/context/CompanyContext"
 
 export default function AdminDash() {
 
@@ -12,6 +15,7 @@ export default function AdminDash() {
     const [viewMore, setViewMore] = useState(false)
     const [selectedLeave, setSelectedLeave] = useState<any>(null)
     const [openComment, setOpenComment] = useState(false)
+    const { company, profile, refresh } = useCompany()
     const [stats, setStats] = useState({
         approved_leaves: 0,
         pending_leaves: 0,
@@ -22,30 +26,68 @@ export default function AdminDash() {
     const [leaves, setLeaves] = useState<any[]>([])
 
     useEffect(() => {
-   fetchDashboard()
+        fetchDashboard()
+        if (!profile || !company) {
+            refresh()
+        }
+        const channel = supabase
+            .channel('realtime-leaves')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'leave_comments' },
+                () => fetchDashboard()
+            )
+            .subscribe()
 
-    const channel = supabase
-        .channel('realtime-leaves')
-        .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'leave_comments' },
-            () => fetchDashboard()
-        )
-        .subscribe()
+        return () => {
+            supabase.removeChannel(channel)
+        }
 
-    return () => {
-        supabase.removeChannel(channel)
-    }
-}, [])
+    }, [profile, company])
 
     async function fetchDashboard() {
+        const { data, error } = await supabase
+            .from('leaves')
+            .select(`
+    id,
+    leave_type,
+    start_date,
+    end_date,
+    status,
+    created_at,
+    approved_at,
+    rejected_at,
+    approved_by,
+    rejected_by,
 
-        const { data } = await supabase
-            .from("leaves")
-            .select("*")
+    approved_profile:profiles!leaves_approved_by_fkey(
+        full_name,
+        email
+    ),
+
+    rejected_profile:profiles!leaves_rejected_by_fkey(
+        full_name,
+        email
+    ),
+
+    employees(name, email, department, role),
+    reason,
+    leave_comments(
+        id,
+        comment,
+        created_at,
+        profiles(full_name)
+    )
+`)
+            .eq('company_id', profile?.company_id)
+            .order('created_at', { ascending: false })
+        if (error) {
+            console.error("Error fetching leaves:", error)
+            return
+        }
 
         const leavesData = data || []
-
+        console.log(leavesData)
         const approved = leavesData.filter(l => l.status === "approved").length
         const pending = leavesData.filter(l => l.status === "pending").length
         const rejected = leavesData.filter(l => l.status === "rejected").length
@@ -221,10 +263,10 @@ export default function AdminDash() {
                                     Employee Information
                                 </h3>
 
-                                <InfoRow label="Employee Name" value={selectedLeave.employee_name} />
-                                <InfoRow label="Email" value={selectedLeave.employee_email} />
-                                <InfoRow label="Department" value={selectedLeave.employee_department} />
-                                <InfoRow label="Role" value={selectedLeave.employee_role} />
+                                <InfoRow label="Employee Name" value={selectedLeave.employees.name} />
+                                <InfoRow label="Email" value={selectedLeave.employees.email} />
+                                <InfoRow label="Department" value={selectedLeave.employees.department} />
+                                <InfoRow label="Role" value={selectedLeave.employees.role} />
 
                             </div>
 
@@ -254,8 +296,43 @@ export default function AdminDash() {
                                     }
                                 />
 
+                                {selectedLeave.approved_at && (
+                                    <>
+                                        <InfoRow label="Approved At" value={formatDate(selectedLeave.approved_at)} />
+                                        <InfoRow label="Approved By" value={selectedLeave.approved_profile?.full_name} />
+                                    </>
+                                )}
+                                {selectedLeave.rejected_at && (
+                                    <>
+                                        <InfoRow label="Rejected At" value={formatDate(selectedLeave.rejected_at)} />
+                                        <InfoRow label="Rejected By" value={selectedLeave.rejected_profile?.full_name} />
+                                    </>
+                                )}
+
                             </div>
 
+                        </div>
+                        {/*COMMENTS */}
+                        <div className="mt-6">
+                            <h3 className="font-semibold border-b pb-2 mb-4">
+                                Comments
+                            </h3>
+
+                            {selectedLeave.leave_comments?.length === 0 ? (
+                                <p className="text-gray-500">No comments yet</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {selectedLeave.leave_comments?.map((comment: any) => (
+                                        <div key={comment.id} className="border rounded-lg p-3">
+                                            <p className="text-gray-700">{comment.comment}</p>
+                                            <p className="text-xs text-gray-500 mt-2">
+                                                Commented by {comment.profiles?.full_name} on{" "}
+                                                {formatDate(comment.created_at)}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                     </div>
@@ -266,7 +343,7 @@ export default function AdminDash() {
 
                     <div className="w-full p-2 md:p-6 rounded-lg border-2 border-green-200">
 
-                
+
 
                         {/* -------- SUMMARY CARDS -------- */}
 
@@ -357,7 +434,7 @@ export default function AdminDash() {
 
                                         <tr key={leave.id} className="border-t">
 
-                                            <td className="px-4 py-3">{leave.employee_name}</td>
+                                            <td className="px-4 py-3">{leave.employees.name}</td>
                                             <td className="px-4 py-3">{leave.leave_type}</td>
                                             <td className="px-4 py-3">{leave.start_date}</td>
                                             <td className="px-4 py-3">{leave.end_date}</td>
@@ -410,7 +487,7 @@ function SummaryCard({ label, value }: { label: string, value: string }) {
     )
 }
 
-function InfoRow({ label, value }: { label: string, value: any }) {
+export function InfoRow({ label, value }: { label: string, value: any }) {
     return (
         <div className="flex justify-between items-center border-b pb-2">
             <span className="text-gray-600 text-sm">{label}</span>
