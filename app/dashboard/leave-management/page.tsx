@@ -5,7 +5,6 @@ import { HiSearch } from "react-icons/hi"
 import { createClient } from "@/app/utils/supabase/client"
 import AddCommentModal from "@/app/components/AddCommentModal"
 import { formatDate } from "@/app/utils/dateFormatter"
-import { profile } from "console"
 import { useCompany } from "@/app/context/CompanyContext"
 
 export default function AdminDash() {
