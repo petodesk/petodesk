@@ -43,6 +43,8 @@ export function formatDateForAnnouncements(dateString: string) {
   else if (diff < 3600) timeAgo = `${Math.floor(diff / 60)} min ago`
   else if (diff < 86400) timeAgo = `${Math.floor(diff / 3600)} h ago`
   else if (diff < 604800) timeAgo = `${Math.floor(diff / 86400)} day(s) ago`
+  else timeAgo = `${Math.floor(diff / 604800)} week(s) ago`
+  
 
   return `${formatted} • ${timeAgo}`
 }

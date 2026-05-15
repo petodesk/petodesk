@@ -423,12 +423,13 @@ const stockValue = products.reduce((sum, p) => {
             <p className="text-gray-700">Low Stock: {lowStockCount}</p>
           </div>
 
-          <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={()=>setOpenOutOfStock(true)}>
+          <div className="flex items-center gap-3 ">
             <div className="h-4 w-4 rounded-sm bg-red-500"></div>
             <p
 
               className="text-gray-700">Stock Value: {currency} {stockValue.toLocaleString()}</p>
           </div>
+
             <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={()=>setOpenOutOfStock(true)}>
             <div className="h-4 w-4 rounded-sm bg-red-500"></div>
             <p

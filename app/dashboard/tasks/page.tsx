@@ -6,6 +6,8 @@ import { createClient } from "@/app/utils/supabase/client"
 import AddTaskModal from "@/app/components/AddTaskModal"
 import AddCommentModal from "@/app/components/AddCommentModal"
 import Reports from "@/app/components/Reports"
+import { formatDate, formatDateForAnnouncements } from "@/app/utils/dateFormatter"
+import { formatDistanceToNow } from "date-fns"
 
 export default function Tasks() {
     const supabase = createClient()
@@ -133,28 +135,37 @@ export default function Tasks() {
     }
 
 
-    function timeAgo(dateString: string) {
-        const now = new Date()
-        const past = new Date(dateString)
-        const diff = Math.floor((now.getTime() - past.getTime()) / 1000)
+    // function timeAgo(dateString: string) {
+    //     const now = new Date()
+    //     const past = new Date(dateString)
+    //     const diff = Math.floor((now.getTime() - past.getTime()) / 1000)
 
-        if (diff < 60) return "now"
+    //     if (diff < 60) return "now"
 
-        const minutes = Math.floor(diff / 60)
-        if (minutes < 60) return `${minutes} min ago`
+    //     const minutes = Math.floor(diff / 60)
+    //     if (minutes < 60) return `${minutes} min ago`
 
-        const hours = Math.floor(minutes / 60)
-        if (hours < 24) return `${hours} h ago`
+    //     const hours = Math.floor(minutes / 60)
+    //     if (hours < 24) return `${hours} h ago`
 
-        const days = Math.floor(hours / 24)
-        if (days < 7) return `${days} day${days > 1 ? "s" : ""} ago`
+    //     const days = Math.floor(hours / 24)
+    //     if (days < 7) return `${days} day${days > 1 ? "s" : ""} ago`
 
-        const weeks = Math.floor(days / 7)
-        if (weeks < 4) return `${weeks} week${weeks > 1 ? "s" : ""} ago`
+    //     const weeks = Math.floor(days / 7)
+    //     if (weeks < 4) return `${weeks} week${weeks > 1 ? "s" : ""} ago`
 
-        const months = Math.floor(days / 30)
-        return `${months} month${months > 1 ? "s" : ""} ago`
-    }
+    //     const months = Math.floor(days / 30)
+    //     return `${months} month${months > 1 ? "s" : ""} ago`
+    // }
+     const getSafeTime = (dateString: string) => {
+        if (!dateString) return "just now"
+    
+        const date = new Date(dateString)
+    
+        if (isNaN(date.getTime())) return "just now"
+    
+        return formatDistanceToNow(date, { addSuffix: true })
+      }
 
     function ActionMenu({ task }: { task: any }) {
         const [open, setOpen] = useState(false)
@@ -252,7 +263,7 @@ export default function Tasks() {
                         <div>
                             <h2 className="text-2xl font-bold">Task Details</h2>
                             <p className="text-sm text-gray-500">
-                                Assigned on {new Date(selectedTask.created_at).toLocaleDateString()}
+                                Assigned on {formatDate(selectedTask.created_at)}
                             </p>
                         </div>
                         <HiX
@@ -274,8 +285,8 @@ export default function Tasks() {
                         <div className="border rounded-xl p-5 space-y-4">
                             <h3 className="font-semibold border-b pb-2">Task Content</h3>
                             <InfoRow label="Title" value={selectedTask.title} />
-                            <InfoRow label="Start Date" value={new Date(selectedTask.start_date).toLocaleDateString()} />
-                            <InfoRow label="End Date" value={new Date(selectedTask.end_date).toLocaleDateString()} />
+                            <InfoRow label="Start Date" value={formatDate(selectedTask.start_date)} />
+                            <InfoRow label="End Date" value={formatDate(selectedTask.end_date)} />
                             <div className="flex flex-col gap-1">
                                 <span className="text-gray-600 text-sm">Description</span>
                                 <p className="text-sm bg-gray-50 p-2 rounded">{selectedTask.description || "No description provided."}</p>
@@ -298,7 +309,7 @@ export default function Tasks() {
                                                 <p className="hidden md:flex text-sm text-gray-900">Role:{' '}{c.profiles?.role}</p>
                                             </div>
                                             <span className="text-xs text-gray-500">
-                                                {timeAgo(c.created_at)}
+                                                {formatDateForAnnouncements(c.created_at)}
                                             </span>
                                         </div>
 
