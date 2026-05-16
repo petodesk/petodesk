@@ -19,9 +19,7 @@ export default function Setting() {
     const { profile, company } = useCompany()
     const[name, setName] = useState(profile?.full_name || '')
     const [openRoleModal, setOpenRoleModal] = useState(false)
-    console.log('company in setting', company)
-    console.log('role in setting', role)
-    console.log('email in setting', email)
+    
     const handleInvite = async () => {
         if (loading) return
 
