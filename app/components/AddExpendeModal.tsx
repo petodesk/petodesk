@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/app/utils/supabase/client'
 import { toast } from 'react-toastify'
-import { touchCompanyActivity } from '../utils/activity'
+import { useCompany } from '../context/CompanyContext'
 
 export function AddExpendeModal({
   open,
@@ -31,25 +31,16 @@ export function AddExpendeModal({
   const [payerId, setPayerId] = useState<string | null>(null)
   const [userCompanyId, setUserCompanyId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const { profile, company, refresh } = useCompany()
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
 
-      setPayerId(user.id)
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single()
-
-      setUserCompanyId(profile?.company_id ?? null)
+    if (profile && company) {
+      setPayerId(profile.id)
+      setUserCompanyId(company.id)
     }
-
-    getUser()
-  }, [])
+    refresh()
+  }, [profile, company, refresh])
 
 
   const uploadReceipt = async (file: File, companyId: string) => {
@@ -121,7 +112,7 @@ export function AddExpendeModal({
         }
       )
 
-      
+
 
       // 3️⃣ Insert or update
       const query = isEdit
