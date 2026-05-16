@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '../utils/supabase/client'
+import { useCompany } from '../context/CompanyContext'
 
 type Props = {
     open: boolean
@@ -45,7 +46,7 @@ export function AddProductModal({ open, onClose, product }: Props) {
 
     const supabase = createClient()
     const [isVariant, setIsVariant] = useState(false)
-
+const { company, profile, refresh } = useCompany()
 
     const [variant, setVariant] = useState<VariantData>({
         size: '',
@@ -125,28 +126,14 @@ export function AddProductModal({ open, onClose, product }: Props) {
 
     // ✅ Get logged-in user info
     useEffect(() => {
-        const getUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
-
-            setSellerId(user.id)
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('full_name, company_id')
-                .eq('id', user.id)
-                .single()
-
-            if (error) {
-                console.error(error)
-                return
-            }
-
+        if (profile && company) {
+            setSellerId(profile.id)
             setSeller(profile.full_name)
             setUserCompanyId(profile.company_id)
+        }else {
+           refresh()
         }
-
-        getUser()
-    }, [])
+    }, [profile, company, refresh])
 
 
     const [existingSuppliers, setExistingSuppliers] = useState<any[]>([])
@@ -205,6 +192,11 @@ export function AddProductModal({ open, onClose, product }: Props) {
                 });
 
                 if (error) throw error;
+                await supabase.rpc('touch_company_activity', {
+                    p_company_id:company?.id,
+                    p_user_id: profile?.id,
+                    p_activity: `Added a new product`,
+                })
 
 
             }
@@ -246,6 +238,12 @@ export function AddProductModal({ open, onClose, product }: Props) {
                         .eq('product_id', product.id)
                 }
             }
+                await supabase.rpc('touch_company_activity', {
+                    p_company_id:company?.id,
+                    p_user_id: profile?.id,
+                    p_activity: `Edited a product`,
+                })
+             refresh()
 
 
             onClose();

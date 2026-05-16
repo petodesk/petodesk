@@ -58,12 +58,12 @@ export function AddInvoiceModal({
     const [unitPrice, setUnitPrice] = useState(0)
     const [items, setItems] = useState<InvoiceItem[]>([])
     const [productSearch, setProductSearch] = useState('')
-  const { company, currency, profile } = useCompany()
+    const { company, currency, profile } = useCompany()
 
     /* ---------------- INIT ---------------- */
     useEffect(() => {
         const init = async () => {
-  const { data: productData } = await supabase
+            const { data: productData } = await supabase
                 .from('products')
                 .select(`
           id,
@@ -88,22 +88,22 @@ export function AddInvoiceModal({
         if (error) throw error
         return data
     }
-    
+
 
     useEffect(() => {
-  if (!isEdit || !invoices?.invoice_items) return
+        if (!isEdit || !invoices?.invoice_items) return
 
-  setItems(
-    invoices.invoice_items.map((i: any) => ({
-      item_type: i.item_type,
-      product_id: i.product_id,
-      name: i.item_name,
-      quantity: i.quantity,
-      unit_price: i.unit_price,
-      total: i.amount,
-    }))
-  )
-}, [isEdit, invoices])
+        setItems(
+            invoices.invoice_items.map((i: any) => ({
+                item_type: i.item_type,
+                product_id: i.product_id,
+                name: i.item_name,
+                quantity: i.quantity,
+                unit_price: i.unit_price,
+                total: i.amount,
+            }))
+        )
+    }, [isEdit, invoices])
 
 
 
@@ -242,6 +242,11 @@ export function AddInvoiceModal({
                         account_number: accountNumber,
                     })
                     .eq('invoice_id', invoices.id)
+                await supabase.rpc('touch_company_activity', {
+                    p_company_id: company?.id,
+                    p_user_id: profile?.id,
+                    p_activity: `Edited an invoice`,
+                })
 
                 onClose()
                 return
@@ -299,6 +304,11 @@ export function AddInvoiceModal({
                 account_number: accountNumber,
             })
 
+            await supabase.rpc('touch_company_activity', {
+                p_company_id: company?.id,
+                p_user_id: profile?.id,
+                p_activity: `Added a new invoice`,
+            })
             onClose()
         } catch (err: any) {
             console.log(err.message)
@@ -519,7 +529,7 @@ export function AddInvoiceModal({
                 <div className="px-6 py-4 mb-4 border-t flex justify-end">
                     <button disabled={loading} onClick={onClose} className="mr-2 px-4 py-2 border rounded cursor-pointer">Cancel</button>
                     <button onClick={handleSave} disabled={loading} className="bg-blue-600 text-white px-8 py-2 rounded cursor-pointer disabled:opacity-70">
-                     {loading ? 'Saving…' : isEdit ? 'Update' : 'Save'}
+                        {loading ? 'Saving…' : isEdit ? 'Update' : 'Save'}
 
                     </button>
                 </div>

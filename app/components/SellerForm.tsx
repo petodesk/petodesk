@@ -5,6 +5,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import { HiPlus, HiMinus } from 'react-icons/hi'
 import { toast } from 'react-toastify'
 import ClipLoader from 'react-spinners/ClipLoader'
+import { useCompany } from '../context/CompanyContext'
 
 /* ---------------- TYPES ---------------- */
 
@@ -49,22 +50,18 @@ export function AddSaleModal({
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const{company, profile, refresh,currency} = useCompany()
 
   /* ---------------- FETCH USER ---------------- */
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) return
-      setSellerId(data.user.id)
-
-      supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', data.user.id)
-        .single()
-        .then(({ data }) => setCompanyId(data?.company_id))
-    })
-  }, [])
+   if(!profile || !company) {
+    refresh()
+   } else {
+    setSellerId(profile.id)
+    setCompanyId(company.id)
+   }
+  }, [profile, company])
 
   /* ---------------- FETCH PRODUCTS ---------------- */
 
@@ -203,6 +200,11 @@ export function AddSaleModal({
         .eq('product_id', item.product.id)
     }
 
+    await supabase.rpc('touch_company_activity', {
+  p_company_id: companyId,
+  p_user_id: sellerId,
+  p_activity: 'completed a sale',
+})
     setLoading(false)
     onClose()
   }
@@ -301,10 +303,9 @@ export function AddSaleModal({
                 onChange={e => setPaymentMethod(e.target.value)}
                 className="rounded border p-2"
               >
-                <option value="">Payment</option>
-                <option>Cash</option>
-                <option>Transfer</option>
-                <option>POS</option>
+                <option value="cash">Cash</option>
+                <option value="transfer">Transfer</option>
+                <option value="pos">POS</option>
               </select>
             </div>
 
@@ -325,7 +326,7 @@ export function AddSaleModal({
 
                   <div>
                     <p className="text-gray-800">Selling Price</p>
-                    <p className="font-medium mt-2">₦{price}</p>
+                    <p className="font-medium mt-2">{currency} {price}</p>
                   </div>
                 </div>
 
@@ -353,7 +354,7 @@ export function AddSaleModal({
                   <div>
                     <p className="text-gray-800">Subtotal</p>
                     <p className="font-semibold text-green-600 mt-2">
-                      ₦{previewSubtotal.toLocaleString()}
+                      {currency} {previewSubtotal.toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -403,7 +404,7 @@ export function AddSaleModal({
                       <div>
                         Product price
                         <p className="text-gray-500 mt-2">
-                          ₦{price}
+                          {currency} {price}
                         </p>
                       </div>
                     </div>
@@ -447,7 +448,7 @@ export function AddSaleModal({
 
                         <p className="text-gray-500">Subtotal</p>
                         <p className="font-semibold text-green-600 mt-2">
-                          ₦{subtotal.toLocaleString()}
+                        c{currency} {subtotal.toLocaleString()}
                         </p>
                       </div>
                       <div>
@@ -490,7 +491,7 @@ export function AddSaleModal({
           <div className='flex gap-2'>
             <h1>Total=</h1>
             <span className="font-semibold">
-              ₦{totalAmount.toLocaleString()}
+              {currency} {totalAmount.toLocaleString()}
             </span>
           </div>
           <button
