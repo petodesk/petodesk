@@ -117,7 +117,7 @@ export function AddExpendeModal({
         {
           p_company_id: userCompanyId,
           p_user_id: payerId,
-          p_activity: ` ${isEdit ? 'Expense updated' : 'Expense added'}: ${title} - $${amount}`,
+          p_activity: ` ${isEdit ? 'Expense updated' : 'Expense added'}`,
         }
       )
 
@@ -147,6 +147,12 @@ export function AddExpendeModal({
     'Marketing and Advertising',
     'Software Subscriptions and Technology',
     'Raw Materials and Inventory',
+    'Travel and Entertainment',
+    'Professional Services and Consulting',
+    'Insurance and Legal Fees',
+    'Maintenance and Repairs',
+    'Miscellaneous Expenses',
+    'other',
   ]
 
   return (
