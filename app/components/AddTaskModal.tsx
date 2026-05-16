@@ -5,6 +5,7 @@ import { createClient } from '@/app/utils/supabase/client'
 import { toast } from 'react-toastify'
 import { ClipLoader } from 'react-spinners'
 import { sendTaskEmail } from '@/app/actions/sendEmail'
+import { useCompany } from '../context/CompanyContext'
 interface Employee {
     id: string
     auth_user_id:string
@@ -29,6 +30,7 @@ export default function AddTaskModal({ open, onClose , task}: { open: boolean, o
     const [employees, setEmployees] = useState<Employee[]>([])
     const[assignedBy, setAssignedBy] = useState<string>()
     const[userCompanyId, setUserCompanyId] = useState<string>()
+    const{ company, profile, refresh } = useCompany()
     const [formData, setFormData] = useState({
         title: "",
         description: "",
@@ -59,23 +61,16 @@ export default function AddTaskModal({ open, onClose , task}: { open: boolean, o
     }, [open, supabase])
 
 useEffect(() => {
-        const getUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
+      
+            if(profile && company){
+                setAssignedBy(profile.id)
+                setUserCompanyId(company.id)
+            }else{
+                refresh()
+            }
 
-            setAssignedBy(user.id)
 
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('company_id')
-                .eq('id', user.id)
-                .single()
-
-            setUserCompanyId(profile?.company_id ?? null)
-        }
-
-        getUser()
-    }, [])
+    }, [profile, company, refresh])
 useEffect(() => {
     if (task) {
         setFormData({
