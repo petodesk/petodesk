@@ -64,11 +64,6 @@ export function AddExpendeModal({
   }
 
 
-
-
-
-
-
   // ✅ Save or update
   const handleSave = async () => {
     if (!title || !categroy || !amount || !paidTo || !receiptNumber) {
