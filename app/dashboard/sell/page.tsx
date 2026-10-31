@@ -406,7 +406,48 @@ export default function SellPage() {
       setIsCheckoutLoading(false);
     }
   };
+  const exportToCSV = () => {
+    if (!filteredSales || filteredSales.length === 0) {
+      alert('No sales data available to export.')
+      return
+    }
 
+    // Define headers matching your table
+    const headers = ['Date', 'Item', 'Qty', 'Selling Price', 'Amount', 'Sold By', 'Status']
+
+    // Flatten sales into individual line items
+    const rows = filteredSales.flatMap((sale) =>
+      sale.sale_items.map((item) => [
+        `"${formatDate(sale.created_at).replace(/"/g, '""')}"`,
+        `"${(item.products?.name ?? 'Unknown').replace(/"/g, '""')}"`,
+        item.quantity,
+        item.selling_price,
+        `"${currency} ${item.subtotal.toLocaleString()}"`,
+        `"${(sale.profiles?.full_name ?? 'Unknown').replace(/"/g, '""')}"`,
+        `"${item.status}"`,
+      ])
+    )
+
+    // Construct CSV content
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) => row.join(',')),
+    ].join('\r\n')
+
+    // Generate downloadable Blob
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute(
+      'download',
+      `sales_history_${range}_${new Date().toISOString().split('T')[0]}.csv`
+    )
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
 
 
   function ActionMenu({ sale, item, rowId }: any) {
@@ -613,71 +654,109 @@ export default function SellPage() {
     <section className="w-full p-2 md:p-6 bg-gray-50">
 
       {/* ---------------- TOP ACTION BAR ---------------- */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* ---------------- TOP ACTION BAR ---------------- */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
-        {/* Left: Add Sale */}
-        <button
-          onClick={() => setOpenModal(true)}
-          className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white sm:w-auto"
-        >
-          + Add New Sell
-        </button>
+        {/* Left: Action Buttons Group */}
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:flex-wrap">
+          {/* 1. Add New Sale */}
+          <button
+            type="button"
+            onClick={() => setOpenModal(true)}
+            className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 active:scale-[0.98] transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add New Sale
+          </button>
 
-        <button
-          onClick={() => setScannerOpen(true)}
-          className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white sm:w-auto"
-        >
-          Scan Barcode
-        </button>
+          {/* 2. Scan Barcode */}
+          <button
+            type="button"
+            onClick={() => setScannerOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-100 active:scale-[0.98] transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+            </svg>
+            Scan Barcode
+          </button>
 
-        {scannerOpen && (
-          <div className="fixed inset-0 z-[70] bg-black flex flex-col">
-            {/* Header for Scanner */}
-            <div className="p-4 flex justify-between items-center text-white bg-blue-600">
-              <h2 className="font-bold">Scanning Items... ({cart.length} in cart)</h2>
-              <button
-                onClick={() => setScannerOpen(false)}
-                className="px-4 py-2 bg-red-500 rounded-lg"
-              >
-                Done Scanning
-              </button>
-            </div>
+          {/* 3. Export CSV */}
+          <button
+            type="button"
+            onClick={exportToCSV}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 active:scale-[0.98] transition-all"
+          >
+            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export CSV
+          </button>
+        </div>
 
-            <CameraScanner
-              onScan={(code) => {
-                handleBarcodeScan(code);
-                // Notice we DON'T close the scanner here anymore
-              }}
-              onClose={() => setScannerOpen(false)}
-            />
-
-            {/* Mini Cart Preview inside Scanner */}
-            <div className="absolute bottom-10 left-0 right-0 px-4">
-              <div className="bg-white/90 p-3 rounded-t-xl text-center font-bold text-blue-800">
-                Last Scanned: {cart[cart.length - 1]?.name || 'None'}
-              </div>
+        {/* Right: Date Range Selector */}
+        <div className="flex items-center justify-between sm:justify-end gap-2 bg-white sm:bg-transparent p-2 sm:p-0 rounded-xl border sm:border-0 border-gray-200">
+          <label htmlFor="time-range" className="text-xs font-medium text-gray-500 sm:text-sm">
+            Filter Time:
+          </label>
+          <div className="relative">
+            <select
+              id="time-range"
+              value={range}
+              onChange={(e) => setRange(e.target.value as Range)}
+              className="w-full sm:w-44 appearance-none rounded-xl border border-gray-200 bg-white py-2 pl-3 pr-8 text-sm font-medium text-gray-700 shadow-sm outline-none transition-all hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="today">Today</option>
+              <option value="yesterday">Yesterday</option>
+              <option value="this_week">This Week</option>
+              <option value="last_week">Last Week</option>
+              <option value="this_month">This Month</option>
+              <option value="last_month">Last Month</option>
+              <option value="this_year">This Year</option>
+              <option value="last_year">Last Year</option>
+            </select>
+            {/* Custom Chevron Indicator */}
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
           </div>
-        )}
-        {/* Right: Range Selector */}
-        <div className='flex gap-2 items-center'>
-          <h1>Filter by Time:</h1>
-          <select
-            value={range}
-            onChange={(e) => setRange(e.target.value as Range)}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-48"
-          >
-            <option value="today">Today</option>
-            <option value="yesterday">Yesterday</option>
-            <option value="this_week">This Week</option>
-            <option value="last_week">Last Week</option>
-            <option value="this_month">This Month</option>
-            <option value="last_month">Last Month</option>
-            <option value="this_year">This Year</option>
-            <option value="last_year">Last Year</option>
-          </select>
         </div>
+
       </div>
+
+      {/* Scanner Fullscreen Overlay */}
+      {scannerOpen && (
+        <div className="fixed inset-0 z-[70] bg-black flex flex-col">
+          <div className="p-4 flex justify-between items-center text-white bg-blue-600 shadow-md">
+            <h2 className="font-semibold text-sm sm:text-base">
+              Scanning Items... <span className="bg-blue-800 px-2 py-0.5 rounded-full text-xs ml-1">{cart.length} in cart</span>
+            </h2>
+            <button
+              onClick={() => setScannerOpen(false)}
+              className="px-4 py-1.5 bg-red-500 hover:bg-red-600 rounded-lg text-sm font-medium transition-colors"
+            >
+              Done Scanning
+            </button>
+          </div>
+
+          <CameraScanner
+            onScan={(code) => {
+              handleBarcodeScan(code);
+            }}
+            onClose={() => setScannerOpen(false)}
+          />
+
+          <div className="absolute bottom-10 left-0 right-0 px-4">
+            <div className="max-w-md mx-auto bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow-lg text-center font-medium text-blue-900 border border-blue-100 text-sm">
+              Last Scanned: <span className="font-bold">{cart[cart.length - 1]?.name || 'None'}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
 
       {/* Summary cards */}
