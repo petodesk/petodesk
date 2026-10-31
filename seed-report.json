@@ -1,0 +1,19 @@
+{
+  "inserted": 681,
+  "skippedExisting": [],
+  "invalid": [],
+  "conflicts": [
+    {
+      "name": "Daravit Perfect 3",
+      "prices": [
+        10000,
+        13000
+      ],
+      "lines": [
+        296,
+        541
+      ]
+    }
+  ],
+  "failedBatches": []
+}

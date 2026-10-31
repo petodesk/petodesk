@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:products": "tsx --env-file=.env.local scripts/seed-products.ts"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
@@ -44,9 +45,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "csv-parse": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "5.9.3"
   }
 }
