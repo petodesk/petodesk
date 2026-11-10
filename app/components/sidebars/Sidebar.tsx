@@ -59,12 +59,12 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
-
   const [loading, setLoading] = useState(true)
-  const [plan, setPlan] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [trialEnd, setTrialEnd] = useState<string | null>(null)
   const { profile, company } = useCompany()
+  const plan = company?.service_type ?? null
+
 
   useEffect(() => {
 
@@ -86,7 +86,6 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       const subscriptionData = subscription as unknown as SubscriptionWithPlan
       const planName = subscriptionData?.plans?.name || null
 
-      setPlan(planName)
       setStatus(subscriptionData?.status || null)
       setTrialEnd(subscriptionData?.trial_end || null)
 
