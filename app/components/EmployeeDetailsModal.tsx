@@ -84,8 +84,10 @@ type Employee = {
 export default function EmployeeDetailsModal({ open, onClose, employee, currency }: { open: boolean, onClose: () => void, employee: Employee, currency: any }) {
     const { id } = useParams();
     const supabase = createClient();
+    const { company } = useCompany();
     const [openEdit, setOpenEdit] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [sendingInvite, setSendingInvite] = useState(false)
     const [employeeD, setEmployeeD] = useState(employee)
     const [openPerformanceModal, setOpenPerfromanceModal] = useState(false)
     console.log('employee details', employee)
@@ -121,6 +123,48 @@ export default function EmployeeDetailsModal({ open, onClose, employee, currency
         }
         getFullDetails();
     }, [id]);
+
+    // 📧 Send (or re-send) the password setup invite to this employee
+    const handleSendInvite = async () => {
+        if (sendingInvite || !company) return
+
+        try {
+            setSendingInvite(true)
+
+            // Always read the latest email from the database. If the admin just corrected a
+            // misspelled email, the `employee` prop on this page can still hold the old one.
+            const { data: latest, error: latestError } = await supabase
+                .from('employees')
+                .select('name, email')
+                .eq('id', employee.id)
+                .single()
+
+            if (latestError || !latest?.email) {
+                throw new Error('Could not load the employee email')
+            }
+
+            const res = await fetch('/api/invite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: latest.email,
+                    name: latest.name,
+                    companyId: company.id,
+                    companyName: company.name
+                })
+            })
+
+            const data = await res.json().catch(() => ({}))
+
+            if (!res.ok) throw new Error(data.error || 'Failed to send invite')
+
+            toast.success(`Invite sent to ${latest.email}`)
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to send invite')
+        } finally {
+            setSendingInvite(false)
+        }
+    }
 
     const calculateCompletionRate = (tasks: any[]) => {
         if (!tasks || tasks.length === 0) return 0;
@@ -257,6 +301,14 @@ export default function EmployeeDetailsModal({ open, onClose, employee, currency
                     className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
                 >
                     + Edit Employee
+                </button>
+                <button
+                    onClick={handleSendInvite}
+                    disabled={sendingInvite}
+                    className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors
+                        ${sendingInvite ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 cursor-pointer'}`}
+                >
+                    {sendingInvite ? 'Sending…' : 'Send Invite'}
                 </button>
                 <button
                     onClick={() => setOpenPerfromanceModal(true)}
