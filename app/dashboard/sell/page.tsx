@@ -135,7 +135,7 @@ export default function SellPage() {
 
     return { from, to }
   }
-
+  console.log("Role", role)
   /* ---------------- FETCH SALES ---------------- */
   const fetchSales = useCallback(async () => {
     setLoading(true)
@@ -684,16 +684,31 @@ export default function SellPage() {
           </button>
 
           {/* 3. Export CSV */}
-          <button
-            type="button"
-            onClick={exportToCSV}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 active:scale-[0.98] transition-all"
-          >
-            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Export CSV
-          </button>
+
+          {
+            (role === "admin" || role === "owner") && (
+              <button
+                type="button"
+                onClick={exportToCSV}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 active:scale-[0.98] transition-all"
+              >
+                <svg
+                  className="w-4 h-4 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
+                Export CSV
+              </button>
+            )
+          }
         </div>
 
         {/* Right: Date Range Selector */}
