@@ -32,10 +32,10 @@ import {
 import { useCompany } from '../../context/CompanyContext'
 
 const links = [
-  { label: 'Dashboard', href: '/dashboard', icon: HiSquares2X2, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'inventory', 'hr'] },
+  { label: 'Dashboard', href: '/dashboard', icon: HiSquares2X2, roles: ['admin', 'owner'], plans: ['business_plus', 'inventory', 'hr'] },
   { label: 'Sell', href: '/dashboard/sell', icon: HiOutlineShoppingCart, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'inventory'] },
   { label: 'Expenses', href: '/dashboard/expenses', icon: HiOutlineWallet, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'inventory', 'hr'] },
-  { label: 'Inventory', href: '/dashboard/inventory', icon: HiOutlineCube, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'inventory'] },
+  { label: 'Inventory', href: '/dashboard/inventory', icon: HiOutlineCube, roles: ['admin', 'owner', ], plans: ['business_plus', 'inventory'] },
   { label: 'Tasks', href: '/dashboard/tasks', icon: HiOutlineClipboardDocumentList, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr'] },
   { label: 'Daily Reports', href: '/dashboard/daily-reports', icon: HiOutlineChartBar, roles: ['admin', 'owner', 'employee'], plans: ['business_plus', 'hr'] },
   { label: 'Payroll', href: '/dashboard/payroll', icon: HiOutlineCurrencyDollar, roles: ['admin', 'owner'], plans: ['business_plus', 'hr'] },

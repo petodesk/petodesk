@@ -3,6 +3,22 @@ import type { NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { routePermissions } from "./app/utils/permissions"
 
+/* -------------------------------- */
+/* Employee landing page            */
+/* -------------------------------- */
+// Employees never see /dashboard. They land on their first sidebar item instead.
+// Keep in sync with the Sidebar `links` and the dashboard page.
+const EMPLOYEE_HOME: Record<string, string> = {
+  inventory: "/dashboard/sell",
+  business_plus: "/dashboard/sell",
+  hr: "/dashboard/expenses",
+}
+// Expenses is open to employees on every plan, so it is the safe fallback
+const EMPLOYEE_FALLBACK = "/dashboard/expenses"
+
+const employeeHome = (plan: string | null) =>
+  (plan && EMPLOYEE_HOME[plan]) || EMPLOYEE_FALLBACK
+
 export async function proxy(req: NextRequest) {
   const res = NextResponse.next()
 
@@ -97,6 +113,16 @@ if (!role.startsWith("peto_") && company?.status === "suspended") {
   }
 
   /* -------------------------------- */
+  /* 🔒 Employees: no dashboard        */
+  /* -------------------------------- */
+  if (
+    role === "employee" &&
+    (pathname === "/dashboard" || pathname === "/dashboard/")
+  ) {
+    return NextResponse.redirect(new URL(employeeHome(plan), req.url))
+  }
+
+  /* -------------------------------- */
   /* Match Route                      */
   /* -------------------------------- */
   const sortedRoutes = Object.keys(routePermissions).sort(
@@ -126,9 +152,15 @@ if (!role.startsWith("peto_") && company?.status === "suspended") {
       `❌ Access Denied: Role(${role}) Plan(${plan}) → ${pathname}`
     )
 
-    const redirectPath = pathname.startsWith("/admindash")
-      ? "/admindash"
-      : "/dashboard"
+    // Where to send the denied user
+    let redirectPath = "/dashboard"
+    if (pathname.startsWith("/admindash")) redirectPath = "/admindash"
+    else if (role === "employee") redirectPath = employeeHome(plan)
+
+    // Loop guard: if the landing page itself is denied, stop instead of redirecting forever
+    if (pathname === redirectPath) {
+      return new NextResponse("Forbidden", { status: 403 })
+    }
 
     return NextResponse.redirect(new URL(redirectPath, req.url))
   }
