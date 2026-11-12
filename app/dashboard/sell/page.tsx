@@ -12,6 +12,7 @@ import { useCompany } from '@/app/context/CompanyContext'
 import { formatDate } from '@/app/utils/dateFormatter'
 
 type Range =
+  | 'all'
   | 'today'
   | 'yesterday'
   | 'this_week'
@@ -131,6 +132,10 @@ export default function SellPage() {
         to = new Date(now.getFullYear() - 1, 11, 31)
         to.setHours(23, 59, 59, 999)
         break
+        case 'all':
+          from = new Date(0) // January 1, 1970
+          to = new Date() // Current date and  time
+
     }
 
     return { from, to }
@@ -723,6 +728,7 @@ export default function SellPage() {
               onChange={(e) => setRange(e.target.value as Range)}
               className="w-full sm:w-44 appearance-none rounded-xl border border-gray-200 bg-white py-2 pl-3 pr-8 text-sm font-medium text-gray-700 shadow-sm outline-none transition-all hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             >
+              <option value="all">All</option>
               <option value="today">Today</option>
               <option value="yesterday">Yesterday</option>
               <option value="this_week">This Week</option>
