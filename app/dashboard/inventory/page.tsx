@@ -13,6 +13,7 @@ import { formatDate } from '@/app/utils/dateFormatter'
 import * as XLSX from "xlsx"
 import { saveAs } from "file-saver"
 type DateFilter =
+  | 'all'
   | 'today'
   | 'yesterday'
   | 'week'
@@ -95,51 +96,51 @@ export default function inventoryPage() {
   console.log(products)
 
   const mapProductsForExport = (data: Products[]) => {
-  return data.map((p) => {
-    const stock = p.product_stock?.[0] || {}
-    const price = p.product_prices?.[0] || {}
+    return data.map((p) => {
+      const stock = p.product_stock?.[0] || {}
+      const price = p.product_prices?.[0] || {}
 
-    return {
-      Name: p.name,
-      Category: p.category || "",
-      Brand: p.brand || "",
-      Barcode: p.barcode || "",
-      Quantity: stock.quantity || 0,
-      Unit: stock.unit_of_measure || "",
-      Status: stock.status || "",
-      SellingPrice: price.selling_price || 0,
-      CostPrice: price.cost_price || 0,
-      ExpiryDate: p.expires_at ? formatDate(p.expires_at) : "",
-      CreatedAt: formatDate(p.created_at)
-    }
-  })
-}
-
-
-const exportToExcel = () => {
-  const exportData = mapProductsForExport(filteredProducts)
-
-  if (exportData.length === 0) {
-    alert("No products to export")
-    return
+      return {
+        Name: p.name,
+        Category: p.category || "",
+        Brand: p.brand || "",
+        Barcode: p.barcode || "",
+        Quantity: stock.quantity || 0,
+        Unit: stock.unit_of_measure || "",
+        Status: stock.status || "",
+        SellingPrice: price.selling_price || 0,
+        CostPrice: price.cost_price || 0,
+        ExpiryDate: p.expires_at ? formatDate(p.expires_at) : "",
+        CreatedAt: formatDate(p.created_at)
+      }
+    })
   }
 
-  const worksheet = XLSX.utils.json_to_sheet(exportData)
-  const workbook = XLSX.utils.book_new()
 
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Products")
+  const exportToExcel = () => {
+    const exportData = mapProductsForExport(filteredProducts)
 
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "array"
-  })
+    if (exportData.length === 0) {
+      alert("No products to export")
+      return
+    }
 
-  const fileData = new Blob([excelBuffer], {
-    type: "application/octet-stream"
-  })
+    const worksheet = XLSX.utils.json_to_sheet(exportData)
+    const workbook = XLSX.utils.book_new()
 
-  saveAs(fileData, "Products.xlsx")
-}
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Products")
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array"
+    })
+
+    const fileData = new Blob([excelBuffer], {
+      type: "application/octet-stream"
+    })
+
+    saveAs(fileData, "Products.xlsx")
+  }
 
   const filteredProducts = products.filter((p) => {
     /* ---------- DATE FILTER ---------- */
@@ -167,7 +168,7 @@ const exportToExcel = () => {
     const startOfThisYear = new Date(now.getFullYear(), 0, 1)
     const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1)
     const endOfLastYear = new Date(startOfThisYear)
-
+    const allTime = new Date(0) // January 1, 1970
     let dateMatch = true
 
     switch (dateFilter) {
@@ -205,6 +206,9 @@ const exportToExcel = () => {
       case 'lastYear':
         dateMatch =
           created >= startOfLastYear && created < endOfLastYear
+        break
+      case 'all':
+        dateMatch = created >= allTime
         break
     }
 
@@ -247,15 +251,15 @@ const exportToExcel = () => {
   const totalStock = products.reduce((sum, p) => sum + (p.product_stock[0]?.quantity || 0), 0);
   const inStockProducts = products.filter(p => p.product_stock[0]?.status === 'in_stock');
   const inStockCount = inStockProducts.length;
-  const  lowStockProducts = products.filter(p => p.product_stock[0]?.status === 'low_stock');
+  const lowStockProducts = products.filter(p => p.product_stock[0]?.status === 'low_stock');
   const lowStockCount = lowStockProducts.length;
-  const  outOfStockProducts = products.filter(p => p.product_stock[0]?.status === 'out_of_stock');
+  const outOfStockProducts = products.filter(p => p.product_stock[0]?.status === 'out_of_stock');
   const outOfStockCount = outOfStockProducts.length;
-const stockValue = products.reduce((sum, p) => {
-  const quantity = p.product_stock[0]?.quantity || 0;
-  const sellingPrice = p.product_prices[0]?.selling_price || 0;
-  return sum + (quantity * sellingPrice);
-}, 0);
+  const stockValue = products.reduce((sum, p) => {
+    const quantity = p.product_stock[0]?.quantity || 0;
+    const sellingPrice = p.product_prices[0]?.selling_price || 0;
+    return sum + (quantity * sellingPrice);
+  }, 0);
   const expireSoonCount = products.filter(p => {
     const expireDate = new Date(p.expires_at || '')
     const now = new Date()
@@ -388,10 +392,10 @@ const stockValue = products.reduce((sum, p) => {
         >
           View Products Barcode
         </button>
-       
-          <button
+
+        <button
           onClick={exportToExcel}
-           className='flex gap-2 cursor-pointer items-center justify-center md:h-10 rounded-md bg-blue-600 text-white px-4 py-4 max-sm:w-full hover:bg-blue-800 '>
+          className='flex gap-2 cursor-pointer items-center justify-center md:h-10 rounded-md bg-blue-600 text-white px-4 py-4 max-sm:w-full hover:bg-blue-800 '>
           Export to Excel
         </button>
 
@@ -410,43 +414,43 @@ const stockValue = products.reduce((sum, p) => {
           value={totalStock.toLocaleString()}
         />
 
-       
+
       </div>
-       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-xl bg-white p-4 shadow-sm w-full mb-6">
-          <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={()=>setOpenInStock(true)}>
-            <div className="h-4 w-4 rounded-sm bg-green-500"></div>
-            <p className="text-gray-700 ">In Stock: {inStockCount}</p>
-          </div>
-
-          <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={()=>setOpenLowStock(true)}>
-            <div className="h-4 w-4 rounded-sm bg-yellow-500"></div>
-            <p className="text-gray-700">Low Stock: {lowStockCount}</p>
-          </div>
-
-          <div className="flex items-center gap-3 ">
-            <div className="h-4 w-4 rounded-sm bg-red-500"></div>
-            <p
-
-              className="text-gray-700">Stock Value: {currency} {stockValue.toLocaleString()}</p>
-          </div>
-
-            <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={()=>setOpenOutOfStock(true)}>
-            <div className="h-4 w-4 rounded-sm bg-red-500"></div>
-            <p
-
-              className="text-gray-700">Out of Stock: {outOfStockCount}</p>
-          </div>
-          <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={()=>setOpenExpires(true)}>
-            <div className="h-4 w-4 rounded-sm bg-red-500"></div>
-            <p
-        
-              className="text-gray-700">Expire soon: {expireSoonCount.length}</p>
-          </div>
-          <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200" onClick={()=>setOpenExpired(true)}>
-            <div className="h-4 w-4 rounded-sm bg-red-500"></div>
-            <p className="text-gray-700">Expired: {expiredProducts.length}</p>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-xl bg-white p-4 shadow-sm w-full mb-6">
+        <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={() => setOpenInStock(true)}>
+          <div className="h-4 w-4 rounded-sm bg-green-500"></div>
+          <p className="text-gray-700 ">In Stock: {inStockCount}</p>
         </div>
+
+        <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={() => setOpenLowStock(true)}>
+          <div className="h-4 w-4 rounded-sm bg-yellow-500"></div>
+          <p className="text-gray-700">Low Stock: {lowStockCount}</p>
+        </div>
+
+        <div className="flex items-center gap-3 ">
+          <div className="h-4 w-4 rounded-sm bg-red-500"></div>
+          <p
+
+            className="text-gray-700">Stock Value: {currency} {stockValue.toLocaleString()}</p>
+        </div>
+
+        <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={() => setOpenOutOfStock(true)}>
+          <div className="h-4 w-4 rounded-sm bg-red-500"></div>
+          <p
+
+            className="text-gray-700">Out of Stock: {outOfStockCount}</p>
+        </div>
+        <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={() => setOpenExpires(true)}>
+          <div className="h-4 w-4 rounded-sm bg-red-500"></div>
+          <p
+
+            className="text-gray-700">Expire soon: {expireSoonCount.length}</p>
+        </div>
+        <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200" onClick={() => setOpenExpired(true)}>
+          <div className="h-4 w-4 rounded-sm bg-red-500"></div>
+          <p className="text-gray-700">Expired: {expiredProducts.length}</p>
+        </div>
+      </div>
       <div className="flex flex-col md:flex-row gap-3 mb-4">
         {/* Search */}
         <div className="flex items-center w-full rounded-xl bg-gray-100 px-3 py-2">
@@ -476,13 +480,14 @@ const stockValue = products.reduce((sum, p) => {
       {/* Table */}
       <div className="rounded-xl bg-white shadow-sm">
         <div className="flex items-center justify-between border-b px-4 py-3 text-sm font-medium mb-2">
-          <span>{dateFilter === 'today' ? "Today's" : dateFilter === 'yesterday' ? "Yesterday's" : dateFilter === 'week' ? "This Week" :dateFilter === 'thisMonth' ? "This Month" : dateFilter ==='lastMonth' ? "Last Month" : dateFilter === 'thisYear' ? "This Year" : "All Time "} Added Products</span>
+          <span>{dateFilter === 'today' ? "Today's" : dateFilter === 'yesterday' ? "Yesterday's" : dateFilter === 'week' ? "This Week" : dateFilter === 'thisMonth' ? "This Month" : dateFilter === 'lastMonth' ? "Last Month" : dateFilter === 'thisYear' ? "This Year" : "All Time "} Added Products</span>
 
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value as DateFilter)}
             className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm"
           >
+            <option value="all">All</option>
             <option value="today">Today</option>
             <option value="yesterday">Yesterday</option>
             <option value="week">This Week</option>
@@ -665,25 +670,25 @@ const stockValue = products.reduce((sum, p) => {
       )}
       {
         openExpires && (
-          <AllProducts title='Expire Soon Products' filteredProducts={expireSoonCount} open={openExpires} onClose={()=>setOpenExpires(false)} fetchAllProduct={fetchAllProduct} />
+          <AllProducts title='Expire Soon Products' filteredProducts={expireSoonCount} open={openExpires} onClose={() => setOpenExpires(false)} fetchAllProduct={fetchAllProduct} />
         )
       }
       {
         openExpired && (
-          <AllProducts title='Expired Products' filteredProducts={expiredProducts} open={openExpired} onClose={()=>setOpenExpired(false)} fetchAllProduct={fetchAllProduct} />
+          <AllProducts title='Expired Products' filteredProducts={expiredProducts} open={openExpired} onClose={() => setOpenExpired(false)} fetchAllProduct={fetchAllProduct} />
         )
       }
 
-        {openInStock && (
-          <AllProducts title='In Stock Products' filteredProducts={inStockProducts} open={openInStock} onClose={()=>setOpenInStock(false)} fetchAllProduct={fetchAllProduct} />
-        )}
-          {openLowStock && (  
-          <AllProducts title='Low Stock Products' filteredProducts={lowStockProducts} open={openLowStock} onClose={()=>setOpenLowStock(false)} fetchAllProduct={fetchAllProduct} />
-        )}
-          {openOutOfStock && (  
-          <AllProducts title='Out of Stock Products' filteredProducts={outOfStockProducts} open={openOutOfStock} onClose={()=>setOpenOutOfStock(false)} fetchAllProduct={fetchAllProduct} />
-        )}
-        
+      {openInStock && (
+        <AllProducts title='In Stock Products' filteredProducts={inStockProducts} open={openInStock} onClose={() => setOpenInStock(false)} fetchAllProduct={fetchAllProduct} />
+      )}
+      {openLowStock && (
+        <AllProducts title='Low Stock Products' filteredProducts={lowStockProducts} open={openLowStock} onClose={() => setOpenLowStock(false)} fetchAllProduct={fetchAllProduct} />
+      )}
+      {openOutOfStock && (
+        <AllProducts title='Out of Stock Products' filteredProducts={outOfStockProducts} open={openOutOfStock} onClose={() => setOpenOutOfStock(false)} fetchAllProduct={fetchAllProduct} />
+      )}
+
 
 
       {viewaAllBarcode && (
