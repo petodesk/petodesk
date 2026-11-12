@@ -39,7 +39,7 @@ export default function inventoryPage() {
   const [loading, setLoading] = useState(true)
   const [openAllProducts, setOpenAllProducts] = useState(false)
 
-  const [dateFilter, setDateFilter] = useState<DateFilter>('thisMonth')
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all')
   const [search, setSearch] = useState('')
   const [stockFilter, setStockFilter] = useState<StockFilter>('all')
   const [viewaAllBarcode, setViewAllBArcode] = useState(false)
