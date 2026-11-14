@@ -571,13 +571,13 @@ export default function inventoryPage() {
                 </Link>
               </div>
 
-              {/* Category */}
+              {/* Category
               <div className="flex items-center justify-between">
                 <p className="text-md font-semibold text-gray-700 mb-1">Category</p>
                 <p className="font-medium text-gray-800">
                   {p.category || '—'}
                 </p>
-              </div>
+              </div> */}
 
               {/* Quantity */}
               <div className="flex items-center justify-between">
@@ -633,7 +633,7 @@ export default function inventoryPage() {
               <tr>
                 <th className="px-4 py-3 text-left">Date</th>
                 <th className="px-4 py-3 text-left">Item</th>
-                <th className="px-4 py-3 text-left">Category</th>
+                {/* <th className="px-4 py-3 text-left">Category</th> */}
                 <th className="px-4 py-3 text-left">Quantity</th>
                 <th className="px-4 py-3 text-left">Selling Price</th>
                 <th className="px-4 py-3 text-left">Status</th>
@@ -655,7 +655,7 @@ export default function inventoryPage() {
                       {p.name}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{p.category}</td>
+                  {/* <td className="px-4 py-3 text-gray-500">{p.category}</td> */}
                   <td className="px-4 py-3">{p.product_stock[0]?.quantity} {p.product_stock[0]?.unit_of_measure}</td>
                   <td className="px-4 py-3">
                     {currency} {Number(p.product_prices[0]?.selling_price).toLocaleString()}
