@@ -134,7 +134,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
   )
 
   return (
-    <aside className="flex flex-col h-screen w-64 bg-white shadow-sm max-h-[90vh] font-poppins">
+    <aside className="flex flex-col h-full max-h-screen w-64 bg-white shadow-sm max-h-[90vh] font-poppins">
 
       <div className="bg-blue-600 text-white p-4 font-bold text-center rounded-t-lg my-2 ">
         My Petodesk Account
