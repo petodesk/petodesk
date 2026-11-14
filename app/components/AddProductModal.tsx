@@ -98,7 +98,7 @@ const { company, profile, refresh } = useCompany()
         const e: Record<string, string> = {}
 
         if (!form.name.trim()) e.name = 'Product name is required'
-        if (!form.category) e.category = 'Category is required'
+        // if (!form.category) e.category = 'Category is required'
         if (!form.costPrice || Number(form.costPrice) <= 0)
             e.costPrice = 'Cost price must be greater than 0'
         if (!form.sellingPrice || Number(form.sellingPrice) <= 0)

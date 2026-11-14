@@ -7,6 +7,7 @@ import BarcodeLabel from "./BarcodeLabel";
 import { createClient } from "../utils/supabase/client";
 import { useCompany } from "../context/CompanyContext";
 import { formatDate } from "../utils/dateFormatter";
+import Link from "next/link";
 
 
 
@@ -156,9 +157,12 @@ export default function AllProducts({ filteredProducts, open, onClose, fetchAllP
                             {/* Name */}
                             <div className="flex items-center justify-between">
                                 <p className="text-md font-semibold text-gray-700 mb-1">Product Name</p>
-                                <p className="text-base font-semibold text-gray-900">
+                                <Link
+                                    href={`/dashboard/inventory/${p.id}`}
+                                    className="text-base font-semibold text-blue-600 hover:underline"
+                                >
                                     {p.name}
-                                </p>
+                                </Link>
                             </div>
 
                             {/* Category */}
@@ -224,12 +228,19 @@ export default function AllProducts({ filteredProducts, open, onClose, fetchAllP
                         </thead>
 
                         <tbody>
-                            {filteredProducts.map((p:any) => (
+                            {filteredProducts.map((p: any) => (
                                 <tr key={p.id} className="border-t">
                                     <td className="px-4 py-3">
                                         {formatDate(p.created_at)}
                                     </td>
-                                    <td className="px-4 py-3 font-medium">{p.name}</td>
+                                    <td className="px-4 py-3 font-medium">
+                                        <Link
+                                            href={`/dashboard/inventory/${p.id}`}
+                                            className="text-base font-semibold text-blue-600 hover:underline"
+                                        >
+                                            {p.name}
+                                        </Link>
+                                    </td>
                                     <td className="px-4 py-3 text-gray-500">{p.category}</td>
                                     <td className="px-4 py-3">{p.product_stock[0]?.quantity}</td>
                                     <td className="px-4 py-3">

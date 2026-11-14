@@ -1,6 +1,8 @@
+
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/app/utils/supabase/client'
 import { AddProductModal } from '@/app/components/AddProductModal'
 import { HiDownload, HiSearch } from 'react-icons/hi'
@@ -30,6 +32,23 @@ type StockFilter = 'all' | 'in_stock' | 'low_stock' | 'out_of_stock'
 
 export const dynamic = 'force-dynamic'
 
+/* ---------- expiry helpers ---------- */
+// expires_at is a calendar date ("2026-12-01"). Parse it as LOCAL time, not UTC,
+// so it never shifts by a day, and compare against the start of today.
+const startOfToday = () => {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+const daysUntilExpiry = (expiresAt?: string | null): number | null => {
+  if (!expiresAt) return null
+  const [y, m, d] = String(expiresAt).slice(0, 10).split('-').map(Number)
+  if (!y || !m || !d) return null
+  const expiry = new Date(y, m - 1, d)
+  return Math.round((expiry.getTime() - startOfToday().getTime()) / 86400000)
+}
+
 export default function inventoryPage() {
   const supabase = createClient()
 
@@ -43,7 +62,8 @@ export default function inventoryPage() {
   const [search, setSearch] = useState('')
   const [stockFilter, setStockFilter] = useState<StockFilter>('all')
   const [viewaAllBarcode, setViewAllBArcode] = useState(false)
-  const [openExpires, setOpenExpires] = useState(false)
+  const [openExpires7, setOpenExpires7] = useState(false)
+  const [openExpires30, setOpenExpires30] = useState(false)
   const [openExpired, setOpenExpired] = useState(false)
   const [openInStock, setOpenInStock] = useState(false)
   const [openLowStock, setOpenLowStock] = useState(false)
@@ -260,23 +280,25 @@ export default function inventoryPage() {
     const sellingPrice = p.product_prices[0]?.selling_price || 0;
     return sum + (quantity * sellingPrice);
   }, 0);
-  const expireSoonCount = products.filter(p => {
-    const expireDate = new Date(p.expires_at || '')
-    const now = new Date()
 
-    // Reset times to midnight for date-only comparison
-    expireDate.setHours(0, 0, 0, 0)
-    now.setHours(0, 0, 0, 0)
+  // Expiry tiers. Products with no expiry date, or with nothing left in stock, are ignored.
+  // "Today" counts as expiring (0 days), never as already expired.
+  const hasStock = (p: Products) => (p.product_stock[0]?.quantity || 0) > 0
+  const expiryDays = (p: Products) => daysUntilExpiry(p.expires_at)
 
-    const diffInDays = (expireDate.getTime() - now.getTime()) / (1000 * 3600 * 24)
-    return diffInDays >= 0 && diffInDays <= 7
-  });
   const expiredProducts = products.filter(p => {
-    const expireDate = new Date(p.expires_at || '')
-    const now = new Date()
-    return expireDate < now
+    const d = expiryDays(p)
+    return d !== null && d < 0 && hasStock(p)
   })
-  console.log("Expiredsoon", expireSoonCount)
+  const expireIn7 = products.filter(p => {
+    const d = expiryDays(p)
+    return d !== null && d >= 0 && d <= 7 && hasStock(p)
+  })
+  // Everything expiring within the next 30 days (includes the 7-day group)
+  const expireIn30 = products.filter(p => {
+    const d = expiryDays(p)
+    return d !== null && d >= 0 && d <= 30 && hasStock(p)
+  })
 
 
   function ActionMenu({ product }: { product: any }) {
@@ -377,7 +399,7 @@ export default function inventoryPage() {
   }
 
   return (
-    <section className="w-full p-2 md:p-6 bg-gray-50 my-3">
+    <section className="w-full h-full max-h-screen p-2 md:p-6 bg-gray-50 my-3">
       {/* Top action */}
       <div className="flex flex-col gap-6 md:flex-row md:justify-between  mb-6">
         <button
@@ -401,6 +423,25 @@ export default function inventoryPage() {
 
 
       </div>
+
+      {/* ⏳ Soon expires banner */}
+      {expireIn30.length > 0 && (
+        <div className="mb-6 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-amber-800">⏳ Soon expires</p>
+            <p className="text-sm text-amber-700">
+              {expireIn30.length} product{expireIn30.length === 1 ? '' : 's'} will expire within the next 30 days
+              {expireIn7.length > 0 && ` (${expireIn7.length} within 7 days)`}.
+            </p>
+          </div>
+          <button
+            onClick={() => setOpenExpires30(true)}
+            className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 cursor-pointer"
+          >
+            View products
+          </button>
+        </div>
+      )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-20 mb-6">
@@ -440,14 +481,16 @@ export default function inventoryPage() {
 
             className="text-gray-700">Out of Stock: {outOfStockCount}</p>
         </div>
-        <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={() => setOpenExpires(true)}>
-          <div className="h-4 w-4 rounded-sm bg-red-500"></div>
-          <p
-
-            className="text-gray-700">Expire soon: {expireSoonCount.length}</p>
+        <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={() => setOpenExpires7(true)}>
+          <div className="h-4 w-4 rounded-sm bg-orange-500"></div>
+          <p className="text-gray-700">Expires in 7 days: {expireIn7.length}</p>
+        </div>
+        <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 " onClick={() => setOpenExpires30(true)}>
+          <div className="h-4 w-4 rounded-sm bg-amber-400"></div>
+          <p className="text-gray-700">Expires within 30 days: {expireIn30.length}</p>
         </div>
         <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-200" onClick={() => setOpenExpired(true)}>
-          <div className="h-4 w-4 rounded-sm bg-red-500"></div>
+          <div className="h-4 w-4 rounded-sm bg-red-600"></div>
           <p className="text-gray-700">Expired: {expiredProducts.length}</p>
         </div>
       </div>
@@ -520,9 +563,12 @@ export default function inventoryPage() {
               {/* Name */}
               <div className="flex items-center justify-between">
                 <p className="text-md font-semibold text-gray-700 mb-1">Product Name</p>
-                <p className="text-base font-semibold text-gray-900">
+                <Link
+                  href={`/dashboard/inventory/${p.id}`}
+                  className="text-base font-semibold text-blue-600 hover:underline"
+                >
                   {p.name}
-                </p>
+                </Link>
               </div>
 
               {/* Category */}
@@ -572,12 +618,9 @@ export default function inventoryPage() {
             </div>
           ))}
           {!loading && filteredProducts.length === 0 && (
-            <tr>
-              <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
-                No products found for this period.
-
-              </td>
-            </tr>
+            <p className="px-4 py-10 text-center text-gray-400">
+              No products found for this period.
+            </p>
           )}
         </div>
 
@@ -604,7 +647,14 @@ export default function inventoryPage() {
                   <td className="px-4 py-3">
                     {formatDate(p.created_at)}
                   </td>
-                  <td className="px-4 py-3 font-medium">{p.name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link
+                      href={`/dashboard/inventory/${p.id}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {p.name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-gray-500">{p.category}</td>
                   <td className="px-4 py-3">{p.product_stock[0]?.quantity} {p.product_stock[0]?.unit_of_measure}</td>
                   <td className="px-4 py-3">
@@ -669,8 +719,13 @@ export default function inventoryPage() {
 
       )}
       {
-        openExpires && (
-          <AllProducts title='Expire Soon Products' filteredProducts={expireSoonCount} open={openExpires} onClose={() => setOpenExpires(false)} fetchAllProduct={fetchAllProduct} />
+        openExpires7 && (
+          <AllProducts title='Expires in 7 Days' filteredProducts={expireIn7} open={openExpires7} onClose={() => setOpenExpires7(false)} fetchAllProduct={fetchAllProduct} />
+        )
+      }
+      {
+        openExpires30 && (
+          <AllProducts title='Expires Within 30 Days' filteredProducts={expireIn30} open={openExpires30} onClose={() => setOpenExpires30(false)} fetchAllProduct={fetchAllProduct} />
         )
       }
       {
